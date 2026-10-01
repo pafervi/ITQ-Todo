@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 102">
+  <g stroke="#5e6ef2" stroke-width="4.4" stroke-linecap="round" fill="none">
+    <polygon points="51,22 68,31.5 68,50.5 51,60 34,50.5 34,31.5" />
+  </g>
+  <g fill="#5e6ef2">
+    <circle cx="51" cy="22" r="4.3"/>
+    <circle cx="68" cy="31.5" r="4.3"/>
+    <circle cx="68" cy="50.5" r="4.3"/>
+    <circle cx="51" cy="60" r="4.3"/>
+    <circle cx="34" cy="50.5" r="4.3"/>
+    <circle cx="34" cy="31.5" r="4.3"/>
+  </g>
+  <path d="M40 40 L49 49 L63 33" fill="none" stroke="#5e6ef2" stroke-width="7.5"
+        stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="98" y="59" font-family="Arial, Helvetica, sans-serif" font-size="42" font-weight="700" fill="#183251">ITQ<tspan fill="#5e6ef2"> Todo</tspan></text>
+</svg>

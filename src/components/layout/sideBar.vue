@@ -69,7 +69,7 @@
 
       <div class="sidebar-group sidebar-group-status">
         <span v-if="streakCount > 0" class="sb-item sb-badge streak-badge" :class="{ 'streak-celebrate': streakCelebrate }" :title="$t('ui.streakTitle', [streakCount])">
-          <i class="ph-fill ph-hexagon streak-icon sb-icon"></i>
+          <streak-crystal :count="streakCount" class="sb-icon streak-icon" />
           <span class="sb-count">{{ streakCount }}</span>
           <span class="sb-label sb-label-small">{{ $t('ui.streak') || 'Streak' }}</span>
         </span>
@@ -157,12 +157,14 @@ import languageHelper from "../../helpers/languageHelper.js";
 import configRepository from "../../repositories/configRepository";
 import streakHelper from "../../helpers/streakHelper";
 import zeoliteHelper from "../../helpers/zeoliteHelper";
+import streakCrystal from "../streakCrystal.vue";
 
 export default {
   name: "sideBar",
   emits: ["changeDate"],
   components: {
     Datepicker,
+    streakCrystal,
   },
   data() {
     return {
@@ -642,18 +644,19 @@ export default {
   color: var(--accent-color, #5e6ef2);
 }
 
+/* The streak icon is now the growing crystal component. Hover/pulse the
+   container; the component owns the per-cell animation. */
 .streak-icon {
-  animation: streakPulse 2.4s ease-in-out infinite;
+  flex-shrink: 0;
 }
 
 .streak-badge.streak-celebrate {
   animation: streakCelebrateBounce 1.5s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-.streak-badge.streak-celebrate .streak-icon {
+.streak-badge.streak-celebrate :deep(.streak-crystal) {
   color: #f59e0b;
   filter: drop-shadow(0 0 6px rgba(245, 158, 11, 0.75));
-  animation: streakCelebrateIcon 1.5s ease-out;
 }
 
 @keyframes streakCelebrateBounce {
@@ -662,11 +665,6 @@ export default {
   50% { transform: scale(0.98); }
   70% { transform: scale(1.06); }
   100% { transform: scale(1); }
-}
-
-@keyframes streakCelebrateIcon {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 1; filter: drop-shadow(0 0 12px rgba(245, 158, 11, 1)); }
 }
 
 .scheduled-week-badge .sb-count {
@@ -695,13 +693,8 @@ export default {
   transform: scale(1.1) rotate(10deg);
 }
 
-@keyframes streakPulse {
-  0%, 100% { opacity: 0.75; transform: scale(1); }
-  50% { opacity: 1; transform: scale(1.12); }
-}
-
 @media (prefers-reduced-motion: reduce) {
-  .streak-icon { animation: none; }
+  .streak-badge.streak-celebrate { animation: none; }
 }
 
 /* ---------- Accent / saved markers ---------- */

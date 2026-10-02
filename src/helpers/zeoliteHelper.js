@@ -78,6 +78,25 @@ const FRAMEWORKS = [
   { code: "LTA", fullName: "LTA (ITQ-29, pure silica)", ring: "8-MR", sides: 8, size: 36, itq: true, year: 2004, note: "ITQ-29 is the pure-silica form of LTA, made at the ITQ." },
 ];
 
+// Point list for the framework polygon, in a 100x100 viewBox. Used by the
+// background foreground overlay and the project cover: the SVG itself is
+// rendered inline in the component so the stroke can be `currentColor` and
+// pick up whatever surrounding tint applies (accent, project color, etc.).
+function polygonPoints(sides, ry) {
+  let rx = 44;
+  let radiusY = ry ? (ry / 50) * 44 : 44;
+  let cx = 50;
+  let cy = 50;
+  let pts = [];
+  for (let i = 0; i < sides; i++) {
+    let a = (Math.PI * 2 * i) / sides - Math.PI / 2;
+    let x = (cx + rx * Math.cos(a)).toFixed(2);
+    let y = (cy + radiusY * Math.sin(a)).toFixed(2);
+    pts.push(x + "," + y);
+  }
+  return pts.join(" ");
+}
+
 function build(fw) {
   return {
     code: fw.code,
@@ -87,9 +106,23 @@ function build(fw) {
     itq: !!fw.itq,
     year: fw.year || null,
     note: fw.note,
+    sides: fw.sides,
+    polygonPoints: polygonPoints(fw.sides, fw.ry),
     mask: ngonMaskUrl(fw.sides, fw.size, fw.ry),
     size: fw.size + "px " + fw.size + "px",
   };
+}
+
+// Stable hash so a given project id always maps to the same framework. Used
+// by project covers; separate from the day-of-year rotation used by the
+// ambient background so the two layers don't collide on the same day.
+function hashCode(seed) {
+  let str = String(seed || "");
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = (hash * 31 + str.charCodeAt(i)) >>> 0;
+  }
+  return hash;
 }
 
 export default {
@@ -100,6 +133,13 @@ export default {
   },
   getTodayLattice() {
     let idx = moment().dayOfYear() % FRAMEWORKS.length;
+    return build(FRAMEWORKS[idx]);
+  },
+  // Deterministic framework for a project (or any seed). Project covers use
+  // this to pick a hex silhouette that identifies the project at a glance,
+  // consistent across sessions.
+  frameworkFor(seed) {
+    let idx = hashCode(seed) % FRAMEWORKS.length;
     return build(FRAMEWORKS[idx]);
   },
 };

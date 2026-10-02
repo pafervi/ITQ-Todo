@@ -7,6 +7,33 @@
   }" :style="containerStyle">
     <i v-if="listKind === 'meeting'" class="bi-people-fill kind-watermark" aria-hidden="true"></i>
     <i v-if="listKind === 'activelearning'" class="bi-cpu-fill kind-watermark" aria-hidden="true"></i>
+
+    <!-- Project cover: a stylised hex of the project's zeolite framework
+         sitting as a watermark on the top-right of custom project cards.
+         Deterministic per project id so the identity stays stable; tinted
+         with the project colour via currentColor. Hidden on day lists
+         (they already carry the date headline), on 'kind' variants (they
+         own the top-right slot), and on manually-coloured lists where the
+         user chose a plain colour (keeps their intent). -->
+    <svg
+      v-if="showProjectCover"
+      class="project-cover"
+      viewBox="0 0 100 100"
+      :aria-label="projectFramework.fullName"
+    >
+      <polygon
+        :points="projectFramework.polygonPoints"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="3"
+        stroke-linejoin="round"
+      />
+      <polygon
+        :points="projectFramework.polygonPoints"
+        fill="currentColor"
+        fill-opacity="0.1"
+      />
+    </svg>
     <div v-if="loading" class="loading-spinner">
       <svg class="orbital-spinner" viewBox="0 0 40 40" width="30" height="30" role="status" aria-hidden="true">
         <circle class="orbital-nucleus" cx="20" cy="20" r="3"></circle>
@@ -30,9 +57,18 @@
       <div v-if="!collapsed && allDone" class="all-done-banner">
         <i class="bi-check2-circle"></i>
         <span>{{ $t('ui.allTasksDone') }}</span>
-        <span v-if="celebrate" class="confetti-burst" aria-hidden="true">
-          <span v-for="n in 10" :key="n" class="confetti-dot" :class="'confetti-' + n"></span>
-        </span>
+        <!-- Nucleation celebration: a small cluster of particles converges
+             from a circle onto the vertices of a hexagonal unit cell when
+             the last task of the day gets checked. On-brand replacement
+             for the generic confetti burst. -->
+        <svg v-if="celebrate" class="nucleation-burst" viewBox="-40 -40 80 80" aria-hidden="true">
+          <polygon class="nucleation-cell" :points="hexCellPoints"></polygon>
+          <circle v-for="(p, i) in nucleationParticles" :key="i"
+            class="nucleation-dot" :class="'np-' + i"
+            :cx="p.sx" :cy="p.sy" r="3"
+            :style="{ '--tx': p.tx + 'px', '--ty': p.ty + 'px', animationDelay: (i * 0.03) + 's' }"
+          />
+        </svg>
       </div>
     </transition>
     <transition name="fade-collapse">
@@ -69,6 +105,7 @@ import tasksHelper from "../helpers/tasksHelper";
 import collapsedListsRepository from "../repositories/collapsedListsRepository";
 import projectColorHelper from "../helpers/projectColorHelper";
 import autoTagHelper from "../helpers/autoTagHelper";
+import zeoliteHelper from "../helpers/zeoliteHelper";
 
 export default {
   components: {
@@ -361,6 +398,52 @@ export default {
     allDone: function () {
       return !!(this.toDoListState && this.toDoListState.length > 0 && this.toDoListState.every((t) => t.checked));
     },
+    // ---- Project cover (feature 8) ----
+    //
+    // Each custom project card gets a stylised hex watermark derived
+    // deterministically from its id. Day lists have their own date-driven
+    // identity in the mesh and heading, so they don't get one. The
+    // 'kind-meeting' and 'kind-activelearning' variants already own the
+    // top-right watermark slot, so we skip them too.
+    showProjectCover: function () {
+      if (!this.customTodoList) return false;
+      if (this.listKind === "meeting" || this.listKind === "activelearning") return false;
+      return true;
+    },
+    projectFramework: function () {
+      return zeoliteHelper.frameworkFor(this.id);
+    },
+    // ---- Nucleation particles (feature 6) ----
+    //
+    // Six particles start on a wide circle around the centre and fly inward
+    // to land exactly on the six vertices of a pointy-top hexagon of
+    // radius R. Each starting angle is matched to its landing vertex (same
+    // bearing), so the motion reads as nucleation onto a lattice site.
+    nucleationParticles: function () {
+      let R = 14;        // final unit-cell radius
+      let START_R = 40;  // starting ring radius (edge of the viewBox)
+      let pts = [];
+      for (let i = 0; i < 6; i++) {
+        let a = (Math.PI / 3) * i - Math.PI / 2;
+        let sx = (START_R * Math.cos(a)).toFixed(2);
+        let sy = (START_R * Math.sin(a)).toFixed(2);
+        let tx = (R * Math.cos(a) - START_R * Math.cos(a)).toFixed(2);
+        let ty = (R * Math.sin(a) - START_R * Math.sin(a)).toFixed(2);
+        pts.push({ sx, sy, tx, ty });
+      }
+      return pts;
+    },
+    hexCellPoints: function () {
+      let R = 14;
+      let pts = [];
+      for (let i = 0; i < 6; i++) {
+        let a = (Math.PI / 3) * i - Math.PI / 2;
+        let x = (R * Math.cos(a)).toFixed(2);
+        let y = (R * Math.sin(a)).toFixed(2);
+        pts.push(x + "," + y);
+      }
+      return pts.join(" ");
+    },
   },
 };
 </script>
@@ -648,60 +731,106 @@ export default {
   }
 }
 
-/* ---- Tiny celebration when the last task of the day gets checked ---- */
+/* ---- Nucleation celebration (feature 6) ----
+   Replaces the old confetti burst. Six particles fly inward from a wide
+   circle and land on the vertices of a hexagonal unit cell that fades in
+   underneath them, as if the day's work had crystallised. */
 
-.confetti-burst {
+.nucleation-burst {
   position: absolute;
   left: 50%;
   top: 50%;
-  width: 0;
-  height: 0;
+  width: 80px;
+  height: 80px;
+  margin-left: -40px;
+  margin-top: -40px;
   pointer-events: none;
+  color: var(--accent-color, #5e6ef2);
+  overflow: visible;
 }
 
-.confetti-dot {
-  position: absolute;
-  left: 0;
-  top: 0;
-  width: 5px;
-  height: 5px;
-  border-radius: 1px;
-  background: var(--accent-color, #5e6ef2);
+.nucleation-cell {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.4;
+  stroke-linejoin: round;
   opacity: 0;
-  animation: confettiPop 0.95s cubic-bezier(0.2, 0.8, 0.3, 1) forwards;
+  transform-origin: center;
+  animation: nucleationCellIn 0.9s cubic-bezier(0.2, 0.8, 0.3, 1) 0.45s forwards;
 }
 
-$confetti-colors: #5e6ef2, #f97316, #2dbd6e, #ed56a1, #06b6d4;
-// Pre-computed (x, y) offsets for 10 dots spread evenly around a circle
-// (radius 34px, 36deg apart) - avoids relying on CSS trig() functions.
-$confetti-offsets: (27.5px, 20px), (10.5px, 32.3px), (-10.5px, 32.3px), (-27.5px, 20px), (-34px, 0px),
-  (-27.5px, -20px), (-10.5px, -32.3px), (10.5px, -32.3px), (27.5px, -20px), (34px, 0px);
-
-@for $i from 1 through 10 {
-  .confetti-#{$i} {
-    $offset: nth($confetti-offsets, $i);
-    --confetti-x: #{nth($offset, 1)};
-    --confetti-y: #{nth($offset, 2)};
-    background: nth($confetti-colors, ($i - 1) % 5 + 1);
-    animation-delay: #{$i * 0.012}s;
-  }
+.nucleation-dot {
+  fill: currentColor;
+  opacity: 0;
+  animation: nucleationFlyIn 0.75s cubic-bezier(0.2, 0.8, 0.3, 1) forwards;
 }
 
-@keyframes confettiPop {
-  0% {
-    opacity: 1;
-    transform: translate(0, 0) scale(1);
-  }
-  100% {
-    opacity: 0;
-    transform: translate(var(--confetti-x), var(--confetti-y)) scale(0.4);
-  }
+/* Each dot picks up a slightly different accent so the lattice doesn't
+   read as monochrome mid-flight. The gold at the end is intentional, it
+   echoes the 100% progress colour of the day greeting. */
+.np-0 { color: var(--accent-color, #5e6ef2); }
+.np-1 { color: #2dbd6e; }
+.np-2 { color: #06b6d4; }
+.np-3 { color: #f59e0b; }
+.np-4 { color: #ed56a1; }
+.np-5 { color: #10b981; }
+
+@keyframes nucleationFlyIn {
+  0%   { opacity: 0; transform: translate(0, 0) scale(1.3); }
+  40%  { opacity: 1; }
+  100% { opacity: 1; transform: translate(var(--tx, 0), var(--ty, 0)) scale(1); }
+}
+
+@keyframes nucleationCellIn {
+  0%   { opacity: 0; stroke-dasharray: 0 120; }
+  70%  { opacity: 0.85; }
+  100% { opacity: 0.75; stroke-dasharray: 120 0; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .confetti-dot {
+  .nucleation-dot,
+  .nucleation-cell {
     animation: none !important;
     opacity: 0 !important;
   }
+}
+
+/* ---- Project cover (feature 8) ----
+   A stylised hex of the project's deterministic zeolite framework, sitting
+   as a watermark in the top-right of a custom project card. Tinted with
+   the project's own colour via currentColor, so it reinforces the per-card
+   identity without competing with the task list. */
+.project-cover {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 60px;
+  height: 60px;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.28;
+  color: var(--project-color, var(--accent-color, #5e6ef2));
+  transition: opacity 0.35s ease, transform 0.6s cubic-bezier(0.2, 1, 0.1, 1);
+}
+
+.dark-theme .project-cover {
+  opacity: 0.42;
+}
+
+.to-do-list-container:hover .project-cover {
+  opacity: 0.42;
+  transform: rotate(6deg) scale(1.06);
+}
+
+.dark-theme .to-do-list-container:hover .project-cover {
+  opacity: 0.6;
+}
+
+/* On meeting / activelearning variants the slot is already taken by the
+   kind-watermark icon; the v-if in the template handles that, but keep
+   this guard too in case either is toggled dynamically. */
+.kind-meeting .project-cover,
+.kind-activelearning .project-cover {
+  display: none;
 }
 </style>

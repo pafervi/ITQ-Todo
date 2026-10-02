@@ -13,6 +13,25 @@
       <span class="mesh-blob blob-1"></span>
       <span class="mesh-blob blob-2"></span>
       <span class="mesh-blob blob-3"></span>
+
+      <!-- Ambient lattice overlay: the day's framework as a single
+           hero-sized ring, drawn as a visible SVG stroke and rotating very
+           slowly so the room feels alive rather than animated. Separate
+           from the ::before mask layer, which stays as the tiled
+           watermark. -->
+      <svg
+        class="lattice-field"
+        viewBox="-120 -120 240 240"
+        preserveAspectRatio="xMidYMid slice"
+      >
+        <g class="lattice-rotor">
+          <polygon
+            class="lattice-ring"
+            :points="todayLattice.polygonPoints"
+          />
+          <circle class="lattice-nucleus" cx="0" cy="0" r="3" />
+        </g>
+      </svg>
     </div>
     <div class="hidden-mobile app-body" :style="{ zoom: `${zoom}%` }">
       <splash-screen ref="splash"></splash-screen>
@@ -1067,6 +1086,67 @@ body {
 
 .dark-theme .blob-3 {
   opacity: 0.14;
+}
+
+/* ---- Ambient lattice overlay (feature 4) ----
+   The day's zeolite framework rendered as a hero-sized ring triplet, with
+   a slow rotation. Scales with viewport so it reads as architectural
+   backdrop rather than ornament. */
+.lattice-field {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.08;
+  color: var(--accent-color, #5e6ef2);
+  mix-blend-mode: multiply;
+  overflow: visible;
+}
+
+.dark-theme .lattice-field {
+  opacity: 0.14;
+  mix-blend-mode: screen;
+}
+
+.lattice-rotor {
+  transform-origin: 0 0;
+  transform-box: fill-box;
+  animation: latticeDrift 180s linear infinite;
+}
+
+.lattice-ring {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 0.9;
+  stroke-linejoin: round;
+  transform: scale(1.2);
+  transform-origin: center;
+  transform-box: fill-box;
+  opacity: 1;
+}
+
+.lattice-nucleus {
+  fill: currentColor;
+  opacity: 0.6;
+}
+
+@keyframes latticeDrift {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+.typing-active .lattice-rotor {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lattice-rotor { animation: none; }
+}
+
+.perf-mode .lattice-field {
+  display: none;
 }
 
 /* Translate-only: a pure compositor transform on an already-blurred layer

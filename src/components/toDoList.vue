@@ -341,13 +341,20 @@ export default {
     },
     containerStyle: function () {
       let style = { flex: `0 0 ${100 / this.columns}%` };
-      if (this.listColor) {
-        style.borderTop = `3px solid ${this.listColor}`;
-      } else if (this.customTodoList) {
-        // No manual color chosen: give the project a stable, automatic
-        // color identity derived from its id, instead of a flat border.
-        style.borderTop = "3px solid transparent";
-        style.borderImage = `${projectColorHelper.gradientFor(this.id)} 1`;
+      // Resolve the single colour that identifies this project: the user's
+      // manual pick wins, otherwise a stable auto-colour derived from the
+      // list id. Expose it via CSS vars so the stylesheet draws the side
+      // bar, the tint wash, and the hover state from one source.
+      let color = this.listColor;
+      if (!color && this.customTodoList) {
+        color = projectColorHelper.solidFor(this.id);
+      }
+      if (color) {
+        style["--project-color"] = color;
+        style["--project-tint"] =
+          `color-mix(in srgb, ${color} 7%, transparent)`;
+        style["--project-tint-strong"] =
+          `color-mix(in srgb, ${color} 11%, transparent)`;
       }
       return style;
     },
@@ -384,12 +391,47 @@ export default {
   scroll-snap-align: start;
   margin-bottom: 5px;
   position: relative;
+  transition: background 0.35s ease;
 }
 
+/* Project colour as a protagonist: a thick vertical bar on the left plus
+   a diagonal wash of the same hue tinting the card. The bar lives on
+   ::after (kind-* variants already own ::before) and the tint is a
+   background on the container itself so it reads through the whole
+   column without competing with the task text. */
 .to-do-list-container.has-accent-color {
-  padding-top: 6px;
-  border-top-left-radius: 4px;
-  border-top-right-radius: 4px;
+  padding-top: 10px;
+  padding-left: 18px;
+  border-top-left-radius: 10px;
+  border-top-right-radius: 10px;
+  background: linear-gradient(
+    135deg,
+    var(--project-tint, transparent) 0%,
+    transparent 58%
+  );
+}
+
+.to-do-list-container.has-accent-color::after {
+  content: "";
+  position: absolute;
+  top: 10px;
+  bottom: 10px;
+  left: 0;
+  width: 4px;
+  border-radius: 3px;
+  background-color: var(--project-color, var(--accent-color, #5e6ef2));
+  box-shadow: 0 0 10px -2px
+    color-mix(in srgb, var(--project-color, #5e6ef2) 45%, transparent);
+  z-index: 1;
+  pointer-events: none;
+}
+
+.to-do-list-container.has-accent-color:hover {
+  background: linear-gradient(
+    135deg,
+    var(--project-tint-strong, transparent) 0%,
+    transparent 62%
+  );
 }
 
 /* ---- Meeting / active-learning list identity ---- */

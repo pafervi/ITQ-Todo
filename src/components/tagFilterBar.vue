@@ -49,14 +49,9 @@ export default {
   flex-wrap: wrap;
   align-items: center;
   gap: 6px;
-  padding: 10px 13px 14px 13px;
-  margin-top: 2px;
-  margin-bottom: 2px;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-
-  .dark-theme & {
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  }
+  padding: 2px 20px 16px 20px;
+  margin-top: 0px;
+  margin-bottom: 0px;
 }
 
 .tag-filter-chip {
@@ -68,8 +63,9 @@ export default {
   color: #3c3c3c;
 
   .dark-theme & {
-    background-color: #21262d;
-    color: #c9d1d9;
+    background-color: #121a33;
+    color: #c8cfe8;
+    border: 1px solid rgba(94, 110, 242, 0.14);
   }
 }
 

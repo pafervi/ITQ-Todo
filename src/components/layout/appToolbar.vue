@@ -176,17 +176,17 @@ export default {
 }
 
 .dark-theme .app-toolbar {
-  background-color: rgba(13, 17, 23, 0.52);
+  background-color: rgba(10, 15, 32, 0.52);
 }
 
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   .dark-theme .app-toolbar {
-    background-color: #12161c;
+    background-color: #0d1326;
   }
 }
 
 .dark-theme .app-toolbar.scrolled {
-  border-bottom-color: rgba(255, 255, 255, 0.08);
+  border-bottom-color: rgba(94, 110, 242, 0.18);
 }
 
 .toolbar-row {
@@ -240,7 +240,7 @@ export default {
 }
 
 .dark-theme .toolbar-segmented {
-  background-color: rgba(255, 255, 255, 0.07);
+  background-color: rgba(94, 110, 242, 0.12);
 }
 
 .segmented-option {
@@ -277,7 +277,8 @@ export default {
 }
 
 .dark-theme .segmented-pill {
-  background-color: #343b43;
+  background-color: #1a2447;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
 }
 
 .segmented-pill.right {
@@ -334,10 +335,10 @@ export default {
 }
 
 .dark-theme .toolbar-search-field {
-  background-color: rgba(255, 255, 255, 0.07);
+  background-color: rgba(94, 110, 242, 0.1);
 
   &:hover {
-    background-color: rgba(255, 255, 255, 0.11);
+    background-color: rgba(94, 110, 242, 0.16);
   }
 }
 
@@ -371,7 +372,7 @@ export default {
 }
 
 .dark-theme .window-controls {
-  border-left-color: rgba(255, 255, 255, 0.08);
+  border-left-color: rgba(94, 110, 242, 0.16);
 }
 
 .window-btn {
@@ -403,15 +404,15 @@ export default {
 }
 
 .dark-theme .window-btn {
-  color: #cfd4da;
+  color: #c8cfe8;
 
   &:hover {
-    color: #fff;
+    color: #eef1ff;
   }
 }
 
 .dark-theme .window-btn:hover {
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: rgba(94, 110, 242, 0.14);
 }
 
 .window-btn-close:hover {

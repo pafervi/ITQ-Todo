@@ -1,16 +1,24 @@
 <template>
   <div class="day-greeting" :style="collapseStyle">
-    <span class="day-greeting-text" :key="greeting">
-      <span
-        v-for="(ch, i) in greetingChars"
-        :key="i"
-        class="kinetic-char"
-        :style="{ animationDelay: i * 0.032 + 's' }"
-        >{{ ch === " " ? nbsp : ch }}</span
-      >
-    </span>
-    <span class="day-greeting-date">{{ dateLabel }}</span>
-    <span v-if="todayTotal > 0" class="day-greeting-progress" :class="{ 'at-100': progressPercent === 100 }" :title="progressTitle">
+    <div class="day-greeting-head">
+      <span class="day-greeting-weekday">{{ weekdayLabel }}</span>
+      <h1 class="day-greeting-text" :key="greeting">
+        <span
+          v-for="(ch, i) in greetingChars"
+          :key="i"
+          class="kinetic-char"
+          :style="{ animationDelay: i * 0.028 + 's' }"
+          >{{ ch === " " ? nbsp : ch }}</span
+        >
+      </h1>
+      <span class="day-greeting-date">{{ dateLabel }}</span>
+    </div>
+    <span
+      v-if="todayTotal > 0"
+      class="day-greeting-progress"
+      :class="{ 'at-100': progressPercent === 100 }"
+      :title="progressTitle"
+    >
       <span class="day-progress-bar">
         <span
           class="day-progress-fill"
@@ -35,7 +43,7 @@ export default {
   },
   data() {
     return {
-      nbsp: " ",
+      nbsp: " ",
     };
   },
   computed: {
@@ -59,6 +67,9 @@ export default {
     },
     greetingChars: function () {
       return this.greeting.split("");
+    },
+    weekdayLabel: function () {
+      return moment().locale(this.language).format("dddd");
     },
     dateLabel: function () {
       return moment().locale(this.language).format("LL");
@@ -98,17 +109,51 @@ export default {
 
 <style scoped lang="scss">
 .day-greeting {
-  padding: 14px 16px 0px 16px;
+  padding: 18px 20px 2px 20px;
   display: flex;
-  align-items: baseline;
-  gap: 9px;
+  align-items: flex-end;
+  gap: 18px;
   flex-wrap: wrap;
 }
 
+.day-greeting-head {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* Tiny eyebrow above the title: the weekday in all caps gives the greeting a
+   newspaper-dateline rhythm and anchors the oversized serif below. */
+.day-greeting-weekday {
+  font-size: 0.62rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #8c8c8c;
+  margin-bottom: 2px;
+
+  .dark-theme & {
+    color: #8b949e;
+  }
+}
+
 .day-greeting-text {
-  font-size: 1.25rem;
-  font-weight: 600;
+  font-family: var(--font-voice, "Fraunces", Georgia, serif);
+  font-size: clamp(1.9rem, 2.4vw + 0.6rem, 2.8rem);
+  font-weight: 400;
+  font-variation-settings: "opsz" 72, "wght" 420;
+  line-height: 1.02;
+  letter-spacing: -0.015em;
   text-transform: capitalize;
+  margin: 0;
+  color: #1a1a1a;
+
+  .dark-theme & {
+    color: #f0f0f3;
+    font-variation-settings: "opsz" 72, "wght" 380;
+  }
 }
 
 .kinetic-char {
@@ -138,9 +183,11 @@ export default {
 }
 
 .day-greeting-date {
+  margin-top: 6px;
   font-size: 0.82rem;
   color: grey;
   text-transform: capitalize;
+  font-variant-numeric: oldstyle-nums;
 
   .dark-theme & {
     color: #8b949e;
@@ -150,10 +197,11 @@ export default {
 .day-greeting-progress {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  margin-left: 10px;
+  gap: 10px;
   font-size: 0.72rem;
   color: grey;
+  padding-bottom: 6px;
+  flex: 0 0 auto;
 
   .dark-theme & {
     color: #8b949e;
@@ -162,7 +210,7 @@ export default {
 
 .day-progress-bar {
   display: inline-block;
-  width: 90px;
+  width: 110px;
   height: 4px;
   border-radius: 3px;
   background-color: rgba(0, 0, 0, 0.08);

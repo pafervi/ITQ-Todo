@@ -959,9 +959,14 @@ body {
   background-color: #f4f5f7;
 }
 
+/* Deep-navy dark palette: not an inversion of the light theme. The
+   canvas sits a touch below the sidebar/toolbar surfaces so the layered
+   chrome stays legible, and the accent-colored mesh behind reads as a
+   subtle aurora rather than noise. */
 .dark-theme#app-container,
 #app-container.dark-theme {
-  background-color: #0d1117;
+  background-color: #080c17;
+  color: #d7dcee;
 }
 
 /* ---- Mesh gradient background (ambient, time-of-day tinted) ---- */
@@ -1056,11 +1061,12 @@ body {
 }
 
 .dark-theme .mesh-blob {
-  opacity: 0.15;
+  opacity: 0.22;
+  filter: blur(42px) saturate(140%);
 }
 
 .dark-theme .blob-3 {
-  opacity: 0.1;
+  opacity: 0.14;
 }
 
 /* Translate-only: a pure compositor transform on an already-blurred layer
@@ -1339,13 +1345,18 @@ body {
 }
 
 .dark-theme .today-only-layout .to-do-list-container {
-  background-color: #191d24;
-  background-color: rgba(25, 29, 36, 0.9);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  background-color: #121a33;
+  background-color: rgba(18, 26, 51, 0.92);
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.5),
+    0 1px 0 rgba(94, 110, 242, 0.08) inset;
 }
 
 .dark-theme .today-only-layout .to-do-list-container:hover {
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.45);
+  box-shadow:
+    0 10px 24px -6px rgba(0, 0, 0, 0.55),
+    0 2px 8px rgba(0, 0, 0, 0.35),
+    0 1px 0 rgba(94, 110, 242, 0.14) inset;
 }
 
 .today-only-layout.compact-cards .to-do-list-container {
@@ -1391,13 +1402,13 @@ body {
 
 /*----------------Dark Theme------------------*/
 .dark-theme {
-  background-color: #0d1117;
-  color: #c9d1d9;
+  background-color: #080c17;
+  color: #d7dcee;
 }
 
 .dark-theme input {
-  background-color: #13171d;
-  color: #c9d1d9;
+  background-color: #0d1326;
+  color: #d7dcee;
 }
 
 .dark-theme input.form-range {

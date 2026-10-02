@@ -1,5 +1,13 @@
 @import "globalVars";
 
+:root {
+  /* Editorial display serif used for the day greeting and project card
+     titles. Falls back to high-quality system serifs so the UI never ends
+     up in Times New Roman while the webfont is still loading. */
+  --font-voice: "Fraunces", "Charter", "Iowan Old Style", "Palatino",
+                "Georgia", serif;
+}
+
 body {
   color: $text-color;
 }
@@ -200,8 +208,8 @@ i {
 }
 
 .dark-theme .modal-content {
-  background-color: #21262d;
-  border: 1px solid #30363d;
+  background-color: #121a33;
+  border: 1px solid rgba(94, 110, 242, 0.18);
 }
 
 .close-modal {
@@ -324,8 +332,8 @@ i {
 }
 
 .dark-theme .toast {
-  background-color: #21262d !important;
-  border: 1px solid #30363d !important;
+  background-color: #121a33 !important;
+  border: 1px solid rgba(94, 110, 242, 0.18) !important;
 }
 
 .close-toast {
@@ -444,22 +452,23 @@ i {
 .perf-mode:not(.dark-theme) .side-bar {
   background-color: #fbfbfc !important;
 }
-.perf-mode.dark-theme .side-bar {
-  background-color: #12161c !important;
+.perf-mode.dark-theme .side-bar,
+.perf-mode.dark-theme .side-bar-rail {
+  background-color: #0d1326 !important;
 }
 
 .perf-mode:not(.dark-theme) .app-toolbar {
   background-color: #f7f8fa !important;
 }
 .perf-mode.dark-theme .app-toolbar {
-  background-color: #0f141b !important;
+  background-color: #0b1024 !important;
 }
 
 .perf-mode:not(.dark-theme) .to-do-list-container {
   background-color: #ffffff !important;
 }
 .perf-mode.dark-theme .to-do-list-container {
-  background-color: #161b22 !important;
+  background-color: #121a33 !important;
 }
 
 /* Kill the animated blob drift too, in case any residual element remains. */

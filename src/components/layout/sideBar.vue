@@ -1,133 +1,151 @@
 <template>
-  <div class="side-bar">
-    <div class="logo-badge" data-bs-toggle="modal" data-bs-target="#aboutModal" :title="$t('about.about')">
-      <img class="logo" src="/img/logo-color.svg" width="26" height="26" alt="ITQ Todo Logo" />
-      <img class="logo logo-white" src="/img/logo-white.svg" width="26" height="26" alt="ITQ Todo Logo" />
-    </div>
+  <div
+    class="side-bar"
+    @mouseenter="handleEnter"
+    @mouseleave="handleLeave"
+  >
+    <div class="side-bar-rail" :class="{ 'is-expanded': expanded }">
+      <div class="sb-item sb-logo-item" data-bs-toggle="modal" data-bs-target="#aboutModal" :title="$t('about.about')">
+        <div class="logo-badge">
+          <img class="logo" src="/img/logo-color.svg" width="30" height="30" alt="ITQ Todo Logo" />
+          <img class="logo logo-white" src="/img/logo-white.svg" width="30" height="30" alt="ITQ Todo Logo" />
+        </div>
+        <span class="sb-label sb-brand-label">ITQ&nbsp;Todo</span>
+      </div>
 
-    <div class="sidebar-group sidebar-group-nav">
-      <i v-if="showCalendar" class="ph ph-house" @click="setTodayDate" :title="$t('ui.today')"></i>
-      <datepicker
-        v-if="datepickerEnabled"
-        id="side-bar-date-picker-input"
-        v-model="pickedDate"
-        :locale="language"
-        :weekStartsOn="weekStartOnMonday"
-      />
-      <i v-if="showCalendar" class="ph ph-calendar-blank" @click="changeDate" :title="$t('ui.calendar')"> </i>
-    </div>
+      <div class="sidebar-group sidebar-group-nav">
+        <div v-if="showCalendar" class="sb-item" @click="setTodayDate" :title="$t('ui.today')">
+          <i class="ph ph-house sb-icon"></i>
+          <span class="sb-label">{{ $t('ui.today') }}</span>
+        </div>
+        <datepicker
+          v-if="datepickerEnabled"
+          id="side-bar-date-picker-input"
+          v-model="pickedDate"
+          :locale="language"
+          :weekStartsOn="weekStartOnMonday"
+        />
+        <div v-if="showCalendar" class="sb-item" @click="changeDate" :title="$t('ui.calendar')">
+          <i class="ph ph-calendar-blank sb-icon"></i>
+          <span class="sb-label">{{ $t('ui.calendar') }}</span>
+        </div>
+      </div>
 
-    <div class="sidebar-divider"></div>
+      <div class="sidebar-divider"></div>
 
-    <div class="sidebar-group sidebar-group-create">
-      <i class="ph ph-magnifying-glass" :title="$t('ui.search')" data-bs-toggle="modal" data-bs-target="#searchModal"></i>
-      <i
-        v-if="showCalendar"
-        class="ph ph-arrows-clockwise"
-        :title="$t('ui.recurringTasks')"
-        data-bs-toggle="modal"
-        data-bs-target="#RecurrentEventsModal"
-      >
-      </i>
-      <i
-        class="ph ph-calendar-check"
-        :title="$t('ui.deadlines')"
-        data-bs-toggle="modal"
-        data-bs-target="#deadlinesModal"
-      >
-      </i>
-      <i
-        v-if="showCustomList"
-        class="ph ph-list-plus"
-        data-bs-toggle="modal"
-        data-bs-target="#newListTemplateModal"
-        :title="$t('ui.newCustomList')"
-      ></i>
-      <i
-        v-if="showCustomList"
-        class="ph ph-arrows-left-right"
-        data-bs-target="#ReorderCustomListsModal"
-        data-bs-toggle="modal"
-        :title="$t('ui.reorderCustomLists')"
-      ></i>
-      <i
-        class="ph ph-gauge"
-        data-bs-toggle="modal"
-        data-bs-target="#missionControlModal"
-        :title="$t('ui.missionControl')"
-      ></i>
-    </div>
+      <div class="sidebar-group sidebar-group-create">
+        <div class="sb-item" :title="$t('ui.search')" data-bs-toggle="modal" data-bs-target="#searchModal">
+          <i class="ph ph-magnifying-glass sb-icon"></i>
+          <span class="sb-label">{{ $t('ui.search') }}</span>
+        </div>
+        <div v-if="showCalendar" class="sb-item" :title="$t('ui.recurringTasks')"
+          data-bs-toggle="modal" data-bs-target="#RecurrentEventsModal">
+          <i class="ph ph-arrows-clockwise sb-icon"></i>
+          <span class="sb-label">{{ $t('ui.recurringTasks') }}</span>
+        </div>
+        <div class="sb-item" :title="$t('ui.deadlines')"
+          data-bs-toggle="modal" data-bs-target="#deadlinesModal">
+          <i class="ph ph-calendar-check sb-icon"></i>
+          <span class="sb-label">{{ $t('ui.deadlines') }}</span>
+        </div>
+        <div v-if="showCustomList" class="sb-item" data-bs-toggle="modal"
+          data-bs-target="#newListTemplateModal" :title="$t('ui.newCustomList')">
+          <i class="ph ph-list-plus sb-icon"></i>
+          <span class="sb-label">{{ $t('ui.newCustomList') }}</span>
+        </div>
+        <div v-if="showCustomList" class="sb-item" data-bs-target="#ReorderCustomListsModal"
+          data-bs-toggle="modal" :title="$t('ui.reorderCustomLists')">
+          <i class="ph ph-arrows-left-right sb-icon"></i>
+          <span class="sb-label">{{ $t('ui.reorderCustomLists') }}</span>
+        </div>
+        <div class="sb-item" data-bs-toggle="modal"
+          data-bs-target="#missionControlModal" :title="$t('ui.missionControl')">
+          <i class="ph ph-gauge sb-icon"></i>
+          <span class="sb-label">{{ $t('ui.missionControl') }}</span>
+        </div>
+      </div>
 
-    <span style="flex-grow: 1"></span>
+      <span class="sb-spacer"></span>
 
-    <div class="sidebar-group sidebar-group-status">
-      <span v-if="streakCount > 0" class="streak-badge" :class="{ 'streak-celebrate': streakCelebrate }" :title="$t('ui.streakTitle', [streakCount])">
-        <i class="ph-fill ph-hexagon streak-icon"></i>{{ streakCount }}
-      </span>
-      <span v-if="scheduledThisWeek > 0" class="scheduled-week-badge" :title="$t('ui.scheduledWeekTitle', [scheduledThisWeek]) || (scheduledThisWeek + ' scheduled this week')">
-        <i class="bi-calendar-week"></i>{{ scheduledThisWeek }}
-      </span>
-      <span
-        class="zeolite-badge"
-        :title="$t('ui.zeoliteOfDay', [todayLatticeName])"
-        data-bs-toggle="modal"
-        data-bs-target="#zeoliteInfoModal"
-      >
-        <i class="ph ph-hexagon"></i>
-      </span>
-      <span v-if="daysUntilTalk !== null" class="talk-countdown-badge" :title="talkCountdownTitle">
-        <i class="ph ph-microphone-stage"></i>{{ daysUntilTalk }}
-      </span>
-      <span class="accent-quick-picker" :style="{ backgroundColor: accentColor }" :title="$t('settings.accentColor')"
-        @click="$refs.accentInput.click()">
-        <input ref="accentInput" type="color" class="accent-quick-input" v-model="accentColorModel"
-          @change="setAccentColor" />
-      </span>
-      <span class="saved-indicator" :class="{ pulse: savedPulse }" :title="$t('ui.savedIndicator')">
-        <span class="saved-dot"></span>
-      </span>
-    </div>
+      <div class="sidebar-group sidebar-group-status">
+        <span v-if="streakCount > 0" class="sb-item sb-badge streak-badge" :class="{ 'streak-celebrate': streakCelebrate }" :title="$t('ui.streakTitle', [streakCount])">
+          <i class="ph-fill ph-hexagon streak-icon sb-icon"></i>
+          <span class="sb-count">{{ streakCount }}</span>
+          <span class="sb-label sb-label-small">{{ $t('ui.streak') || 'Streak' }}</span>
+        </span>
+        <span v-if="scheduledThisWeek > 0" class="sb-item sb-badge scheduled-week-badge" :title="$t('ui.scheduledWeekTitle', [scheduledThisWeek]) || (scheduledThisWeek + ' scheduled this week')">
+          <i class="bi-calendar-week sb-icon"></i>
+          <span class="sb-count">{{ scheduledThisWeek }}</span>
+          <span class="sb-label sb-label-small">{{ $t('ui.scheduledWeek') || 'This week' }}</span>
+        </span>
+        <span class="sb-item sb-badge zeolite-badge" :title="$t('ui.zeoliteOfDay', [todayLatticeName])"
+          data-bs-toggle="modal" data-bs-target="#zeoliteInfoModal">
+          <i class="ph ph-hexagon sb-icon"></i>
+          <span class="sb-label sb-label-small">{{ todayLatticeName }}</span>
+        </span>
+        <span v-if="daysUntilTalk !== null" class="sb-item sb-badge talk-countdown-badge" :title="talkCountdownTitle">
+          <i class="ph ph-microphone-stage sb-icon"></i>
+          <span class="sb-count">{{ daysUntilTalk }}</span>
+          <span class="sb-label sb-label-small">{{ $t('ui.talk') || 'Next talk' }}</span>
+        </span>
+        <span class="sb-item sb-badge accent-item" :title="$t('settings.accentColor')"
+          @click="$refs.accentInput.click()">
+          <span class="accent-quick-picker" :style="{ backgroundColor: accentColor }"></span>
+          <input ref="accentInput" type="color" class="accent-quick-input" v-model="accentColorModel"
+            @change="setAccentColor" />
+          <span class="sb-label sb-label-small">{{ $t('settings.accentColor') }}</span>
+        </span>
+        <span class="sb-item sb-badge saved-item" :class="{ pulse: savedPulse }" :title="$t('ui.savedIndicator')">
+          <span class="saved-dot"></span>
+          <span class="sb-label sb-label-small">{{ $t('ui.savedIndicator') }}</span>
+        </span>
+      </div>
 
-    <div class="dropend d-flex justify-content-center sidebar-extra-menu">
-      <i class="ph ph-dots-three sidebar-icon align-self-center" type="button" data-bs-toggle="dropdown"></i>
-      <ul class="dropdown-menu mx-3" aria-labelledby="btnTaskOptionMenu">
-        <li>
-          <button class="dropdown-item" type="button" @click="print">
-            <i class="ph ph-printer"></i> <span>{{ $t("ui.print") }} </span>
-          </button>
-        </li>
-        <li v-show="showCustomList">
-          <button class="dropdown-item" type="button" @click="exportAllMarkdown">
-            <i class="ph ph-download-simple"></i> <span>{{ $t("ui.exportAllProjects") }}</span>
-          </button>
-        </li>
-        <li>
-          <hr class="dropdown-divider" />
-        </li>
-        <li>
-          <button class="dropdown-item" type="button" data-bs-toggle="modal" data-bs-target="#aboutModal">
-            <img class="about-menu-logo about-menu-logo-color" src="/img/logo-color.svg" alt="" width="14" height="14" />
-            <img class="about-menu-logo about-menu-logo-white" src="/img/logo-white.svg" alt="" width="14" height="14" />
-            <span>{{ $t("about.about") }}</span>
-          </button>
-        </li>
-        <li>
-          <button class="dropdown-item" type="button" data-bs-toggle="modal" data-bs-target="#shortcutsModal">
-            <i class="ph ph-keyboard"></i> <span>{{ $t("ui.shortcuts") }}</span>
-          </button>
-        </li>
-      </ul>
-    </div>
+      <div class="dropend sidebar-extra-menu">
+        <div class="sb-item sb-dropdown-trigger" type="button" data-bs-toggle="dropdown">
+          <i class="ph ph-dots-three sb-icon"></i>
+          <span class="sb-label">{{ $t('ui.more') || 'More' }}</span>
+        </div>
+        <ul class="dropdown-menu mx-3" aria-labelledby="btnTaskOptionMenu">
+          <li>
+            <button class="dropdown-item" type="button" @click="print">
+              <i class="ph ph-printer"></i> <span>{{ $t("ui.print") }} </span>
+            </button>
+          </li>
+          <li v-show="showCustomList">
+            <button class="dropdown-item" type="button" @click="exportAllMarkdown">
+              <i class="ph ph-download-simple"></i> <span>{{ $t("ui.exportAllProjects") }}</span>
+            </button>
+          </li>
+          <li>
+            <hr class="dropdown-divider" />
+          </li>
+          <li>
+            <button class="dropdown-item" type="button" data-bs-toggle="modal" data-bs-target="#aboutModal">
+              <img class="about-menu-logo about-menu-logo-color" src="/img/logo-color.svg" alt="" width="14" height="14" />
+              <img class="about-menu-logo about-menu-logo-white" src="/img/logo-white.svg" alt="" width="14" height="14" />
+              <span>{{ $t("about.about") }}</span>
+            </button>
+          </li>
+          <li>
+            <button class="dropdown-item" type="button" data-bs-toggle="modal" data-bs-target="#shortcutsModal">
+              <i class="ph ph-keyboard"></i> <span>{{ $t("ui.shortcuts") }}</span>
+            </button>
+          </li>
+        </ul>
+      </div>
 
-    <div class="sidebar-group sidebar-group-settings">
-      <i class="ph ph-info" data-bs-toggle="modal" data-bs-target="#tipsModal" :title="$t('tips.tips')"></i>
-      <i
-        class="ph ph-gear"
-        data-bs-toggle="modal"
-        data-bs-target="#configModal"
-        :title="$t('settings.settings')"
-        @click="openConfigModal"
-      ></i>
+      <div class="sidebar-group sidebar-group-settings">
+        <div class="sb-item" data-bs-toggle="modal" data-bs-target="#tipsModal" :title="$t('tips.tips')">
+          <i class="ph ph-info sb-icon"></i>
+          <span class="sb-label">{{ $t('tips.tips') }}</span>
+        </div>
+        <div class="sb-item" data-bs-toggle="modal" data-bs-target="#configModal"
+          :title="$t('settings.settings')" @click="openConfigModal">
+          <i class="ph ph-gear sb-icon"></i>
+          <span class="sb-label">{{ $t('settings.settings') }}</span>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -159,6 +177,11 @@ export default {
       // the app is open.
       streakCelebrate: false,
       streakCelebrateTimeout: null,
+      // Hover-expand state. A short enter delay avoids the rail popping open
+      // when the mouse just drifts across the edge of the window on its way
+      // somewhere else; the leave is immediate so it never feels sticky.
+      expanded: false,
+      enterTimer: null,
     };
   },
   mounted() {
@@ -183,8 +206,20 @@ export default {
     window.removeEventListener("wtd-day-completed", this.onDayCompleted);
     clearTimeout(this.streakRefreshTimeout);
     clearTimeout(this.streakCelebrateTimeout);
+    clearTimeout(this.enterTimer);
   },
   methods: {
+    handleEnter: function () {
+      // 180ms grace keeps a passing cursor from triggering the full expand.
+      clearTimeout(this.enterTimer);
+      this.enterTimer = setTimeout(() => {
+        this.expanded = true;
+      }, 180);
+    },
+    handleLeave: function () {
+      clearTimeout(this.enterTimer);
+      this.expanded = false;
+    },
     changeDate: function () {
       this.datepickerEnabled = true;
       this.$nextTick(function () {
@@ -334,24 +369,45 @@ export default {
 </script>
 
 <style scoped lang="scss">
+/* ============================================================
+   SIDEBAR RAIL
+   ------------------------------------------------------------
+   Outer `.side-bar` reserves the gutter in the layout (3.6rem).
+   Inner `.side-bar-rail` is absolutely positioned on top of it;
+   on hover it grows to 14rem and overlays the main column,
+   revealing the text labels alongside each icon. The main
+   content never shifts, so nothing jumps when the pointer
+   grazes the edge of the window.
+   ============================================================ */
 .side-bar {
   width: 3.6rem;
   height: 100%;
-  display: flex;
-  flex-direction: column;
   float: left;
-  /* "Thick" material: was the heaviest live backdrop-filter in the app
-     (blur 30px + saturate over the full-height rail). Nothing behind the
-     sidebar ever moves fast enough to need a live blur - it's only the
-     ambient mesh background - so this is a flat translucent tint instead,
-     visually close to the blurred version but with no per-frame cost. */
-  background-color: rgba(255, 255, 255, 0.88);
-  border-right: 1px solid rgba(0, 0, 0, 0.045);
   position: relative;
-  z-index: 2;
+  z-index: 10;
+  flex-shrink: 0;
 }
 
-.side-bar::before {
+.side-bar-rail {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 3.6rem;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  padding: 0 8px;
+  overflow: hidden;
+  background-color: rgba(255, 255, 255, 0.88);
+  border-right: 1px solid rgba(0, 0, 0, 0.045);
+  transition:
+    width 0.26s cubic-bezier(0.2, 1, 0.1, 1),
+    box-shadow 0.26s ease,
+    background-color 0.26s ease;
+}
+
+.side-bar-rail::before {
   content: "";
   position: absolute;
   inset: 0;
@@ -361,109 +417,235 @@ export default {
   z-index: -1;
 }
 
-.dark-theme .side-bar::before {
-  opacity: 0.1;
+.dark-theme .side-bar-rail::before {
+  opacity: 0.14;
 }
 
-.logo-badge {
-  width: 36px;
-  height: 36px;
-  border-radius: 11px;
+.side-bar-rail.is-expanded {
+  width: 14rem;
+  box-shadow:
+    8px 0 24px -8px rgba(0, 0, 0, 0.12),
+    1px 0 0 rgba(0, 0, 0, 0.04);
+}
+
+.dark-theme .side-bar-rail.is-expanded {
+  box-shadow:
+    8px 0 24px -8px rgba(0, 0, 0, 0.5),
+    1px 0 0 rgba(94, 110, 242, 0.14);
+}
+
+/* ---------- Item row (icon + label) ---------- */
+.sb-item {
   display: flex;
   align-items: center;
-  justify-content: center;
-  background-color: color-mix(in srgb, var(--accent-color, #5e6ef2) 14%, transparent);
-  margin: 10px auto 12px auto;
+  gap: 14px;
+  padding: 9px 10px;
+  margin-bottom: 2px;
+  border-radius: 8px;
   cursor: pointer;
-  flex-shrink: 0;
+  color: inherit;
+  position: relative;
+  transition:
+    background-color 0.18s ease,
+    color 0.18s ease,
+    transform 0.4s var(--spring-ease, cubic-bezier(0.34, 1.56, 0.64, 1));
 }
 
-.side-bar .logo {
-  cursor: pointer;
-}
-
-.side-bar .logo-white {
-  display: none;
-}
-
-.dark-theme {
-  .side-bar .logo {
-    display: none;
-  }
-  .side-bar .logo-white {
-    display: block;
-    opacity: 0.95;
-  }
-}
-
-.sidebar-group {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.sidebar-divider {
-  width: 22px;
-  height: 1px;
-  background-color: rgba(0, 0, 0, 0.08);
-  align-self: center;
-  margin: 2px 0px 9px 0px;
-}
-
-.dark-theme .sidebar-divider {
-  background-color: rgba(255, 255, 255, 0.08);
-}
-
-.side-bar > i,
-.sidebar-icon,
-.sidebar-group i {
-  font-size: 1.25rem;
-  padding: 10px;
-  margin-bottom: 9px;
-  align-self: center;
-  cursor: pointer;
-  transition: background-color 0.25s ease, color 0.25s ease, transform 0.4s var(--spring-ease, cubic-bezier(0.34, 1.56, 0.64, 1));
-}
-
-.side-bar i:hover,
-.sidebar-icon:hover {
-  border-radius: 6px;
+.sb-item:hover {
   background-color: #eaecef;
   color: var(--accent-color, #5e6ef2);
-  transform: scale(1.1);
 }
 
-.side-bar i:active,
-.sidebar-icon:active {
+.dark-theme .sb-item:hover {
+  background-color: rgba(94, 110, 242, 0.14);
+  color: #c8cfe8;
+}
+
+.sb-item:active {
   background-color: #dddfe2;
 }
 
+.dark-theme .sb-item:active {
+  background-color: rgba(94, 110, 242, 0.22);
+}
+
+.sb-icon {
+  font-size: 1.25rem;
+  flex-shrink: 0;
+  width: 22px;
+  text-align: center;
+  line-height: 1;
+}
+
+/* The label is reserved an auto flex width so the ellipsis works, but we
+   fade+slide it in only when the rail is expanded. Pointer events are off
+   while hidden so a stray click on the icon never lands on empty space. */
+.sb-label {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 0.86rem;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  opacity: 0;
+  transform: translateX(-6px);
+  pointer-events: none;
+  transition:
+    opacity 0.18s ease,
+    transform 0.22s ease;
+}
+
+.side-bar-rail.is-expanded .sb-label {
+  opacity: 0.92;
+  transform: translateX(0);
+  transition-delay: 0.06s;
+  pointer-events: auto;
+}
+
+.sb-label-small {
+  font-size: 0.78rem;
+  opacity: 0;
+  font-weight: 400;
+}
+
+.side-bar-rail.is-expanded .sb-label-small {
+  opacity: 0.78;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .side-bar-rail,
+  .sb-label,
+  .sb-item {
+    transition: none;
+  }
+}
+
+/* ---------- Logo + brand ---------- */
+.sb-logo-item {
+  padding: 10px 6px;
+  margin-bottom: 10px;
+  gap: 12px;
+}
+
+.sb-logo-item:hover {
+  background-color: transparent;
+}
+
+.logo-badge {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  background:
+    radial-gradient(circle at 30% 25%,
+      color-mix(in srgb, var(--accent-color, #5e6ef2) 55%, white) 0%,
+      color-mix(in srgb, var(--accent-color, #5e6ef2) 85%, black) 100%);
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.12),
+    0 4px 10px -2px color-mix(in srgb, var(--accent-color, #5e6ef2) 35%, transparent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.22);
+  flex-shrink: 0;
+  cursor: pointer;
+  transition:
+    transform 0.3s var(--spring-ease, cubic-bezier(0.34, 1.56, 0.64, 1)),
+    box-shadow 0.25s ease;
+}
+
+.sb-logo-item:hover .logo-badge {
+  transform: translateY(-1px) scale(1.04);
+  box-shadow:
+    0 2px 3px rgba(0, 0, 0, 0.14),
+    0 6px 14px -2px color-mix(in srgb, var(--accent-color, #5e6ef2) 48%, transparent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.28);
+}
+
+.sb-logo-item:active .logo-badge {
+  transform: translateY(0) scale(0.98);
+}
+
+.logo-badge .logo {
+  display: none;
+}
+
+.logo-badge .logo-white {
+  display: block;
+  width: 30px;
+  height: 30px;
+  cursor: pointer;
+  opacity: 0.98;
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.18));
+}
+
+.sb-brand-label {
+  font-family: var(--font-voice, "Fraunces", Georgia, serif);
+  font-size: 1.1rem;
+  font-variation-settings: "opsz" 48, "wght" 460;
+  letter-spacing: -0.01em;
+  opacity: 0;
+}
+
+.side-bar-rail.is-expanded .sb-brand-label {
+  opacity: 1;
+}
+
+/* ---------- Groups and dividers ---------- */
+.sidebar-group {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.sb-spacer {
+  flex: 1 1 auto;
+}
+
+.sidebar-divider {
+  height: 1px;
+  background-color: rgba(0, 0, 0, 0.08);
+  margin: 6px 10px 10px 10px;
+}
+
+.dark-theme .sidebar-divider {
+  background-color: rgba(94, 110, 242, 0.16);
+}
+
+/* ---------- Status badges ---------- */
 .sidebar-group-status {
   gap: 2px;
-  margin-bottom: 6px;
+  padding-bottom: 4px;
+}
+
+.sb-badge {
+  padding: 6px 10px;
+  gap: 12px;
+  cursor: default;
+}
+
+.sb-badge .sb-icon {
+  font-size: 0.95rem;
+}
+
+.sb-count {
+  font-size: 0.72rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  min-width: 20px;
+  text-align: center;
+  color: var(--accent-color, #5e6ef2);
 }
 
 .streak-badge {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  font-size: 0.7rem;
-  font-weight: 600;
   color: var(--accent-color, #5e6ef2);
-  margin-bottom: 8px;
-  cursor: default;
-
-  i {
-    font-size: 0.85rem;
-  }
 }
 
 .streak-icon {
   animation: streakPulse 2.4s ease-in-out infinite;
 }
 
-/* Celebrate flash: a short burst of gold glow + bounce when a day closes
-   100% while the app is open. */
 .streak-badge.streak-celebrate {
   animation: streakCelebrateBounce 1.5s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
@@ -476,9 +658,9 @@ export default {
 
 @keyframes streakCelebrateBounce {
   0% { transform: scale(1); }
-  25% { transform: scale(1.35); }
-  50% { transform: scale(0.95); }
-  70% { transform: scale(1.1); }
+  25% { transform: scale(1.15); }
+  50% { transform: scale(0.98); }
+  70% { transform: scale(1.06); }
   100% { transform: scale(1); }
 }
 
@@ -487,87 +669,54 @@ export default {
   50% { opacity: 1; filter: drop-shadow(0 0 12px rgba(245, 158, 11, 1)); }
 }
 
-/* Weekly scheduled-task count: how many open tasks have a dueDate falling
-   between today and Sunday. Shows next to the streak and zeolite badges. */
-.scheduled-week-badge {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  font-size: 0.7rem;
-  font-weight: 600;
+.scheduled-week-badge .sb-count {
   color: #0891b2;
-  margin-bottom: 8px;
-  cursor: default;
-
-  i {
-    font-size: 0.85rem;
-  }
 }
 
-.dark-theme .scheduled-week-badge {
+.dark-theme .scheduled-week-badge .sb-count {
   color: #22d3ee;
 }
 
-.talk-countdown-badge {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  font-size: 0.7rem;
-  font-weight: 600;
+.talk-countdown-badge .sb-count {
   color: #e11d48;
-  margin-bottom: 8px;
-  cursor: default;
-
-  i {
-    font-size: 0.85rem;
-  }
 }
 
-.zeolite-badge {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 8px;
-  cursor: pointer;
-  opacity: 0.45;
+.dark-theme .talk-countdown-badge .sb-count {
+  color: #fb7185;
+}
+
+.zeolite-badge .sb-icon {
+  opacity: 0.55;
   transition: opacity 0.25s ease, transform 0.4s var(--spring-ease, cubic-bezier(0.34, 1.56, 0.64, 1));
+}
 
-  i {
-    font-size: 0.85rem;
-  }
-
-  &:hover {
-    opacity: 0.85;
-    transform: scale(1.15) rotate(15deg);
-  }
+.zeolite-badge:hover .sb-icon {
+  opacity: 0.9;
+  transform: scale(1.1) rotate(10deg);
 }
 
 @keyframes streakPulse {
-  0%,
-  100% {
-    opacity: 0.75;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 1;
-    transform: scale(1.12);
-  }
+  0%, 100% { opacity: 0.75; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.12); }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .streak-icon {
-    animation: none;
-  }
+  .streak-icon { animation: none; }
+}
+
+/* ---------- Accent / saved markers ---------- */
+.accent-item {
+  cursor: pointer;
 }
 
 .accent-quick-picker {
   position: relative;
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
   border-radius: 50%;
-  cursor: pointer;
   box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.08);
-  margin-bottom: 10px;
+  flex-shrink: 0;
+  margin-left: 2px;
 }
 
 .dark-theme .accent-quick-picker {
@@ -583,26 +732,33 @@ export default {
   pointer-events: none;
 }
 
-.saved-indicator {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 10px;
+.saved-item {
   cursor: default;
 }
 
 .saved-dot {
-  width: 7px;
-  height: 7px;
+  width: 9px;
+  height: 9px;
   border-radius: 50%;
   background-color: #2dbd6e;
   display: block;
+  flex-shrink: 0;
+  margin-left: 6px;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
-.saved-indicator.pulse .saved-dot {
+.saved-item.pulse .saved-dot {
   transform: scale(1.7);
   box-shadow: 0 0 0 4px rgba(45, 189, 110, 0.22);
+}
+
+/* ---------- Dropdown (more menu) ---------- */
+.sidebar-extra-menu {
+  position: relative;
+}
+
+.sb-dropdown-trigger {
+  width: 100%;
 }
 
 .dropdown-menu {
@@ -650,21 +806,10 @@ export default {
   padding: 0px;
 }
 
-/*------------------------Dark Theme*------------------*/
-
-.dark-theme .side-bar {
-  background-color: rgba(18, 22, 28, 0.92);
-  border-right: 1px solid rgba(255, 255, 255, 0.06);
-  color: #ababab;
-}
-
-.dark-theme .side-bar i:hover {
-  border-radius: 6px;
-  background-color: #21262d;
-  color: var(--accent-color, #5e6ef2);
-}
-
-.dark-theme .side-bar i:active {
-  background-color: #2e353d;
+/* ---------- Dark theme (deep navy, not inverted) ---------- */
+.dark-theme .side-bar-rail {
+  background-color: rgba(13, 19, 38, 0.92);
+  border-right: 1px solid rgba(94, 110, 242, 0.14);
+  color: #c8cfe8;
 }
 </style>

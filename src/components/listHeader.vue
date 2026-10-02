@@ -470,18 +470,30 @@ export default {
   text-decoration: underline;
 }
 
+/* Project / day titles in the editorial display serif. The custom-list
+   variant and the day heading share the same voice so the column grid
+   reads as one typographic system. */
 .weekly-to-do-header h4 {
   margin-bottom: 4px;
-  font-size: var(--fs-title, 21px);
-  font-weight: var(--fw-title, 600);
+  font-family: var(--font-voice, "Fraunces", Georgia, serif);
+  font-size: calc(var(--fs-title, 21px) + 2px);
+  font-weight: 400;
+  font-variation-settings: "opsz" 48, "wght" 460;
+  letter-spacing: -0.012em;
   text-transform: capitalize;
   min-height: 25px;
+  line-height: 1.1;
+}
+
+.dark-theme .weekly-to-do-header h4 {
+  font-variation-settings: "opsz" 48, "wght" 420;
 }
 
 .weekly-to-do-subheader {
   margin-top: 0px;
   font-size: var(--fs-subtitle, 12px);
   color: grey;
+  font-variant-numeric: oldstyle-nums;
 }
 
 .weekly-to-do-header .header-menu-icons {
@@ -511,9 +523,13 @@ export default {
 }
 
 .custom-todo-input {
-  font-size: var(--fs-title, 21px);
-  font-weight: var(--fw-title, 600);
+  font-family: var(--font-voice, "Fraunces", Georgia, serif);
+  font-size: calc(var(--fs-title, 21px) + 2px);
+  font-weight: 400;
+  font-variation-settings: "opsz" 48, "wght" 460;
+  letter-spacing: -0.012em;
   width: 100%;
+  background: transparent;
 }
 
 .custom-todo-input:focus {

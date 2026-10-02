@@ -110,15 +110,10 @@ export default {
 .week-strip {
   display: flex;
   gap: 6px;
-  padding: 6px 13px 16px 13px;
-  margin-top: 2px;
-  margin-bottom: 2px;
+  padding: 10px 20px 10px 20px;
+  margin-top: 4px;
+  margin-bottom: 0px;
   flex-wrap: wrap;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-
-  .dark-theme & {
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  }
 }
 
 .week-strip-day {
@@ -135,8 +130,8 @@ export default {
   color: #3c3c3c;
 
   .dark-theme & {
-    background-color: #1c2128;
-    color: #c9d1d9;
+    background-color: #121a33;
+    color: #c8cfe8;
   }
 
   &:hover {
@@ -144,7 +139,7 @@ export default {
   }
 
   .dark-theme &:hover {
-    background-color: #21262d;
+    background-color: #1a2447;
   }
 }
 
@@ -156,7 +151,7 @@ export default {
   background-color: #f0eef9;
 
   .dark-theme & {
-    background-color: #201f2b;
+    background-color: #171f3d;
   }
 }
 

@@ -57,6 +57,12 @@ export default {
         backupFolderPath: "",
         autoLoadLatestBackup: false,
         lastBackupDate: "",
+        // Friday wrap-up ritual: auto-opens on Fridays once the clock hits
+        // `fridayRitualHour` local time, unless already closed this ISO week
+        // (tracked by lastFridayRitualDate = YYYY-MM-DD).
+        fridayRitualEnabled: true,
+        fridayRitualHour: 17,
+        lastFridayRitualDate: null,
       };
       storageRepository.set("config", default_config);
       return default_config;

@@ -27,7 +27,7 @@
               </li>
             </ul>
           </span>
-          {{ todo_list_name }}
+          <span class="project-title-click" @click="openCrystal" :title="$t('ui.openCrystal') || 'Open project crystal'">{{ todo_list_name }}</span>
           <i v-if="folderPath && !editingFolder" class="bi-folder2-open folder-link-icon" :title="folderPath"
             @click.stop="openFolder"></i>
         </h4>
@@ -45,6 +45,12 @@
         <div v-show="!editing && toDoList.length" class="list-progress-bar">
           <div class="list-progress-fill" :style="{ width: progressStats.percent + '%' }"></div>
         </div>
+        <paper-tracker
+          v-if="!editing && customTodoList && folderPath"
+          :folder-path="folderPath"
+          :target="paperTarget"
+          :c-todo-list-index="cTodoListIndex"
+        />
         <p v-if="!editing && !editingNotes && notes" class="project-notes-preview" @click="openNotesEdit"
           :title="$t('ui.projectNotes')">{{ notes }}</p>
         <textarea v-if="editingNotes" v-model="notesDraft" class="project-notes-input"
@@ -137,10 +143,11 @@ import notifications from "../helpers/notifications";
 import tasksHelper from "../helpers/tasksHelper";
 import isElectron from "is-electron";
 import projectColorHelper from "../helpers/projectColorHelper";
+import paperTracker from "./paperTracker.vue";
 import { Toast, Modal } from 'bootstrap';
 
 export default {
-  components: {},
+  components: { paperTracker },
   props: {
     id: { required: false, type: String },
     customTodoList: { required: false, default: false, type: Boolean },
@@ -355,6 +362,13 @@ export default {
       if (!isElectron() || !this.folderPath) return;
       require("electron").shell.openPath(this.folderPath);
     },
+    // Project crystal: a dedicated detail view with the project's framework
+    // rotating in 3D plus its stats and open tasks. Only wired on custom
+    // project lists (day lists don't have a stable framework identity).
+    openCrystal: function () {
+      if (!this.customTodoList) return;
+      window.dispatchEvent(new CustomEvent("open-project-crystal", { detail: { listId: this.id } }));
+    },
     openPasteQueue: function () {
       this.$store.commit("setPasteQueueTarget", this.id);
       let modalEl = document.getElementById("pasteQueueModal");
@@ -440,6 +454,14 @@ export default {
       let list = this.$store.getters.cTodoListIds[this.cTodoListIndex];
       return list ? list.folderPath || "" : "";
     },
+    // Per-project target word count for the paper tracker. Set once from the
+    // tracker widget itself (pencil icon) and persisted on the custom list
+    // record. null = tracker shows the word count without a progress bar.
+    paperTarget: function () {
+      if (!this.customTodoList || this.cTodoListIndex == null) return null;
+      let list = this.$store.getters.cTodoListIds[this.cTodoListIndex];
+      return list && typeof list.paperTarget === "number" ? list.paperTarget : null;
+    },
     autoColorGradient: function () {
       return projectColorHelper.gradientFor(this.id);
     },
@@ -487,6 +509,22 @@ export default {
 
 .dark-theme .weekly-to-do-header h4 {
   font-variation-settings: "opsz" 48, "wght" 420;
+}
+
+/* The project title inside h4 is clickable (opens the crystal view). Use a
+   subtle hover-color + underline-offset trick instead of a full button so
+   the editorial typography of h4 stays intact. */
+.project-title-click {
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.project-title-click:hover {
+  color: var(--project-color, var(--accent-color, #5e6ef2));
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--project-color, #5e6ef2) 50%, transparent);
+  text-underline-offset: 4px;
+  text-decoration-thickness: 1px;
 }
 
 .weekly-to-do-subheader {

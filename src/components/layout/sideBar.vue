@@ -63,6 +63,16 @@
           <i class="ph ph-gauge sb-icon"></i>
           <span class="sb-label">{{ $t('ui.missionControl') }}</span>
         </div>
+        <div class="sb-item" data-bs-toggle="modal"
+          data-bs-target="#peopleModal" :title="$t('ui.people') || 'People'">
+          <i class="ph ph-users-three sb-icon"></i>
+          <span class="sb-label">{{ $t('ui.people') || 'People' }}</span>
+        </div>
+        <div v-if="isFriday" class="sb-item sb-item-friday" data-bs-toggle="modal"
+          data-bs-target="#fridayRitualModal" :title="$t('ui.fridayRitual') || 'Friday wrap-up'">
+          <i class="ph ph-sparkle sb-icon"></i>
+          <span class="sb-label">{{ $t('ui.fridayRitual') || 'Friday wrap-up' }}</span>
+        </div>
       </div>
 
       <span class="sb-spacer"></span>
@@ -344,6 +354,11 @@ export default {
       if (days < 0) return null;
       return days;
     },
+    // Friday-only sidebar entry for the weekly wrap-up; hidden the rest of
+    // the week so the rail stays uncluttered.
+    isFriday: function () {
+      return moment().isoWeekday() === 5;
+    },
     talkCountdownTitle: function () {
       let title = this.$store.getters.config.nextTalkTitle || this.$t("ui.templateConference");
       if (this.daysUntilTalk === 0) return title + ": " + this.$t("ui.talkCountdownToday");
@@ -610,6 +625,15 @@ export default {
   background-color: rgba(0, 0, 0, 0.08);
   margin: 6px 10px 10px 10px;
 }
+
+/* Friday wrap-up item is only visible on Fridays. Tint the icon warm so it
+   reads as a special moment of the week. */
+.sb-item.sb-item-friday .sb-icon {
+  color: #f59e0b;
+  filter: drop-shadow(0 0 4px rgba(245, 158, 11, 0.4));
+}
+
+.sb-item.sb-item-friday:hover { color: #f59e0b; }
 
 .dark-theme .sidebar-divider {
   background-color: rgba(94, 110, 242, 0.16);

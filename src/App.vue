@@ -184,6 +184,9 @@
       <mission-control-modal></mission-control-modal>
       <weekly-summary-modal></weekly-summary-modal>
       <daily-summary-modal></daily-summary-modal>
+      <people-modal></people-modal>
+      <project-crystal-modal></project-crystal-modal>
+      <friday-ritual-modal></friday-ritual-modal>
     </div>
     <div class="mobile d-flex flex-column justify-content-center align-items-center">
       <i class="bi-exclamation-diamond mb-4" style="font-size: 100px"></i>
@@ -253,6 +256,9 @@ import pasteQueueModal from "./views/pasteQueueModal.vue";
 import missionControlModal from "./components/missionControlModal.vue";
 import weeklySummaryModal from "./components/weeklySummaryModal.vue";
 import dailySummaryModal from "./components/dailySummaryModal.vue";
+import peopleModal from "./views/peopleModal.vue";
+import projectCrystalModal from "./views/projectCrystalModal.vue";
+import fridayRitualModal from "./views/fridayRitualModal.vue";
 import appToolbar from "./components/layout/appToolbar.vue";
 import zeoliteHelper from "./helpers/zeoliteHelper";
 
@@ -291,6 +297,9 @@ export default {
     missionControlModal,
     weeklySummaryModal,
     dailySummaryModal,
+    peopleModal,
+    projectCrystalModal,
+    fridayRitualModal,
   },
   data() {
     return {

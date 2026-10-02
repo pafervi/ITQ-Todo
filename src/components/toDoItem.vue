@@ -39,7 +39,7 @@
           <i v-if="hasSnooze" class="bi-moon-fill snooze-badge flex-shrink-0"
              :title="$t('todoDetails.snooze') || 'Scheduled'"></i>
         </div>
-        <div v-if="!compactView && ((toDo.tags && toDo.tags.length) || isReference)" class="tag-chips-row">
+        <div v-if="!compactView && ((toDo.tags && toDo.tags.length) || isReference || mentions.length)" class="tag-chips-row">
           <!-- Source project tag: shown only when this task is a dueDate
                reference rendered in a day cell (its real home is elsewhere).
                Click the tag to jump straight to the project. -->
@@ -51,6 +51,18 @@
           >
             <i :class="referenceProjectInfo.isDay ? 'bi-calendar3' : 'bi-folder'"></i>
             {{ referenceProjectInfo.name }}
+          </span>
+          <!-- @person chips: avatar + name, deterministic colour per slug.
+               Click opens the People view with this person preselected. -->
+          <span
+            v-for="m in mentions"
+            :key="'p-' + m.slug"
+            class="item-person-chip"
+            :title="'@' + m.display"
+            @click.stop="openPeople(m.slug)"
+          >
+            <span class="ipc-avatar" :style="{ backgroundColor: personColor(m.slug) }">{{ personInitials(m.slug) }}</span>
+            {{ m.display }}
           </span>
           <span v-for="tag in (toDo.tags || [])" :key="tag" class="item-tag-chip" :style="{ backgroundColor: tagColor(tag) }">{{
             tag }}</span>
@@ -78,6 +90,8 @@ import moment from "moment";
 import linkifyStr from 'linkify-string';
 import tagHelper from "../helpers/tagHelper";
 import calcStatusHelper from "../helpers/calcStatusHelper";
+import peopleHelper from "../helpers/peopleHelper";
+import { Modal } from 'bootstrap';
 
 export default {
   components: {},
@@ -150,6 +164,16 @@ export default {
     },
     tagColor: function (tag) {
       return tagHelper.colorForTag(tag);
+    },
+    personColor: function (slug) {
+      return peopleHelper.colorFor(slug);
+    },
+    personInitials: function (slug) {
+      return peopleHelper.initialsFor(slug);
+    },
+    openPeople: function () {
+      let el = document.getElementById("peopleModal");
+      if (el) Modal.getOrCreateInstance(el).show();
     },
     showToDoItem: function () {
       var activeTodo = {
@@ -250,6 +274,11 @@ export default {
       if (!this.hasSubtasks) return '';
       let done = this.toDo.subTaskList.filter((s) => s.checked).length;
       return `${done}/${this.toDo.subTaskList.length}`;
+    },
+    // @person mentions extracted from the task text, deduped. Rendered as
+    // avatar chips in the chip row.
+    mentions: function () {
+      return peopleHelper.mentionsIn(this.toDo.text);
     },
   }
 };
@@ -464,6 +493,45 @@ export default {
   border-radius: 8px;
   line-height: 1.3rem;
   opacity: 0.9;
+}
+
+/* @person chip: avatar + display name. Uses a deterministic hue per slug so
+   the same person always wears the same colour across the whole app. */
+.item-person-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--fs-badge, 0.72rem);
+  background-color: rgba(0, 0, 0, 0.05);
+  color: inherit;
+  padding: 1px 7px 1px 2px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background-color 0.15s ease, transform 0.2s ease;
+
+  &:hover {
+    background-color: rgba(0, 0, 0, 0.09);
+    transform: translateY(-1px);
+  }
+
+  .dark-theme & {
+    background-color: rgba(94, 110, 242, 0.14);
+    &:hover { background-color: rgba(94, 110, 242, 0.2); }
+  }
+}
+
+.ipc-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  color: white;
+  font-size: 0.56rem;
+  font-weight: 600;
+  flex-shrink: 0;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25);
 }
 
 .bi-check-circle-fill,

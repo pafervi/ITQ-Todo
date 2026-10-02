@@ -642,6 +642,8 @@ export default {
         { id: "settings",   title: "Settings",             hint: "Open preferences",         icon: "bi-gear",          run: this.cmdOpenSettings },
         { id: "shortcuts",  title: "Shortcuts",            hint: "Keyboard reference",       icon: "bi-keyboard",      run: function () { this.openModal("shortcutsModal"); } },
         { id: "dark",       title: darkOn ? "Switch to light theme" : "Switch to dark theme", hint: "Toggle colour theme", icon: "bi-circle-half", run: this.cmdToggleTheme },
+        { id: "people",     title: "People view",          hint: "Who's waiting on who",     icon: "bi-people",        run: function () { this.openModal("peopleModal"); } },
+        { id: "friday",     title: "Friday wrap-up",       hint: "Close the week in 90s",    icon: "bi-stars",         run: function () { this.openModal("fridayRitualModal"); } },
       ];
     },
     filteredCommands: function () {

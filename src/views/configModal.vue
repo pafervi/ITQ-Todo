@@ -446,6 +446,8 @@
     </div>
     <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1056">
       <toast-message ref="invalidFile" id="invalidFile" text="$t('settings.invalidFile')"></toast-message>
+      <toast-message ref="backupOk" id="backupOk" :text="backupToastText"></toast-message>
+      <toast-message ref="backupErr" id="backupErr" :text="backupErrText"></toast-message>
     </div>
   </div>
 </template>
@@ -458,7 +460,7 @@ import mockDataSeeder from "../helpers/mockDataSeeder";
 import linkList from "../components/linkList";
 import configList from "./configList";
 import notifications from "../helpers/notifications";
-import { Modal } from "bootstrap";
+import { Modal, Toast } from "bootstrap";
 
 export default {
   name: "configModal",
@@ -469,6 +471,10 @@ export default {
   data() {
     return {
       configData: this.$store.getters.config,
+      // Toast strings for backup ok/err. Overwritten by backupNow() right
+      // before showing the toast so the message reflects the actual outcome.
+      backupToastText: "",
+      backupErrText: "",
       accentPresets: [
         { hex: "#5e6ef2", labelKey: "settings.accentZeolite" },
         { hex: "#06b6d4", labelKey: "settings.accentMace" },
@@ -521,11 +527,33 @@ export default {
       mockDataSeeder.seed(this.$store);
     },
     backupNow: function () {
-      if (!this.configData.backupFolderPath) return;
-      exportTool.exportToPath(this.configData.backupFolderPath);
-      let today = new Date().toISOString().slice(0, 10);
-      this.changeConfig("lastBackupDate", today);
-      this.configData.lastBackupDate = today;
+      if (!this.configData.backupFolderPath) {
+        this.backupErrText = this.$t("settings.backupErrNoPath") || "Set a backup folder first.";
+        new Toast(document.getElementById("backupErr")).show();
+        return;
+      }
+      exportTool.exportToPath(this.configData.backupFolderPath).then((res) => {
+        if (res.ok) {
+          let today = new Date().toISOString().slice(0, 10);
+          this.changeConfig("lastBackupDate", today);
+          this.configData.lastBackupDate = today;
+          let kb = Math.max(1, Math.round(res.bytes / 1024));
+          this.backupToastText = (this.$t("settings.backupOkTemplate") ||
+            "Backup saved: {0} ({1} KB) in {2}")
+            .replace("{0}", res.filename)
+            .replace("{1}", kb)
+            .replace("{2}", res.folder);
+          new Toast(document.getElementById("backupOk")).show();
+        } else {
+          // Human-readable error messages per failure mode.
+          let msg;
+          if (res.error === "not-electron") msg = this.$t("settings.backupErrBrowser") || "Backup requires the desktop app.";
+          else if (res.error === "foreign-path") msg = this.$t("settings.backupErrForeign") || "That looks like a Windows path on a non-Windows system.";
+          else msg = (this.$t("settings.backupErrGeneric") || "Backup failed: {0}").replace("{0}", res.error);
+          this.backupErrText = msg;
+          new Toast(document.getElementById("backupErr")).show();
+        }
+      });
     },
     goHome: function () {
       document.getElementById("config-home-tab").click();

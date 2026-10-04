@@ -133,7 +133,7 @@
                 <i class="bi-flag-fill"></i> P{{ addPreview.priority }}
               </span>
             </div>
-            <div class="add-preview-hint">{{ $t('ui.addTaskHint') || 'tomorrow, 10am, #tag, !1/!2/!3, @project' }}</div>
+            <div class="add-preview-hint">{{ $t('ui.addTaskHint') || 'tomorrow · 10am · #tag · !1/!2/!3 · @person (mention) · /project (assign)' }}</div>
           </div>
 
           <!-- Default search mode: tasks table -->
@@ -210,8 +210,11 @@ function parseTaskInput(raw, projects) {
     return pre;
   });
 
-  // Project: @name (fuzzy match against project list)
-  text = text.replace(/(^|\s)@([^\s@]+)/g, (m, pre, name) => {
+  // Project assignment: /name (fuzzy match against project list). We used
+  // to overload @ for this, but @ is now reserved for people mentions —
+  // stripping it from the text would break the peopleHelper that scans
+  // task text for @person. "/" is unambiguous and reads as a path hint.
+  text = text.replace(/(^|\s)\/([a-zA-Z][^\s/]*)/g, (m, pre, name) => {
     projectName = name.toLowerCase();
     return pre;
   });
@@ -582,7 +585,7 @@ export default {
     },
     placeholder: function () {
       if (this.mode === "command") return this.$t('ui.commandPlaceholder') || "> command, or type to filter";
-      if (this.mode === "add") return this.$t('ui.addPlaceholder') || "+ task tomorrow 10am #tag !1 @project";
+      if (this.mode === "add") return this.$t('ui.addPlaceholder') || "+ task tomorrow 10am #tag !1 @person /project";
       return this.$t('ui.searchPlaceholder');
     },
     // Trimmed query without the mode prefix.

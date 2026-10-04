@@ -142,4 +142,13 @@ export default {
     let idx = hashCode(seed) % FRAMEWORKS.length;
     return build(FRAMEWORKS[idx]);
   },
+  // Look up a framework by its IZA code (e.g. "MFI", "ITH"). Falls back to
+  // the deterministic hash when the code is unknown or empty. Used by the
+  // per-project zeolite picker: if the user explicitly chose a framework
+  // for a project, this returns it; otherwise frameworkFor(id) kicks in.
+  frameworkByCode(code) {
+    if (!code) return null;
+    let fw = FRAMEWORKS.find((f) => f.code === code);
+    return fw ? build(fw) : null;
+  },
 };

@@ -122,13 +122,43 @@
           </div>
 
           <div class="crystal-panel panel-framework">
-            <div class="panel-head">{{ $t('ui.crystalFramework') || 'Framework' }}</div>
+            <div class="panel-head">
+              {{ $t('ui.crystalFramework') || 'Framework' }}
+              <button type="button" class="fw-change-btn"
+                v-if="listId"
+                @click.stop="pickerOpen = !pickerOpen"
+                :title="$t('ui.crystalChange') || 'Change framework'">
+                <i class="ph ph-swap"></i>
+                {{ $t('ui.crystalChange') || 'change' }}
+              </button>
+            </div>
             <div class="fw-code-row">
               <span class="fw-code">{{ project.framework.code }}</span>
               <span class="fw-ring">{{ project.framework.ring }}</span>
               <span v-if="project.framework.itq" class="fw-itq-badge" title="Made at the ITQ">ITQ · {{ project.framework.year || '' }}</span>
+              <span v-if="hasOverride" class="fw-override-badge" :title="$t('ui.crystalResetTitle') || 'Reset to auto'" @click.stop="resetFramework">
+                <i class="ph ph-arrow-counter-clockwise"></i>
+              </span>
             </div>
             <p class="fw-note">{{ project.framework.note }}</p>
+
+            <!-- Framework picker: scrollable grid of all 25 IZA codes.
+                 Clicking one persists the choice on the project record. -->
+            <div v-if="pickerOpen" class="fw-picker">
+              <div class="fw-picker-head">{{ $t('ui.crystalPickOne') || 'Pick a zeolite' }}</div>
+              <div class="fw-picker-grid">
+                <button type="button"
+                  v-for="fw in allFrameworks"
+                  :key="fw.code"
+                  class="fw-picker-cell"
+                  :class="{ active: fw.code === project.framework.code, itq: fw.itq }"
+                  @click="setFramework(fw.code)"
+                  :title="fw.fullName">
+                  <span class="fw-pick-code">{{ fw.code }}</span>
+                  <span class="fw-pick-ring">{{ fw.ring }}</span>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -141,12 +171,14 @@ import { Modal } from "bootstrap";
 import moment from "moment";
 import zeoliteHelper from "../helpers/zeoliteHelper";
 import projectColorHelper from "../helpers/projectColorHelper";
+import customToDoListIdsRepository from "../repositories/customToDoListIdsRepository";
 
 export default {
   name: "projectCrystalModal",
   data() {
     return {
       listId: null,
+      pickerOpen: false,
     };
   },
   mounted() {
@@ -178,6 +210,23 @@ export default {
       let modal = new Modal(document.getElementById("toDoModal"), { keyboard: false });
       modal.show();
     },
+    // Persist a user-chosen framework for this project. Stored as the IZA
+    // code on the custom list record; a null value falls back to the
+    // deterministic hash (frameworkFor).
+    setFramework: function (code) {
+      let idx = (this.$store.getters.cTodoListIds || []).findIndex((l) => l.listId === this.listId);
+      if (idx === -1) return;
+      this.$store.commit("updateCustomListField", {
+        index: idx,
+        field: "zeoliteFramework",
+        value: code || null,
+      });
+      customToDoListIdsRepository.update(this.$store.getters.cTodoListIds);
+      this.pickerOpen = false;
+    },
+    resetFramework: function () {
+      this.setFramework(null);
+    },
   },
   computed: {
     language: function () {
@@ -188,11 +237,23 @@ export default {
       if (!this.listId) return empty;
       let meta = (this.$store.getters.cTodoListIds || []).find((l) => l.listId === this.listId);
       if (!meta) return empty;
+      // Prefer the per-project override (meta.zeoliteFramework = IZA code),
+      // fall back to the deterministic hash.
+      let fw = null;
+      if (meta.zeoliteFramework) fw = zeoliteHelper.frameworkByCode(meta.zeoliteFramework);
+      if (!fw) fw = zeoliteHelper.frameworkFor(this.listId);
       return {
         name: meta.listName || "",
         color: meta.color || projectColorHelper.solidFor(this.listId),
-        framework: zeoliteHelper.frameworkFor(this.listId),
+        framework: fw,
       };
+    },
+    allFrameworks: function () {
+      return zeoliteHelper.frameworks;
+    },
+    hasOverride: function () {
+      let meta = (this.$store.getters.cTodoListIds || []).find((l) => l.listId === this.listId);
+      return !!(meta && meta.zeoliteFramework);
     },
     tasks: function () {
       let list = this.$store.getters.todoLists[this.listId] || [];
@@ -598,4 +659,122 @@ export default {
   opacity: 0.78;
   margin: 0;
 }
+
+/* ---- Framework picker (per-project zeolite assignment) ---- */
+.fw-change-btn {
+  background: transparent;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  opacity: 0.65;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 6px;
+  border-radius: 5px;
+
+  &:hover {
+    opacity: 1;
+    background: rgba(0, 0, 0, 0.05);
+  }
+
+  i { font-size: 0.78rem; }
+}
+
+.dark-theme .fw-change-btn:hover { background: rgba(255, 255, 255, 0.08); }
+
+.fw-override-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.06);
+  color: inherit;
+  opacity: 0.6;
+  cursor: pointer;
+  margin-left: auto;
+
+  &:hover { opacity: 1; }
+
+  i { font-size: 0.7rem; }
+}
+
+.dark-theme .fw-override-badge { background: rgba(255, 255, 255, 0.08); }
+
+.fw-picker {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(0, 0, 0, 0.07);
+}
+
+.dark-theme .fw-picker { border-top-color: rgba(94, 110, 242, 0.14); }
+
+.fw-picker-head {
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  opacity: 0.6;
+  margin-bottom: 8px;
+}
+
+.fw-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 5px;
+  max-height: 260px;
+  overflow: auto;
+}
+
+.fw-picker-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 6px 8px;
+  border-radius: 7px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.2s ease;
+  text-align: left;
+
+  &:hover {
+    background: rgba(0, 0, 0, 0.04);
+    transform: translateY(-1px);
+  }
+
+  &.active {
+    background: var(--project-color, var(--accent-color, #5e6ef2));
+    color: white;
+    border-color: var(--project-color, var(--accent-color, #5e6ef2));
+  }
+
+  &.itq:not(.active) {
+    border-color: rgba(249, 115, 22, 0.3);
+  }
+}
+
+.dark-theme .fw-picker-cell {
+  border-color: rgba(94, 110, 242, 0.18);
+  &:hover { background: rgba(94, 110, 242, 0.14); }
+}
+
+.fw-pick-code {
+  font-family: var(--font-voice, "Fraunces", Georgia, serif);
+  font-size: 0.95rem;
+  font-variation-settings: "opsz" 48, "wght" 460;
+  letter-spacing: -0.01em;
+}
+
+.fw-pick-ring {
+  font-size: 0.62rem;
+  opacity: 0.7;
+}
+
+.fw-picker-cell.active .fw-pick-ring { opacity: 0.9; }
 </style>

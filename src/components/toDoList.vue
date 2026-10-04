@@ -411,6 +411,15 @@ export default {
       return true;
     },
     projectFramework: function () {
+      // Explicit per-project framework override wins. The pick is stored on
+      // the custom list record as `zeoliteFramework` (IZA code string).
+      if (this.customTodoList && this.cTodoListIndex != null) {
+        let list = this.$store.getters.cTodoListIds[this.cTodoListIndex];
+        if (list && list.zeoliteFramework) {
+          let fw = zeoliteHelper.frameworkByCode(list.zeoliteFramework);
+          if (fw) return fw;
+        }
+      }
       return zeoliteHelper.frameworkFor(this.id);
     },
     // ---- Nucleation particles (feature 6) ----

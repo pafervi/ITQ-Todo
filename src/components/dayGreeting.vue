@@ -43,7 +43,10 @@ export default {
   },
   data() {
     return {
-      nbsp: " ",
+      // Explicit non-breaking space (U+00A0): the kinetic char spans are
+      // inline-block, and a bare ASCII " " inside one collapses visually,
+      // which was turning "Good evening" into "Goodevening".
+      nbsp: " ",
     };
   },
   computed: {

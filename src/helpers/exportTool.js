@@ -53,20 +53,44 @@ export default {
       };
     };
   },
-  // Writes a full snapshot (same content as a manual export) directly to disk,
-  // silently, without touching the download flow or any modal. Electron-only.
+  // Writes a full snapshot (same content as a manual export) directly to disk.
+  // Electron-only. Returns a Promise<{ok, filename?, folder?, bytes?, error?}>
+  // so the caller can show a toast with the actual result instead of blindly
+  // trusting a fire-and-forget write.
   exportToPath(folderPath) {
-    if (!isElectron() || !folderPath || platformHelper.isForeignPath(folderPath)) return;
-    buildFullData(function (data) {
+    return new Promise((resolve) => {
+      if (!isElectron()) return resolve({ ok: false, error: "not-electron" });
+      if (!folderPath) return resolve({ ok: false, error: "empty-path" });
+      if (platformHelper.isForeignPath(folderPath)) return resolve({ ok: false, error: "foreign-path" });
+
+      // Resolve ~ and $HOME so paths like "~/Documents/backups" or
+      // "$HOME/..." Just Work instead of literally creating a "~" folder.
+      let resolved = folderPath;
       try {
-        const fs = require("fs");
+        const os = require("os");
         const path = require("path");
-        if (!fs.existsSync(folderPath)) fs.mkdirSync(folderPath, { recursive: true });
-        let filename = `WeekToDoBackup-${moment().format("YYYY-MM-DD")}.wtdb`;
-        fs.writeFileSync(path.join(folderPath, filename), JSON.stringify(data), "utf-8");
-      } catch (e) {
-        console.log("[backup] " + e.message);
-      }
+        if (resolved.startsWith("~")) {
+          resolved = path.join(os.homedir(), resolved.slice(1));
+        } else if (resolved.startsWith("$HOME")) {
+          resolved = path.join(os.homedir(), resolved.slice(5));
+        }
+      } catch (e) { /* no os / path - treat as literal */ }
+
+      buildFullData(function (data) {
+        try {
+          const fs = require("fs");
+          const path = require("path");
+          if (!fs.existsSync(resolved)) fs.mkdirSync(resolved, { recursive: true });
+          let filename = `WeekToDoBackup-${moment().format("YYYY-MM-DD")}.wtdb`;
+          let fullPath = path.join(resolved, filename);
+          let json = JSON.stringify(data);
+          fs.writeFileSync(fullPath, json, "utf-8");
+          resolve({ ok: true, filename: filename, folder: resolved, bytes: json.length });
+        } catch (e) {
+          console.log("[backup] " + e.message);
+          resolve({ ok: false, error: e.message || String(e) });
+        }
+      });
     });
   },
   // Looks for the most recently modified .wtdb file in folderPath and imports

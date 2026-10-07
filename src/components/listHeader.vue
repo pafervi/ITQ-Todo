@@ -45,12 +45,12 @@
         <div v-show="!editing && toDoList.length" class="list-progress-bar">
           <div class="list-progress-fill" :style="{ width: progressStats.percent + '%' }"></div>
         </div>
-        <paper-tracker
-          v-if="!editing && customTodoList && folderPath"
-          :folder-path="folderPath"
-          :target="paperTarget"
-          :c-todo-list-index="cTodoListIndex"
-        />
+        <button v-if="!editing && customTodoList && paperSummary" type="button" class="paper-chip"
+          :title="$t('ui.paperTracker')" @click.stop="openPaperTracker">
+          <i class="bi-file-earmark-text"></i>
+          <span>{{ paperSummary.label }}</span>
+          <span v-if="paperSummary.pct !== null" class="paper-chip-bar"><span :style="{ width: paperSummary.pct + '%' }"></span></span>
+        </button>
         <p v-if="!editing && !editingNotes && notes" class="project-notes-preview" @click="openNotesEdit"
           :title="$t('ui.projectNotes')">{{ notes }}</p>
         <textarea v-if="editingNotes" v-model="notesDraft" class="project-notes-input"
@@ -109,8 +109,13 @@
         </button>
       </li>
       <li v-show="customTodoList">
-        <button class="dropdown-item" type="button" @click="openPasteQueue">
-          <i class="bi-clipboard-data"></i> <span>{{ $t('ui.pasteQueue') }}</span>
+        <button class="dropdown-item" type="button" @click="openBatchTracker">
+          <i class="ph ph-stack"></i> <span>{{ $t('ui.batchTracker') || 'Batch tracker' }}</span>
+        </button>
+      </li>
+      <li v-show="customTodoList">
+        <button class="dropdown-item" type="button" @click="openPaperTracker">
+          <i class="bi-file-earmark-text"></i> <span>{{ $t('ui.paperTracker') }}</span>
         </button>
       </li>
       <li v-show="customTodoList">
@@ -143,11 +148,10 @@ import notifications from "../helpers/notifications";
 import tasksHelper from "../helpers/tasksHelper";
 import isElectron from "is-electron";
 import projectColorHelper from "../helpers/projectColorHelper";
-import paperTracker from "./paperTracker.vue";
+import paperTrackerHelper from "../helpers/paperTrackerHelper";
 import { Toast, Modal } from 'bootstrap';
 
 export default {
-  components: { paperTracker },
   props: {
     id: { required: false, type: String },
     customTodoList: { required: false, default: false, type: Boolean },
@@ -369,10 +373,15 @@ export default {
       if (!this.customTodoList) return;
       window.dispatchEvent(new CustomEvent("open-project-crystal", { detail: { listId: this.id } }));
     },
-    openPasteQueue: function () {
-      this.$store.commit("setPasteQueueTarget", this.id);
-      let modalEl = document.getElementById("pasteQueueModal");
+    openBatchTracker: function () {
+      this.$store.commit("setBatchTrackerTarget", this.id);
+      let modalEl = document.getElementById("batchTrackerModal");
       if (modalEl) new Modal(modalEl).show();
+    },
+    openPaperTracker: function () {
+      this.$store.commit("setPaperTrackerTarget", this.id);
+      let modalEl = document.getElementById("paperTrackerModal");
+      if (modalEl) Modal.getOrCreateInstance(modalEl).show();
     },
     exportMarkdown: function () {
       let title = this.todo_list_name || "list";
@@ -454,13 +463,15 @@ export default {
       let list = this.$store.getters.cTodoListIds[this.cTodoListIndex];
       return list ? list.folderPath || "" : "";
     },
-    // Per-project target word count for the paper tracker. Set once from the
-    // tracker widget itself (pencil icon) and persisted on the custom list
-    // record. null = tracker shows the word count without a progress bar.
-    paperTarget: function () {
+    // Compact summary of the project's manuscript plan for the header chip.
+    // null when the project has no plan (nothing is shown in that case).
+    paperSummary: function () {
       if (!this.customTodoList || this.cTodoListIndex == null) return null;
       let list = this.$store.getters.cTodoListIds[this.cTodoListIndex];
-      return list && typeof list.paperTarget === "number" ? list.paperTarget : null;
+      if (!list || !list.paper || !Array.isArray(list.paper.sections) || !list.paper.sections.length) return null;
+      let tot = paperTrackerHelper.totals(list.paper);
+      let label = tot.pct !== null ? tot.pct + "%" : tot.words.toLocaleString() + " " + this.$t("ui.paperWordsWord");
+      return { pct: tot.pct, label: label };
     },
     autoColorGradient: function () {
       return projectColorHelper.gradientFor(this.id);
@@ -768,6 +779,39 @@ export default {
     background-color: #13171d;
     border-color: #30363d;
     color: #c9d1d9;
+  }
+}
+
+.paper-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 4px;
+  padding: 1px 8px;
+  font-size: 0.75rem;
+  border: 1px solid rgba(128, 128, 128, 0.35);
+  border-radius: 10px;
+  background: transparent;
+  color: inherit;
+  opacity: 0.85;
+  cursor: pointer;
+
+  &:hover {
+    opacity: 1;
+  }
+
+  .paper-chip-bar {
+    width: 36px;
+    height: 4px;
+    border-radius: 2px;
+    background: rgba(128, 128, 128, 0.25);
+    overflow: hidden;
+
+    span {
+      display: block;
+      height: 100%;
+      background: #2ea043;
+    }
   }
 }
 

@@ -1,24 +1,22 @@
 <template>
-  <div class="heatmap">
-    <div class="heatmap-grid" :style="{ gridTemplateColumns: `repeat(${weeks.length}, 1fr)` }">
-      <div class="heatmap-week" v-for="(week, wi) in weeks" :key="wi">
-        <span
-          v-for="(day, di) in week"
-          :key="di"
-          class="heatmap-cell"
-          :class="cellClass(day)"
-          :title="cellTitle(day)"
-        ></span>
-      </div>
+  <div class="productivity-heatmap">
+    <div class="ph-grid">
+      <div
+        v-for="(day, i) in days"
+        :key="i"
+        class="ph-cell"
+        :class="'ph-level-' + day.level"
+        :title="day.title"
+      ></div>
     </div>
-    <div class="heatmap-legend">
-      <span>{{ $t("ui.heatmapLess") }}</span>
-      <span class="heatmap-cell level-0"></span>
-      <span class="heatmap-cell level-1"></span>
-      <span class="heatmap-cell level-2"></span>
-      <span class="heatmap-cell level-3"></span>
-      <span class="heatmap-cell level-4"></span>
-      <span>{{ $t("ui.heatmapMore") }}</span>
+    <div class="ph-legend">
+      <span class="ph-legend-label">{{ $t("ui.mcHeatmapLess") || "Less" }}</span>
+      <span class="ph-legend-cell ph-level-0"></span>
+      <span class="ph-legend-cell ph-level-1"></span>
+      <span class="ph-legend-cell ph-level-2"></span>
+      <span class="ph-legend-cell ph-level-3"></span>
+      <span class="ph-legend-cell ph-level-4"></span>
+      <span class="ph-legend-label">{{ $t("ui.mcHeatmapMore") || "More" }}</span>
     </div>
   </div>
 </template>
@@ -27,148 +25,156 @@
 import moment from "moment";
 import dbRepository from "../repositories/dbRepository";
 
-const DAYS_BACK = 84; // ~12 weeks
+// Fourteen weeks of daily completions. Reads every daily list (keys look
+// like YYYYMMDD) straight out of IndexedDB, counts the checked tasks per
+// day and maps each count onto a 0-4 colour level for the grid.
+const WEEKS = 14;
+const DAYS_PER_WEEK = 7;
 
 export default {
   name: "productivityHeatmap",
   data() {
     return {
-      byDate: {},
+      counts: {},
     };
   },
   mounted() {
     this.loadData();
   },
+  computed: {
+    maxCount() {
+      let max = 0;
+      Object.values(this.counts).forEach((v) => {
+        if (v > max) max = v;
+      });
+      return max;
+    },
+    days() {
+      let out = [];
+      let total = WEEKS * DAYS_PER_WEEK;
+      // Right-align on today: last cell = today, grid grows to the past.
+      let start = moment().subtract(total - 1, "days");
+      for (let i = 0; i < total; i++) {
+        let d = start.clone().add(i, "days");
+        let key = d.format("YYYYMMDD");
+        let count = this.counts[key] || 0;
+        out.push({
+          key: key,
+          count: count,
+          level: this.levelFor(count),
+          title: d.format("ddd DD MMM") + " — " + count + " ✓",
+        });
+      }
+      return out;
+    },
+  },
   methods: {
-    loadData: function () {
+    levelFor(count) {
+      if (!count) return 0;
+      let max = this.maxCount || 1;
+      let ratio = count / max;
+      if (ratio >= 0.75) return 4;
+      if (ratio >= 0.5) return 3;
+      if (ratio >= 0.25) return 2;
+      return 1;
+    },
+    loadData() {
       let db_req = dbRepository.open();
       db_req.onsuccess = (event) => {
         let db = event.target.result;
         let request = dbRepository.selectAll(db, "todo_lists");
-        let byDate = {};
+        let counts = {};
         request.onsuccess = () => {
           let cursor = request.result;
           if (cursor) {
-            if (/^\d{8}$/.test(cursor.key) && Array.isArray(cursor.value)) {
-              let total = cursor.value.length;
-              let done = cursor.value.filter((t) => t.checked).length;
-              byDate[cursor.key] = { total: total, done: done };
+            let key = String(cursor.key);
+            // Only daily lists (YYYYMMDD) feed the heatmap.
+            if (/^\d{8}$/.test(key) && Array.isArray(cursor.value)) {
+              let done = cursor.value.filter((t) => t && t.checked).length;
+              if (done) counts[key] = done;
             }
             cursor.continue();
           } else {
-            this.byDate = byDate;
+            this.counts = counts;
           }
         };
+        request.onerror = () => {
+          this.counts = {};
+        };
       };
-    },
-    cellClass: function (day) {
-      let entry = this.byDate[day.key];
-      if (!entry || !entry.total) return "level-0";
-      let ratio = entry.done / entry.total;
-      if (ratio >= 1) return "level-4";
-      if (ratio >= 0.66) return "level-3";
-      if (ratio >= 0.33) return "level-2";
-      return "level-1";
-    },
-    cellTitle: function (day) {
-      let entry = this.byDate[day.key];
-      let dateLabel = moment(day.key, "YYYYMMDD").format("DD/MM/YYYY");
-      if (!entry || !entry.total) return `${dateLabel}: ${this.$t("ui.heatmapNoTasks")}`;
-      return `${dateLabel}: ${entry.done}/${entry.total}`;
-    },
-  },
-  computed: {
-    weeks: function () {
-      // Build a flat list of the last DAYS_BACK days, then chunk into
-      // 7-day weeks (Monday-first) so the grid reads like a GitHub
-      // contributions graph.
-      let days = [];
-      let start = moment().subtract(DAYS_BACK - 1, "days");
-      for (let i = 0; i < DAYS_BACK; i++) {
-        let d = moment(start).add(i, "days");
-        days.push({ key: d.format("YYYYMMDD"), weekday: d.isoWeekday() });
-      }
-      // pad the front so the first column starts on Monday
-      let firstWeekday = days[0].weekday;
-      for (let i = 1; i < firstWeekday; i++) {
-        days.unshift({ key: "", weekday: i });
-      }
-      let weeks = [];
-      for (let i = 0; i < days.length; i += 7) {
-        weeks.push(days.slice(i, i + 7));
-      }
-      return weeks;
     },
   },
 };
 </script>
 
 <style scoped lang="scss">
-.heatmap-grid {
-  display: grid;
-  gap: 3px;
+.productivity-heatmap {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
-.heatmap-week {
+.ph-grid {
   display: grid;
+  grid-template-columns: repeat(14, 1fr);
+  grid-auto-flow: column;
   grid-template-rows: repeat(7, 1fr);
   gap: 3px;
+  width: 100%;
+  aspect-ratio: 14 / 7;
 }
 
-.heatmap-cell {
-  width: 100%;
-  aspect-ratio: 1;
+.ph-cell {
+  border-radius: 2px;
   min-width: 8px;
   min-height: 8px;
-  border-radius: 2px;
-  background-color: #eaecef;
+}
+
+.ph-level-0 {
+  background-color: rgba(0, 0, 0, 0.06);
 
   .dark-theme & {
-    background-color: #21262d;
+    background-color: rgba(255, 255, 255, 0.05);
   }
 }
 
-.heatmap-cell.level-0 {
-  background-color: #eaecef;
-
-  .dark-theme & {
-    background-color: #21262d;
-  }
+.ph-level-1 {
+  background-color: color-mix(in srgb, var(--accent-color, #5e6ef2) 22%, transparent);
 }
 
-.heatmap-cell.level-1 {
-  background-color: color-mix(in srgb, var(--accent-color, #5e6ef2) 25%, #eaecef 75%);
+.ph-level-2 {
+  background-color: color-mix(in srgb, var(--accent-color, #5e6ef2) 45%, transparent);
 }
 
-.heatmap-cell.level-2 {
-  background-color: color-mix(in srgb, var(--accent-color, #5e6ef2) 50%, #eaecef 50%);
+.ph-level-3 {
+  background-color: color-mix(in srgb, var(--accent-color, #5e6ef2) 70%, transparent);
 }
 
-.heatmap-cell.level-3 {
-  background-color: color-mix(in srgb, var(--accent-color, #5e6ef2) 75%, #eaecef 25%);
-}
-
-.heatmap-cell.level-4 {
+.ph-level-4 {
   background-color: var(--accent-color, #5e6ef2);
 }
 
-.heatmap-legend {
+.ph-legend {
   display: flex;
   align-items: center;
-  gap: 3px;
-  margin-top: 8px;
+  gap: 4px;
   font-size: 0.68rem;
   color: grey;
+  justify-content: flex-end;
 
   .dark-theme & {
     color: #8b949e;
   }
+}
 
-  .heatmap-cell {
-    width: 10px;
-    height: 10px;
-    min-width: 10px;
-    min-height: 10px;
-  }
+.ph-legend-label {
+  margin: 0 2px;
+}
+
+.ph-legend-cell {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  display: inline-block;
 }
 </style>

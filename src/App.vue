@@ -180,7 +180,8 @@
       <zeolite-info-modal></zeolite-info-modal>
       <deadline-radar-modal></deadline-radar-modal>
       <focus-mode></focus-mode>
-      <paste-queue-modal :target-list-id="$store.getters.pasteQueueTarget"></paste-queue-modal>
+      <batch-tracker-modal :target-list-id="$store.getters.batchTrackerTarget"></batch-tracker-modal>
+      <paper-tracker-modal :target-list-id="$store.getters.paperTrackerTarget"></paper-tracker-modal>
       <mission-control-modal></mission-control-modal>
       <weekly-summary-modal></weekly-summary-modal>
       <daily-summary-modal></daily-summary-modal>
@@ -225,7 +226,6 @@ import { Modal, Toast } from "bootstrap";
 import migrations from "./migrations/migrations";
 import version_json from "../public/version.json";
 import isElectron from "is-electron";
-import taskHelper from "./helpers/tasksHelper";
 import notifications from "./helpers/notifications";
 import clearDataModal from "./components/comfirmModals/clearDataModal.vue";
 import clearListModal from "./components/comfirmModals/clearListModal.vue";
@@ -247,12 +247,14 @@ import tagFilterBar from "./components/tagFilterBar.vue";
 import weekStrip from "./components/weekStrip.vue";
 import tasksHelper from "./helpers/tasksHelper";
 import deadlinesHelper from "./helpers/deadlinesHelper";
+import todayHelper from "./helpers/todayHelper";
 import exportTool from "./helpers/exportTool";
 import fontHelper from "./helpers/fontHelper";
 import faviconHelper from "./helpers/faviconHelper";
 import focusMode from "./components/focusMode.vue";
 import dayGreeting from "./components/dayGreeting.vue";
-import pasteQueueModal from "./views/pasteQueueModal.vue";
+import batchTrackerModal from "./views/batchTrackerModal.vue";
+import paperTrackerModal from "./views/paperTrackerModal.vue";
 import missionControlModal from "./components/missionControlModal.vue";
 import weeklySummaryModal from "./components/weeklySummaryModal.vue";
 import dailySummaryModal from "./components/dailySummaryModal.vue";
@@ -293,7 +295,8 @@ export default {
     weekStrip,
     focusMode,
     dayGreeting,
-    pasteQueueModal,
+    batchTrackerModal,
+    paperTrackerModal,
     missionControlModal,
     weeklySummaryModal,
     dailySummaryModal,
@@ -677,6 +680,7 @@ export default {
               configRepository.update(this.$store.getters.config);
               if (isElectron()) this.showInitialNotification();
               this.checkDeadlinesSoon();
+              window.dispatchEvent(new CustomEvent("wtd-initial-load-done"));
             });
           } else {
             this.refreshTodayNotifications();
@@ -684,6 +688,7 @@ export default {
             this.$store.commit("updateConfig", { val: moment().format("YYYYMMDD"), key: "lastDayOpened" });
             configRepository.update(this.$store.getters.config);
             this.checkDeadlinesSoon();
+            window.dispatchEvent(new CustomEvent("wtd-initial-load-done"));
           }
         }
       }
@@ -692,39 +697,42 @@ export default {
       if (!(this.$store.getters.config.notificationOnStartup && !this.$store.getters.config.firstTimeOpen)) return;
       setTimeout(
         function () {
-          new Notification("ITQ Todo", {
-            body: this.initialNotificationText(),
-            icon: "/favicon.ico",
-            silent: true,
-          }).onclick = () => {
-            this.ipcRenderer.send("show-current-window");
-            setTimeout(() => {
-              if (document.getElementById("splashScreen")) {
-                document.getElementById("splashScreen").classList.add("hiddenSplashScreen");
-              }
-            }, 3000);
-          };
-          notifications.playNotificationSound(this.$store.getters.config.notificationSound);
+          this.initialNotificationText().then((body) => {
+            new Notification("ITQ Todo", {
+              body: body,
+              icon: "/favicon.ico",
+              silent: true,
+            }).onclick = () => {
+              this.ipcRenderer.send("show-current-window");
+              setTimeout(() => {
+                if (document.getElementById("splashScreen")) {
+                  document.getElementById("splashScreen").classList.add("hiddenSplashScreen");
+                }
+              }, 3000);
+            };
+            notifications.playNotificationSound(this.$store.getters.config.notificationSound);
+          });
         }.bind(this),
         2000
       );
     },
+    // Counts with the same rule as the Today list (own tasks plus project
+    // tasks scheduled to that day), see todayHelper.
     initialNotificationText: function () {
-      let yesterdayTasks = this.$store.getters.todoLists[moment().subtract(1, "d").format("YYYYMMDD")];
-      let todayTasks = this.$store.getters.todoLists[moment().format("YYYYMMDD")];
+      return todayHelper.summary(this.$store.getters.todoLists, this.$store.getters.cTodoListIds).then((res) => {
+        let yesterayPendingTasksCount = res.yesterday;
+        let todayPendingTasksCount = res.today;
 
-      let yesterayPendingTasksCount = taskHelper.pendingTasksCount(yesterdayTasks);
-      let todayPendingTasksCount = taskHelper.pendingTasksCount(todayTasks);
-
-      if (yesterayPendingTasksCount == 0 && todayPendingTasksCount == 0) {
-        return this.$t("notifications.noPendingTasksToday");
-      } else if (yesterayPendingTasksCount == 0) {
-        return this.$t("notifications.pendingTasksToday", [todayPendingTasksCount]);
-      } else if (todayPendingTasksCount == 0) {
-        return this.$t("notifications.pendingTasksYesterday", [yesterayPendingTasksCount]);
-      } else {
-        return this.$t("notifications.pendingTasksYesterdayAndToday", [yesterayPendingTasksCount, todayPendingTasksCount]);
-      }
+        if (yesterayPendingTasksCount == 0 && todayPendingTasksCount == 0) {
+          return this.$t("notifications.noPendingTasksToday");
+        } else if (yesterayPendingTasksCount == 0) {
+          return this.$t("notifications.pendingTasksToday", [todayPendingTasksCount]);
+        } else if (todayPendingTasksCount == 0) {
+          return this.$t("notifications.pendingTasksYesterday", [yesterayPendingTasksCount]);
+        } else {
+          return this.$t("notifications.pendingTasksYesterdayAndToday", [yesterayPendingTasksCount, todayPendingTasksCount]);
+        }
+      });
     },
     resetAppOnDayChange: function () {
       var x = new moment();

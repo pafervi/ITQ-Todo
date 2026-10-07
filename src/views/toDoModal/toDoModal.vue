@@ -56,7 +56,6 @@
             <priority-picker :priority="todo.priority || 0" @priority-selected="changePriority"></priority-picker>
             <deadline-picker :deadline="todo.deadline || null" @deadline-selected="changeDeadline"></deadline-picker>
             <color-picker :color="todo.color" @color-selected="changeColor"></color-picker>
-            <calc-status-picker :calc-status="todo.calcStatus" @calc-status-selected="changeCalcStatus"></calc-status-picker>
             <i id="btnTaskOptionMenu" class="bi-three-dots-vertical header-menu-icons" type="button"
               data-bs-toggle="dropdown" :title="$t('todoDetails.actions')"></i>
             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="btnTaskOptionMenu">
@@ -173,7 +172,6 @@ import toastMessage from "../../components/toastMessage";
 import colorPicker from "./colorPicker";
 import priorityPicker from "./priorityPicker";
 import deadlinePicker from "./deadlinePicker";
-import calcStatusPicker from "./calcStatusPicker";
 import timePicker from "./timePicker";
 import tagHelper from "../../helpers/tagHelper";
 import repeatingEvent from "./repeatingEvent";
@@ -222,7 +220,6 @@ export default {
     colorPicker,
     priorityPicker,
     deadlinePicker,
-    calcStatusPicker,
     Datepicker,
     toastMessage,
     timePicker,
@@ -306,10 +303,11 @@ export default {
       this.clickhandler.handle(function () { this.checkTodo(resetRepeatinEvent) }.bind(this), function () { })
     },
     checkTodo: function (resetRepeatinEvent = true) {
+      // Always send a just-checked task to the bottom (mirrors the main
+      // list behaviour) so completed items do not sit between pending
+      // ones. Unchecking does not relocate.
       if (this.todo.checked) {
-        if (this.$store.getters.config.moveCompletedTaskToBottom) {
-          this.$store.commit("moveTodoToEnd", { toDoListId: this.todo.listId, index: this.index });
-        }
+        this.$store.commit("moveTodoToEnd", { toDoListId: this.todo.listId, index: this.index });
         this.index = this.todoList.length - 1;
       }
       this.updateTodoWithReorder(resetRepeatinEvent);
@@ -360,7 +358,10 @@ export default {
       if (this.$store.getters.todoLists[newListID]) {
         this.$store.commit("addTodo", this.todo);
         this.todoList = this.$store.getters.todoLists[this.todo.listId];
-        this.index = this.todoList.length - 1;
+        // addTodo no longer always appends (open tasks go before the
+        // completed block), so look the task up instead of assuming last.
+        let movedIndex = this.todoList.indexOf(this.todo);
+        this.index = movedIndex === -1 ? this.todoList.length - 1 : movedIndex;
         this.todo = this.todoList[this.index];
 
         if (this.$store.getters.config.autoReorderTasks) {
@@ -435,7 +436,6 @@ export default {
         time: this.todo.time,
         alarm: this.todo.alarm,
         repeatingEvent: null,
-        calcStatus: this.todo.calcStatus || null,
       };
       this.$store.commit("addTodo", newTodo);
 
@@ -472,10 +472,6 @@ export default {
     },
     changeColor(color) {
       this.todo.color = color;
-      this.updateTodo();
-    },
-    changeCalcStatus(calcStatus) {
-      this.todo.calcStatus = calcStatus;
       this.updateTodo();
     },
     changePriority(priority) {
@@ -562,7 +558,6 @@ export default {
       if (this.todo["priority"] == undefined) this.todo["priority"] = 0;
       if (this.todo["tags"] == undefined) this.todo["tags"] = [];
       if (this.todo["deadline"] == undefined) this.todo["deadline"] = null;
-      if (this.todo["calcStatus"] == undefined) this.todo["calcStatus"] = null;
       this.newTag = "";
       this.showingCalendar = moment(this.todo.listId, "YYYYMMDD", true).isValid();
       this.getCListOptions();

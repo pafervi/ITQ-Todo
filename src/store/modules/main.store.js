@@ -5,7 +5,8 @@ const state = {
     listToClearId: null,
     activeTagFilter: null,
     focusTask: null,
-    pasteQueueTarget: null,
+    batchTrackerTarget: null,
+    paperTrackerTarget: null,
 }
 
 const getters = {
@@ -27,8 +28,11 @@ const getters = {
     focusTask(state) {
         return state.focusTask;
     },
-    pasteQueueTarget(state) {
-        return state.pasteQueueTarget;
+    batchTrackerTarget(state) {
+        return state.batchTrackerTarget;
+    },
+    paperTrackerTarget(state) {
+        return state.paperTrackerTarget;
     }
 }
 
@@ -51,8 +55,11 @@ const mutations = {
     setFocusTask(state, obj) {
         state.focusTask = obj;
     },
-    setPasteQueueTarget(state, obj) {
-        state.pasteQueueTarget = obj;
+    setBatchTrackerTarget(state, obj) {
+        state.batchTrackerTarget = obj;
+    },
+    setPaperTrackerTarget(state, obj) {
+        state.paperTrackerTarget = obj;
     }
 }
 

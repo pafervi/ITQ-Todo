@@ -23,7 +23,13 @@
               <circle class="dr-ring dr-ring-core" cx="100" cy="100" r="28" />
               <circle class="dr-center" cx="100" cy="100" r="3" />
               <g v-for="(it, i) in points" :key="i">
-                <circle :cx="it.x" :cy="it.y" :r="it.talk ? 5 : 4" :class="'dr-dot dr-dot-' + it.kind">
+                <circle
+                  :cx="it.x"
+                  :cy="it.y"
+                  :r="it.talk ? 5 : 4"
+                  :class="['dr-dot', 'dr-dot-' + it.kind, { 'dr-dot-selected': selectedIndex === i }]"
+                  @click="selectPoint(i)"
+                >
                   <title>{{ it.label }}</title>
                 </circle>
               </g>
@@ -34,8 +40,36 @@
               <span class="dr-leg"><span class="dr-swatch dr-dot-paper"></span> {{ $t("ui.deadlineRadarPapers") }}</span>
               <span class="dr-leg"><span class="dr-swatch dr-dot-talk"></span> {{ $t("ui.deadlineRadarTalk") }}</span>
             </div>
-            <p class="dr-hint">{{ $t("ui.deadlineRadarHint") }}</p>
-            <p class="dr-empty" v-if="!points.length">{{ $t("ui.deadlineRadarEmpty") }}</p>
+
+            <!-- Detail card for the currently selected dot. Appears below the
+                 radar so the user can see the task name, when it is due and
+                 how far out, and the list it belongs to without hovering. -->
+            <div v-if="selected" class="dr-detail" :class="'dr-detail-' + selected.kind">
+              <div class="dr-detail-head">
+                <span class="dr-detail-swatch" :class="'dr-dot-' + selected.kind"></span>
+                <span class="dr-detail-title">{{ selected.title }}</span>
+                <i v-if="selected.priority" class="bi-flag-fill dr-detail-prio" :class="'priority-' + selected.priority"></i>
+              </div>
+              <div class="dr-detail-meta">
+                <span class="dr-detail-chip">
+                  <i class="bi-calendar-event"></i>
+                  {{ selected.deadlineLabel }}
+                </span>
+                <span class="dr-detail-chip">
+                  <i class="bi-hourglass-split"></i>
+                  {{ daysLabel(selected.days) }}
+                </span>
+                <span v-if="selected.listLabel" class="dr-detail-chip">
+                  <i class="bi-folder2"></i>
+                  {{ selected.listLabel }}
+                </span>
+              </div>
+              <div v-if="selected.tags && selected.tags.length" class="dr-detail-tags">
+                <span v-for="t in selected.tags" :key="t" class="dr-detail-tag">#{{ t }}</span>
+              </div>
+            </div>
+            <p v-else-if="points.length" class="dr-hint">{{ $t("ui.deadlineRadarHint") }}</p>
+            <p v-if="!points.length" class="dr-empty">{{ $t("ui.deadlineRadarEmpty") }}</p>
           </template>
         </div>
       </div>
@@ -61,20 +95,69 @@ export default {
     return {
       loading: true,
       points: [],
+      selectedIndex: -1,
     };
   },
   mounted() {
     let modalEl = document.getElementById("deadlineRadarModal");
-    if (modalEl) modalEl.addEventListener("shown.bs.modal", this.loadData);
+    if (modalEl) {
+      modalEl.addEventListener("shown.bs.modal", this.loadData);
+      // Clear the selection when the modal is dismissed so reopening starts
+      // on the legend/hint again instead of showing a stale detail card.
+      modalEl.addEventListener("hidden.bs.modal", () => {
+        this.selectedIndex = -1;
+      });
+    }
+  },
+  computed: {
+    selected: function () {
+      if (this.selectedIndex < 0) return null;
+      return this.points[this.selectedIndex] || null;
+    },
+    customLists: function () {
+      return this.$store.getters.customToDoLists || [];
+    },
   },
   methods: {
+    selectPoint: function (i) {
+      this.selectedIndex = this.selectedIndex === i ? -1 : i;
+    },
+    listLabel: function (listId) {
+      if (!listId) return "";
+      // Daily list keys look like YYYYMMDD; render those as a date for context.
+      if (/^\d{8}$/.test(String(listId))) {
+        let m = moment(listId, "YYYYMMDD");
+        if (m.isValid()) return m.format("ddd DD MMM");
+      }
+      let hit = this.customLists.find((l) => l.id === listId);
+      return hit ? hit.name : "";
+    },
+    daysLabel: function (days) {
+      if (days < 0) return this.$t("ui.deadlineOverdueBy", [Math.abs(days)]) || `Overdue by ${Math.abs(days)} d`;
+      if (days === 0) return this.$t("ui.deadlineToday") || "Due today";
+      if (days === 1) return this.$t("ui.deadlineTomorrow") || "In 1 day";
+      return this.$t("ui.deadlineInDays", [days]) || `In ${days} days`;
+    },
     loadData: function () {
       this.loading = true;
+      this.selectedIndex = -1;
       deadlinesHelper.getTasksWithDeadline().then((tasks) => {
         let items = tasks.map((t) => {
           let days = moment(t.deadline).startOf("day").diff(moment().startOf("day"), "days");
           let isPaper = (t.tags || []).indexOf("paper") !== -1;
-          return { days: days, label: t.text + " (" + moment(t.deadline).format("DD/MM") + ")", kind: isPaper ? "paper" : "deadline", talk: false };
+          let dl = moment(t.deadline);
+          return {
+            days: days,
+            title: t.text,
+            label: t.text + " (" + dl.format("DD/MM") + ")",
+            deadlineLabel: dl.format("LL"),
+            listId: t.listId,
+            listLabel: this.listLabel(t.listId),
+            priority: t.priority || 0,
+            tags: t.tags || [],
+            kind: isPaper ? "paper" : "deadline",
+            talk: false,
+          };
         });
 
         // The next talk (config.nextTalkDate/Title) rides the radar too.
@@ -83,7 +166,19 @@ export default {
           let days = moment(talkDate).startOf("day").diff(moment().startOf("day"), "days");
           if (days >= 0) {
             let title = this.$store.getters.config.nextTalkTitle || this.$t("ui.templateConference");
-            items.push({ days: days, label: title + " (" + moment(talkDate).format("DD/MM") + ")", kind: "talk", talk: true });
+            let dl = moment(talkDate);
+            items.push({
+              days: days,
+              title: title,
+              label: title + " (" + dl.format("DD/MM") + ")",
+              deadlineLabel: dl.format("LL"),
+              listId: null,
+              listLabel: this.$t("ui.deadlineRadarTalk") || "Talk",
+              priority: 0,
+              tags: [],
+              kind: "talk",
+              talk: true,
+            });
           }
         }
 
@@ -115,7 +210,7 @@ export default {
 
 <style scoped lang="scss">
 .modal-dialog {
-  max-width: 420px;
+  max-width: 460px;
 }
 
 .modal.fade .modal-dialog {
@@ -197,10 +292,25 @@ export default {
 .dr-dot {
   stroke: #fff;
   stroke-width: 1;
+  cursor: pointer;
+  transition: r 0.15s ease, stroke-width 0.15s ease, filter 0.15s ease;
+
+  &:hover {
+    stroke-width: 1.6;
+    filter: brightness(1.15);
+  }
 
   .dark-theme & {
     stroke: #161b22;
   }
+}
+
+/* The clicked dot grows a touch and gets a bright halo so the user can see
+   which one the detail card below is describing. */
+.dr-dot-selected {
+  stroke: var(--accent-color, #5e6ef2);
+  stroke-width: 2;
+  filter: drop-shadow(0 0 4px color-mix(in srgb, var(--accent-color, #5e6ef2) 60%, transparent));
 }
 
 .dr-dot-deadline {
@@ -258,5 +368,114 @@ export default {
   font-size: 0.82rem;
   color: grey;
   margin-top: 8px;
+}
+
+/* Detail card below the radar. Its left border picks up the kind color so the
+   card and its dot read as the same thing without labels. */
+.dr-detail {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background-color: rgba(94, 110, 242, 0.06);
+  border-left: 3px solid #5e6ef2;
+
+  .dark-theme & {
+    background-color: rgba(94, 110, 242, 0.1);
+  }
+}
+
+.dr-detail-paper {
+  background-color: rgba(249, 115, 22, 0.08);
+  border-left-color: #f97316;
+
+  .dark-theme & {
+    background-color: rgba(249, 115, 22, 0.12);
+  }
+}
+
+.dr-detail-talk {
+  background-color: rgba(225, 29, 72, 0.08);
+  border-left-color: #e11d48;
+
+  .dark-theme & {
+    background-color: rgba(225, 29, 72, 0.14);
+  }
+}
+
+.dr-detail-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.dr-detail-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.dr-detail-title {
+  font-weight: 600;
+  font-size: 0.92rem;
+  line-height: 1.25;
+  flex: 1;
+  color: #1a1a1a;
+
+  .dark-theme & {
+    color: #e8ecf8;
+  }
+}
+
+.dr-detail-prio {
+  font-size: 11px;
+  flex-shrink: 0;
+}
+
+.dr-detail-prio.priority-1 { color: #5e6ef2; }
+.dr-detail-prio.priority-2 { color: #f97316; }
+.dr-detail-prio.priority-3 { color: #ed544b; }
+
+.dr-detail-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: 0.76rem;
+}
+
+.dr-detail-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background-color: rgba(0, 0, 0, 0.05);
+  color: #4a4a4a;
+
+  .dark-theme & {
+    background-color: rgba(255, 255, 255, 0.06);
+    color: #c8cfe8;
+  }
+}
+
+.dr-detail-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.dr-detail-tag {
+  font-size: 0.7rem;
+  padding: 1px 7px;
+  border-radius: 10px;
+  background-color: rgba(94, 110, 242, 0.12);
+  color: var(--accent-color, #5e6ef2);
+
+  .dark-theme & {
+    background-color: rgba(94, 110, 242, 0.22);
+    color: #c8cfe8;
+  }
 }
 </style>

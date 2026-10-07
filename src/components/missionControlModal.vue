@@ -33,29 +33,6 @@
               <p class="mc-empty" v-else>{{ $t("ui.mcTodayEmpty") }}</p>
             </div>
 
-            <div class="mc-section mc-calc" :class="{ 'mc-hero': hasFailedJobs }">
-              <h6><i class="ph ph-cpu"></i> {{ $t("ui.mcCalcJobs") }}</h6>
-              <div class="mc-calc-filters" v-if="calcJobs.length">
-                <span class="mc-filter-chip" :class="{ active: !calcStatusFilter }" @click="calcStatusFilter = null">{{ $t("ui.filterAll") }}</span>
-                <span
-                  v-for="status in presentCalcStatuses"
-                  :key="status"
-                  class="mc-filter-chip"
-                  :class="{ active: calcStatusFilter === status }"
-                  :style="calcStatusFilter === status ? { backgroundColor: calcStatusHelper.colorFor(status), color: 'white' } : {}"
-                  @click="calcStatusFilter = status"
-                >{{ $t(calcStatusHelper.labelKeyFor(status)) }}</span>
-              </div>
-              <ul class="mc-list" v-if="filteredCalcJobs.length">
-                <li v-for="(job, i) in filteredCalcJobs" :key="'calc' + i">
-                  <i :class="job.icon" :style="{ color: job.color }"></i>
-                  {{ job.text }}
-                  <span class="mc-list-tag">{{ job.listName }}</span>
-                </li>
-              </ul>
-              <p class="mc-empty" v-else>{{ $t("ui.mcCalcJobsEmpty") }}</p>
-            </div>
-
             <div class="mc-section mc-deadlines">
               <h6><i class="ph ph-warning-diamond"></i> {{ $t("ui.mcDeadlines") }}</h6>
               <ul class="mc-list" v-if="upcomingDeadlines.length">
@@ -92,7 +69,6 @@
 <script>
 import moment from "moment";
 import dbRepository from "../repositories/dbRepository";
-import calcStatusHelper from "../helpers/calcStatusHelper";
 import deadlinesHelper from "../helpers/deadlinesHelper";
 import productivityHeatmap from "./productivityHeatmap.vue";
 
@@ -105,11 +81,8 @@ export default {
     return {
       loading: true,
       todayTasks: [],
-      calcJobs: [],
       upcomingDeadlines: [],
       meetings: [],
-      calcStatusFilter: null,
-      calcStatusHelper: calcStatusHelper,
     };
   },
   mounted() {
@@ -122,38 +95,14 @@ export default {
     },
     loadData: async function () {
       this.loading = true;
-      this.calcStatusFilter = null;
       let todayId = moment().format("YYYYMMDD");
 
       await this.$store.dispatch("loadTodoLists", todayId);
       this.todayTasks = (this.$store.getters.todoLists[todayId] || []).filter((t) => !t.checked);
 
       let cTodoListIds = this.$store.getters.cTodoListIds || [];
-      let listNameFor = (listId) => {
-        let entry = cTodoListIds.find((l) => l.listId === listId);
-        return entry ? entry.listName || this.$t("ui.newCustomList") : listId;
-      };
 
       let allLists = await this.scanAllLists();
-
-      let statusOrder = { failed: 0, running: 1, queued: 2 };
-      let jobs = [];
-      allLists.forEach((entry) => {
-        (entry.tasks || []).forEach((task) => {
-          if (task.calcStatus && statusOrder[task.calcStatus] !== undefined && !task.checked) {
-            jobs.push({
-              text: task.text,
-              listName: listNameFor(entry.listId),
-              icon: calcStatusHelper.iconFor(task.calcStatus),
-              color: calcStatusHelper.colorFor(task.calcStatus),
-              status: task.calcStatus,
-              order: statusOrder[task.calcStatus],
-            });
-          }
-        });
-      });
-      jobs.sort((a, b) => a.order - b.order);
-      this.calcJobs = jobs.slice(0, 12);
 
       let deadlineTasks = await deadlinesHelper.getTasksWithDeadline();
       let limit = moment().add(7, "days").format("YYYYMMDD");
@@ -196,18 +145,6 @@ export default {
           resolve([]);
         };
       });
-    },
-  },
-  computed: {
-    hasFailedJobs: function () {
-      return this.calcJobs.some((j) => j.order === 0);
-    },
-    presentCalcStatuses: function () {
-      let set = new Set(this.calcJobs.map((j) => j.status));
-      return ["failed", "running", "queued"].filter((s) => set.has(s));
-    },
-    filteredCalcJobs: function () {
-      return this.calcStatusFilter ? this.calcJobs.filter((j) => j.status === this.calcStatusFilter) : this.calcJobs;
     },
   },
 };
@@ -285,25 +222,15 @@ export default {
 }
 
 .mc-today {
-  grid-column: span 5;
-}
-
-.mc-calc {
-  grid-column: span 7;
-  transition: grid-column 0.25s ease;
-}
-
-.mc-calc.mc-hero {
-  grid-column: span 12;
-  background: color-mix(in srgb, #ed544b 6%, transparent);
-  border-radius: 10px;
-  padding: 10px 12px;
-  margin: -10px -12px 0 -12px;
-}
-
-.mc-deadlines,
-.mc-meetings {
   grid-column: span 6;
+}
+
+.mc-deadlines {
+  grid-column: span 6;
+}
+
+.mc-meetings {
+  grid-column: span 12;
 }
 
 .mc-activity {
@@ -312,8 +239,6 @@ export default {
 
 @media (max-width: 560px) {
   .mc-today,
-  .mc-calc,
-  .mc-calc.mc-hero,
   .mc-deadlines,
   .mc-meetings,
   .mc-activity {
@@ -381,31 +306,6 @@ export default {
   .dark-theme & {
     color: #8b949e;
   }
-}
-
-.mc-calc-filters {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 5px;
-  margin-bottom: 8px;
-}
-
-.mc-filter-chip {
-  font-size: 0.68rem;
-  padding: 2px 9px;
-  border-radius: 10px;
-  cursor: pointer;
-  background-color: #eaecef;
-  color: #3c3c3c;
-
-  .dark-theme & {
-    background-color: #21262d;
-    color: #c9d1d9;
-  }
-}
-
-.mc-filter-chip.active {
-  font-weight: 600;
 }
 
 .mc-daily-link,

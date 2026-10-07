@@ -101,9 +101,6 @@
 .ph.ph-download-simple:before {
   content: "\e20c";
 }
-.ph.ph-gift:before {
-  content: "\e276";
-}
 .ph.ph-keyboard:before {
   content: "\e2d8";
 }
@@ -141,10 +138,71 @@
   content: "\e3d4";
 }
 .ph.ph-target:before {
-  content: "\e1d6";
+  content: "\e47c";
 }
 
-// Fill weight (bold/filled) icons, used for calc-status glyphs
+.ph.ph-airplane-takeoff:before {
+  content: "\e504";
+}
+.ph.ph-arrow-counter-clockwise:before {
+  content: "\e038";
+}
+.ph.ph-arrow-right:before {
+  content: "\e06c";
+}
+.ph.ph-article:before {
+  content: "\e0a8";
+}
+.ph.ph-at:before {
+  content: "\e0ac";
+}
+.ph.ph-atom:before {
+  content: "\e5e4";
+}
+.ph.ph-check:before {
+  content: "\e182";
+}
+.ph.ph-command:before {
+  content: "\e1c4";
+}
+.ph.ph-file-text:before {
+  content: "\e23a";
+}
+.ph.ph-handshake:before {
+  content: "\e582";
+}
+.ph.ph-lock-simple:before {
+  content: "\e308";
+}
+.ph.ph-moon-stars:before {
+  content: "\e58e";
+}
+.ph.ph-note:before {
+  content: "\e348";
+}
+.ph.ph-paper-plane-tilt:before {
+  content: "\e398";
+}
+.ph.ph-plus-circle:before {
+  content: "\e3d6";
+}
+.ph.ph-sparkle:before {
+  content: "\e6a2";
+}
+.ph.ph-stack:before {
+  content: "\e466";
+}
+.ph.ph-swap:before {
+  content: "\e83c";
+}
+.ph.ph-trend-up:before {
+  content: "\e4ae";
+}
+.ph.ph-users-three:before {
+  content: "\e68e";
+}
+
+// Fill weight (bold/filled) icons, used for filled glyphs
 .ph-fill.ph-arrows-clockwise:before {
   content: "\e094";
 }
@@ -162,4 +220,7 @@
 }
 .ph-fill.ph-hexagon:before {
   content: "\e2ae";
+}
+.ph.ph-address-book:before {
+  content: "\e6f8";
 }

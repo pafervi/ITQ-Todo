@@ -48,7 +48,7 @@
       :collapsed="collapsed" @toggle-collapse="toggleCollapse" @force-collapse="forceCollapse">
     </list-header>
     <transition name="fade-collapse">
-      <div v-if="!collapsed && toDoListState && toDoListState.length === 0" class="empty-list-placeholder">
+      <div v-if="!collapsed && firstLoadDone && toDoListState && toDoListState.length === 0" class="empty-list-placeholder">
         <i :class="customTodoList ? 'bi-inbox' : 'bi-emoji-smile'"></i>
         <span>{{ customTodoList ? $t('ui.emptyListPlaceholder') : $t('ui.emptyListPlaceholderToday') }}</span>
       </div>

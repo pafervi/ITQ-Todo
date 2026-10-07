@@ -63,17 +63,6 @@
             >{{ tag }}</span>
           </div>
 
-          <div v-if="mode === 'search' && allCalcStatuses.length" class="tag-filter-row">
-            <span
-              v-for="status in allCalcStatuses"
-              :key="status"
-              class="tag-filter-chip"
-              :class="{ active: activeCalcStatuses.includes(status) }"
-              :style="activeCalcStatuses.includes(status) ? { backgroundColor: calcStatusColor(status), color: 'white' } : {}"
-              @click="toggleCalcStatus(status)"
-            ><i :class="calcStatusIcon(status)"></i> {{ calcStatusLabel(status) }}</span>
-          </div>
-
           <div v-if="mode === 'search' && allKinds.length" class="tag-filter-row">
             <span
               v-for="kind in allKinds"
@@ -176,7 +165,6 @@ import { Modal } from "bootstrap";
 import moment from "moment";
 import searchHelper from "../helpers/searchHelper";
 import tagHelper from "../helpers/tagHelper";
-import calcStatusHelper from "../helpers/calcStatusHelper";
 import configRepository from "../repositories/configRepository";
 import toDoListRepository from "../repositories/toDoListRepository";
 import notifications from "../helpers/notifications";
@@ -302,7 +290,6 @@ export default {
       loading: false,
       query: "",
       activeTags: [],
-      activeCalcStatuses: [],
       activeKinds: [],
       selectedIndex: 0,
     };
@@ -322,7 +309,6 @@ export default {
       this.loading = true;
       this.query = "";
       this.activeTags = [];
-      this.activeCalcStatuses = [];
       this.activeKinds = [];
       this.selectedIndex = 0;
       searchHelper.getAllTasks().then((tasks) => {
@@ -338,11 +324,6 @@ export default {
       if (idx === -1) this.activeTags.push(tag);
       else this.activeTags.splice(idx, 1);
     },
-    toggleCalcStatus: function (status) {
-      let idx = this.activeCalcStatuses.indexOf(status);
-      if (idx === -1) this.activeCalcStatuses.push(status);
-      else this.activeCalcStatuses.splice(idx, 1);
-    },
     toggleKind: function (kind) {
       let idx = this.activeKinds.indexOf(kind);
       if (idx === -1) this.activeKinds.push(kind);
@@ -350,16 +331,6 @@ export default {
     },
     tagColor: function (tag) {
       return tagHelper.colorForTag(tag);
-    },
-    calcStatusColor: function (status) {
-      return calcStatusHelper.colorFor(status);
-    },
-    calcStatusIcon: function (status) {
-      return calcStatusHelper.iconFor(status);
-    },
-    calcStatusLabel: function (status) {
-      let key = calcStatusHelper.labelKeyFor(status);
-      return key ? this.$t(key) : status;
     },
     kindLabel: function (kind) {
       return kind === "meeting" ? this.$t("ui.templateMeeting") : this.$t("ui.templateActiveLearning");
@@ -574,7 +545,7 @@ export default {
       return "search";
     },
     modeIcon: function () {
-      if (this.mode === "command") return "ph ph-terminal-window";
+      if (this.mode === "command") return "ph ph-command";
       if (this.mode === "add") return "ph ph-plus-circle";
       return "ph ph-magnifying-glass";
     },
@@ -598,14 +569,6 @@ export default {
       this.tasks.forEach((t) => t.tags.forEach((tag) => set.add(tag)));
       return Array.from(set).sort();
     },
-    allCalcStatuses: function () {
-      let set = new Set();
-      this.tasks.forEach((t) => {
-        if (t.calcStatus) set.add(t.calcStatus);
-      });
-      let order = calcStatusHelper.list.map((s) => s.key);
-      return order.filter((key) => set.has(key));
-    },
     allKinds: function () {
       let set = new Set();
       this.tasks.forEach((t) => {
@@ -621,7 +584,6 @@ export default {
         .filter((t) => !t.checked)
         .filter((t) => (q ? t.text && t.text.toLowerCase().includes(q) : true))
         .filter((t) => (this.activeTags.length ? this.activeTags.every((tag) => t.tags.includes(tag)) : true))
-        .filter((t) => (this.activeCalcStatuses.length ? this.activeCalcStatuses.includes(t.calcStatus) : true))
         .filter((t) => (this.activeKinds.length ? this.activeKinds.includes(this.listKindFor(t.listId)) : true))
         .slice(0, 200);
     },
@@ -645,7 +607,7 @@ export default {
         { id: "settings",   title: "Settings",             hint: "Open preferences",         icon: "bi-gear",          run: this.cmdOpenSettings },
         { id: "shortcuts",  title: "Shortcuts",            hint: "Keyboard reference",       icon: "bi-keyboard",      run: function () { this.openModal("shortcutsModal"); } },
         { id: "dark",       title: darkOn ? "Switch to light theme" : "Switch to dark theme", hint: "Toggle colour theme", icon: "bi-circle-half", run: this.cmdToggleTheme },
-        { id: "people",     title: "People view",          hint: "Who's waiting on who",     icon: "bi-people",        run: function () { this.openModal("peopleModal"); } },
+        { id: "people",     title: this.$t("ui.people"),   hint: "Who's waiting on who",     icon: "ph ph-address-book", run: function () { this.openModal("peopleModal"); } },
         { id: "friday",     title: "Friday wrap-up",       hint: "Close the week in 90s",    icon: "bi-stars",         run: function () { this.openModal("fridayRitualModal"); } },
       ];
     },
@@ -673,7 +635,6 @@ export default {
   watch: {
     query: function () { this.selectedIndex = 0; },
     activeTags: function () { this.selectedIndex = 0; },
-    activeCalcStatuses: function () { this.selectedIndex = 0; },
     activeKinds: function () { this.selectedIndex = 0; },
   },
 };
@@ -1029,10 +990,32 @@ export default {
 
 .dark-theme .table {
   --bs-table-bg: transparent;
-  --bs-table-hover-bg: rgba(94, 110, 242, 0.1);
-  --bs-table-hover-color: #eef1ff;
-  color: #d7dcee;
+  // Bootstrap paints td text with these two vars, so overriding them
+  // (not just .table color) is what actually brightens the task rows.
+  --bs-table-color: #f0f3fa;
+  --bs-table-color-state: #f0f3fa;
+  --bs-table-hover-bg: rgba(94, 110, 242, 0.14);
+  --bs-table-hover-color: #ffffff;
+  color: #f0f3fa;
   border-color: rgba(94, 110, 242, 0.14);
+}
+
+/* Explicit per-cell colors: Bootstrap resets the td color through its
+   state vars on hover, so we lock them here too. */
+.dark-theme .table td,
+.dark-theme .search-task-text {
+  color: #f0f3fa;
+}
+
+.dark-theme .search-task-check {
+  color: #c8cfe8;
+}
+
+/* The checked-todo greys the row out via opacity; 0.6 on #f0f3fa reads
+   fine over the dark navy, bump it a touch so the strike-through still
+   feels distinct without looking disabled. */
+.dark-theme .search-task-text.checked-todo {
+  opacity: 0.72;
 }
 
 .table tr { cursor: pointer; }

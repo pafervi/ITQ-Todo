@@ -17,7 +17,7 @@
               :title="priorityLabel"></i>
             <span v-html="todoText"></span>
           </span>
-          <!-- Deadline / calc-status chips live outside .item-text on purpose: in
+          <!-- Deadline chips live outside .item-text on purpose: in
                compact view that span truncates with an ellipsis, and anything
                nested inside it would get clipped away along with the overflow
                text instead of staying visible. -->
@@ -25,9 +25,14 @@
             :title="$t('todoDetails.deadline')">
             <i class="bi-calendar-check"></i>{{ deadlineLabel }}
           </span>
-          <span v-if="toDo.calcStatus" class="calc-status-chip mx-1 flex-shrink-0" :style="{ color: calcStatusColor }"
-            :title="calcStatusLabel">
-            <i :class="calcStatusIcon"></i>
+          <!-- Batch tracker chip: shows done/total and a thin progress bar
+               for tasks standing in for a long calculation run. Clicking it
+               opens the batch tracker on the host list. -->
+          <span v-if="batchInfo" class="batch-chip mx-1 flex-shrink-0" :title="batchInfo.title" @click.stop="openBatchTracker">
+            <span class="batch-chip-text">{{ batchInfo.done }}/{{ batchInfo.total }}</span>
+            <span class="batch-chip-bar">
+              <span class="batch-chip-fill" :style="{ width: batchInfo.percent + '%', backgroundColor: batchInfo.color }"></span>
+            </span>
           </span>
           <span class="item-time flex-shrink-0" :class="{ 'checked-todo': toDo.checked, 'mx-2': !compactView }"> {{ timeFormat(toDo.time) }}
             <div class="alarm-indicator" :class="{ 'show-alarm-indicator': notificationIndicator && toDo.alarm }"></div>
@@ -61,7 +66,7 @@
             :title="'@' + m.display"
             @click.stop="openPeople(m.slug)"
           >
-            <span class="ipc-avatar" :style="{ backgroundColor: personColor(m.slug) }">{{ personInitials(m.slug) }}</span>
+            <span class="ipc-avatar" :style="{ backgroundColor: personColor(m.slug) }">{{ personInitials(m.display) }}</span>
             {{ m.display }}
           </span>
           <span v-for="tag in (toDo.tags || [])" :key="tag" class="item-tag-chip" :style="{ backgroundColor: tagColor(tag) }">{{
@@ -89,7 +94,6 @@ import toDoListRepository from "../repositories/toDoListRepository";
 import moment from "moment";
 import linkifyStr from 'linkify-string';
 import tagHelper from "../helpers/tagHelper";
-import calcStatusHelper from "../helpers/calcStatusHelper";
 import peopleHelper from "../helpers/peopleHelper";
 import { Modal } from 'bootstrap';
 
@@ -128,6 +132,11 @@ export default {
   methods: {
     toggleSubtask: function () {
       toDoListRepository.update(this.toDoListId, this.$store.getters.todoLists[this.toDoListId]);
+    },
+    openBatchTracker: function () {
+      this.$store.commit("setBatchTrackerTarget", this.toDoListId);
+      let modalEl = document.getElementById("batchTrackerModal");
+      if (modalEl) new Modal(modalEl).show();
     },
     editToDo: function () {
       this.text = this.toDo.text;
@@ -168,12 +177,12 @@ export default {
     personColor: function (slug) {
       return peopleHelper.colorFor(slug);
     },
-    personInitials: function (slug) {
-      return peopleHelper.initialsFor(slug);
+    personInitials: function (name) {
+      return peopleHelper.initialsFor(name);
     },
-    openPeople: function () {
-      let el = document.getElementById("peopleModal");
-      if (el) Modal.getOrCreateInstance(el).show();
+    openPeople: function (slug) {
+      // peopleModal listens for this and opens with that person selected.
+      window.dispatchEvent(new CustomEvent("open-people", { detail: { slug: slug } }));
     },
     showToDoItem: function () {
       var activeTodo = {
@@ -199,6 +208,18 @@ export default {
     },
   },
   computed: {
+    batchInfo: function () {
+      let b = this.toDo && this.toDo.batch;
+      if (!b || !b.total || b.total <= 0) return null;
+      let done = Math.max(0, Math.min(b.total, b.done || 0));
+      let percent = Math.round((done / b.total) * 100);
+      let color = "#9ca3af";
+      if (percent >= 100) color = "#10b981";
+      else if (percent >= 66) color = "var(--accent-color, #5e6ef2)";
+      else if (percent >= 33) color = "#f59e0b";
+      let title = (this.$t("ui.batchChipTitle", [done, b.total, percent]) || (done + "/" + b.total + " done (" + percent + "%)"));
+      return { done: done, total: b.total, percent: percent, color: color, title: title };
+    },
     todoText: function () {
       return linkifyStr(this.toDo.text, this.options);
     },
@@ -259,16 +280,6 @@ export default {
     },
     hasSubtasks: function () {
       return !!(this.toDo.subTaskList && this.toDo.subTaskList.length);
-    },
-    calcStatusColor: function () {
-      return calcStatusHelper.colorFor(this.toDo.calcStatus);
-    },
-    calcStatusIcon: function () {
-      return calcStatusHelper.iconFor(this.toDo.calcStatus);
-    },
-    calcStatusLabel: function () {
-      let key = calcStatusHelper.labelKeyFor(this.toDo.calcStatus);
-      return key ? this.$t(key) : "";
     },
     subtaskProgress: function () {
       if (!this.hasSubtasks) return '';
@@ -471,14 +482,6 @@ export default {
   color: #8b949e;
 }
 
-.calc-status-chip {
-  font-size: var(--fs-badge, 0.72rem);
-
-  i {
-    animation: none;
-  }
-}
-
 .tag-chips-row {
   padding: 0 3px 3px 24px;
   display: flex;
@@ -659,5 +662,48 @@ export default {
     background-color: #21262d;
     color: #c9d1d9;
   }
+}
+
+.batch-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 1px 7px 1px 7px;
+  border-radius: 10px;
+  background-color: rgba(94, 110, 242, 0.1);
+  color: var(--accent-color, #5e6ef2);
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+
+.dark-theme .batch-chip {
+  background-color: rgba(94, 110, 242, 0.22);
+  color: #c8cfe8;
+}
+
+.batch-chip-text {
+  font-weight: 600;
+}
+
+.batch-chip-bar {
+  display: inline-block;
+  width: 36px;
+  height: 4px;
+  border-radius: 2px;
+  background-color: rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  vertical-align: middle;
+}
+
+.dark-theme .batch-chip-bar {
+  background-color: rgba(255, 255, 255, 0.12);
+}
+
+.batch-chip-fill {
+  display: block;
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 </style>

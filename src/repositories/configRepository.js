@@ -34,7 +34,6 @@ export default {
         startCalendarYesterday: false,
         notificationIndicator: true,
         autoReorderTasks: false,
-        moveCompletedTaskToBottom: true,
         moveCompletedSubTaskToBottom: true,
         fullscreenToDoModal: false,
         weekStartOnMonday: true,

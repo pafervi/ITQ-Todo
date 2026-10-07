@@ -27,7 +27,6 @@ export default {
                     tags: task.tags || [],
                     priority: task.priority || 0,
                     deadline: task.deadline || null,
-                    calcStatus: task.calcStatus || null,
                   });
                 }
               });

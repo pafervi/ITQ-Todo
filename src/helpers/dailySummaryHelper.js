@@ -10,8 +10,7 @@ export default {
   // sent anywhere. Scans every list once and builds a same-day snapshot:
   // today's done/total, the project that saw the most progress (best-effort,
   // since individual tasks don't carry a completion timestamp - same
-  // limitation as weeklySummaryHelper), how many calcStatus "failed" jobs
-  // are sitting unchecked right now, and a preview of tomorrow's plan.
+  // limitation as weeklySummaryHelper), and a preview of tomorrow's plan.
   getDaySummary(cTodoListIds) {
     return new Promise((resolve) => {
       let db_req = dbRepository.open();
@@ -20,7 +19,6 @@ export default {
         let request = dbRepository.selectAll(db, "todo_lists");
         let byDate = {};
         let byList = {};
-        let failedJobs = [];
         request.onsuccess = function () {
           let cursor = request.result;
           if (cursor) {
@@ -33,11 +31,6 @@ export default {
               } else {
                 byList[cursor.key] = { total: total, done: done };
               }
-              tasks.forEach((t) => {
-                if (t.calcStatus === "failed" && !t.checked) {
-                  failedJobs.push(t.text);
-                }
-              });
             }
             cursor.continue();
           } else {
@@ -61,19 +54,17 @@ export default {
               todayDone: today.done,
               todayTotal: today.total,
               topList: topList || null,
-              failedJobsCount: failedJobs.length,
-              failedJobsPreview: failedJobs.slice(0, 3),
               tomorrowCount: tomorrowPending.length,
               tomorrowPreview: tomorrowPending.slice(0, 3).map((t) => t.text),
             });
           }
         };
         request.onerror = function () {
-          resolve({ todayDone: 0, todayTotal: 0, topList: null, failedJobsCount: 0, failedJobsPreview: [], tomorrowCount: 0, tomorrowPreview: [] });
+          resolve({ todayDone: 0, todayTotal: 0, topList: null, tomorrowCount: 0, tomorrowPreview: [] });
         };
       };
       db_req.onerror = function () {
-        resolve({ todayDone: 0, todayTotal: 0, topList: null, failedJobsCount: 0, failedJobsPreview: [], tomorrowCount: 0, tomorrowPreview: [] });
+        resolve({ todayDone: 0, todayTotal: 0, topList: null, tomorrowCount: 0, tomorrowPreview: [] });
       };
     });
   },

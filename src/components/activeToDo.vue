@@ -8,15 +8,11 @@
         <span v-if="activeTodo.toDo.color != 'none'" class="cicle-icon" :style="'color: ' + activeTodo.toDo.color" :class="{
           'bi-check-circle-fill': activeTodo.toDo.checked,
           'bi-circle-fill': !activeTodo.toDo.checked,
-        }" :title="$t('ui.focusModeHint')" @click="onCircleClick" @contextmenu.prevent="cycleCalcStatus"></span>
+        }" :title="$t('ui.focusModeHint')" @click="onCircleClick"></span>
         <span v-else class="cicle-icon"
           :class="{ 'bi-check-circle': activeTodo.toDo.checked, 'bi-circle': !activeTodo.toDo.checked, }"
-          :title="$t('ui.focusModeHint')" @click="onCircleClick" @contextmenu.prevent="cycleCalcStatus"></span>
+          :title="$t('ui.focusModeHint')" @click="onCircleClick"></span>
         <span v-html="todoText"></span>
-        <span v-if="activeTodo.toDo.calcStatus" class="calc-status-chip mx-1" :style="{ color: calcStatusColor }"
-          :title="calcStatusLabel + ' — ' + $t('ui.calcStatusCycleHint')">
-          <i :class="calcStatusIcon"></i>
-        </span>
         <span class="time-details"> {{ timeFormat(activeTodo.toDo.time) }}
           <div class="alarm-indicator"
             :class="{ 'show-alarm-indicator': notificationIndicator && activeTodo.toDo.alarm }"></div>
@@ -77,7 +73,6 @@ import notifications from "../helpers/notifications";
 import linkifyStr from 'linkify-string';
 import ClickHandler from "@manuelernestog/click-handler";
 import tasksHelper from "../helpers/tasksHelper";
-import calcStatusHelper from "../helpers/calcStatusHelper";
 
 export default {
   components: {},
@@ -111,20 +106,6 @@ export default {
     checkTodoDirect: function () {
       this.$store.commit("checkTodo", { toDoListId: this.activeTodo.toDoListId, index: this.activeTodo.index, });
       this.checkToDo(this.activeTodo.toDoListId, this.activeTodo.index);
-    },
-    // Right-click on the status circle cycles the calc status in place
-    // (none -> queued -> running -> done -> failed -> review -> none),
-    // so Pau doesn't have to open the full task modal just to bump a job
-    // along after checking on it.
-    cycleCalcStatus: function (e) {
-      e.stopPropagation();
-      const order = [null, "queued", "running", "done", "failed", "review"];
-      const current = this.activeTodo.toDo.calcStatus || null;
-      const next = order[(order.indexOf(current) + 1) % order.length];
-      const toDoListId = this.activeTodo.toDoListId;
-      const index = this.activeTodo.index;
-      this.$store.commit("updateCalcStatus", { toDoListId, index, calcStatus: next });
-      toDoListRepository.update(toDoListId, this.$store.getters.todoLists[toDoListId]);
     },
     enterFocusMode: function () {
       this.$store.commit("setFocusTask", { toDo: this.activeTodo.toDo, toDoListId: this.activeTodo.toDoListId });
@@ -222,7 +203,10 @@ export default {
       this.clickhandler.handle(() => { this.checkToDo(id, index) }, this.activeTodo.edit, `${this.activeTodo.toDoListId}${this.activeTodo.index}`);
     },
     checkToDo: function (toDoListId, index) {
-      if (this.$store.getters.todoLists[toDoListId][index].checked && this.$store.getters.config.moveCompletedTaskToBottom) {
+      // Checking a task always pushes it to the bottom so completed and
+      // in-flight work never sit mixed together. Unchecking leaves the
+      // row where it is so the user can bring it back without hunting.
+      if (this.$store.getters.todoLists[toDoListId][index].checked) {
         this.$refs.currentTodo.style.display = `none`;
         this.$store.commit("moveTodoToEnd", { toDoListId: toDoListId, index: index, });
       }
@@ -300,16 +284,6 @@ export default {
     },
     moveSubtaskToBotttom: function () {
       return this.$store.getters.config.moveCompletedSubTaskToBottom;
-    },
-    calcStatusColor: function () {
-      return calcStatusHelper.colorFor(this.activeTodo.toDo.calcStatus);
-    },
-    calcStatusIcon: function () {
-      return calcStatusHelper.iconFor(this.activeTodo.toDo.calcStatus);
-    },
-    calcStatusLabel: function () {
-      let key = calcStatusHelper.labelKeyFor(this.activeTodo.toDo.calcStatus);
-      return key ? this.$t(key) : "";
     },
     // Prefills the date picker with the current dueDate (so the user can
     // tweak it) or today otherwise.
@@ -399,11 +373,6 @@ export default {
   opacity: 0.6;
   display: inline;
   margin-left: 5px;
-}
-
-.calc-status-chip {
-  font-size: var(--fs-badge, 0.72rem);
-  cursor: context-menu;
 }
 
 .todo-item.checked-todo .time-details {

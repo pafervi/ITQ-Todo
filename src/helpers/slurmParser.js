@@ -1,87 +1,98 @@
-// Heuristic parser for pasted `squeue` / `sacct` output. Not a strict format
-// parser (SLURM output varies a lot by site config) — good enough to save
-// Pau from typing job status by hand after checking a cluster queue.
+// Parses the output of SLURM `squeue` / `sacct` pasted into the queue modal
+// and returns one entry per job with { jobId, name, calcStatus }. The result
+// feeds pasteQueueModal, which either updates an existing task that mentions
+// the jobId or creates a new task tagged with that calcStatus.
 
 const STATE_MAP = {
-  R: "running",
-  RUNNING: "running",
-  CG: "running",
-  COMPLETING: "running",
   PD: "queued",
   PENDING: "queued",
   CF: "queued",
   CONFIGURING: "queued",
-  RS: "queued",
-  RESIZING: "queued",
+  R: "running",
+  RUNNING: "running",
+  CG: "running",
+  COMPLETING: "running",
+  S: "running",
+  SUSPENDED: "running",
   CD: "done",
   COMPLETED: "done",
   F: "failed",
   FAILED: "failed",
   TO: "failed",
   TIMEOUT: "failed",
-  CA: "failed",
-  CANCELLED: "failed",
   NF: "failed",
   NODE_FAIL: "failed",
-  OOM: "failed",
-  OUT_OF_MEMORY: "failed",
+  CA: "failed",
+  CANCELLED: "failed",
   BF: "failed",
   BOOT_FAIL: "failed",
   DL: "failed",
   DEADLINE: "failed",
+  OOM: "failed",
   PR: "failed",
   PREEMPTED: "failed",
 };
 
-function normalizeState(token) {
-  if (!token) return null;
-  let key = token
-    .trim()
-    .toUpperCase()
-    .replace(/\+$/, "");
+function mapState(raw) {
+  if (!raw) return null;
+  let key = String(raw).toUpperCase().replace(/\+$/, "");
   return STATE_MAP[key] || null;
 }
 
 export default {
-  // Returns [{ jobId, name, calcStatus }], de-duplicated by jobId.
   parse(text) {
     if (!text) return [];
-    let lines = text
-      .split(/\r\n|\r|\n/)
-      .map((l) => l.trim())
-      .filter((l) => l.length > 0);
+    let lines = String(text).split(/\r?\n/);
+    let jobs = [];
+    let seen = new Set();
 
-    let results = [];
+    for (let line of lines) {
+      line = line.trim();
+      if (!line) continue;
+      // Skip headers and separators.
+      if (/^-+$/.test(line)) continue;
+      if (/^JOBID\b/i.test(line)) continue;
 
-    lines.forEach((line) => {
-      if (/^JOBID\b/i.test(line) || /^JobID\|/i.test(line)) return; // header row
+      // Whitespace-separated columns. squeue default and most sacct formats
+      // put JOBID first; find the first numeric token (optionally with .batch
+      // suffix for sacct steps) and the first SLURM state code anywhere in
+      // the row.
+      let cols = line.split(/\s+/);
+      let jobId = null;
+      let name = null;
+      let state = null;
 
-      let jobId, name, state;
-
-      if (line.indexOf("|") !== -1) {
-        // sacct --parsable(2) style: JobID|JobName|State|...
-        let cols = line.split("|").map((c) => c.trim());
-        jobId = (cols[0] || "").split(".")[0];
-        if (!/^\d+$/.test(jobId)) return;
-        name = cols[1] || "";
-        state = cols.map(normalizeState).find((s) => s) || null;
-      } else {
-        // squeue-style whitespace-delimited: JOBID PARTITION NAME USER ST TIME ...
-        let cols = line.split(/\s+/);
-        if (!cols[0] || !/^\d+(_\d+)?$/.test(cols[0])) return;
-        jobId = cols[0].split("_")[0];
-        name = cols.length >= 3 ? cols[2] : "";
-        state = cols.slice(1).map(normalizeState).find((s) => s) || null;
+      for (let i = 0; i < cols.length; i++) {
+        let c = cols[i];
+        if (!jobId && /^\d+(_\d+)?(\.\w+)?$/.test(c)) {
+          jobId = c.split(".")[0]; // strip step suffix
+          continue;
+        }
+        if (!state) {
+          let mapped = mapState(c);
+          if (mapped) {
+            state = mapped;
+            continue;
+          }
+        }
       }
 
-      if (!jobId) return;
-      results.push({ jobId: jobId, name: name, calcStatus: state });
-    });
+      if (!jobId) continue;
+      if (seen.has(jobId)) continue;
+      seen.add(jobId);
 
-    let byId = {};
-    results.forEach((r) => {
-      byId[r.jobId] = r;
-    });
-    return Object.values(byId);
+      // Best-effort name: squeue column 3 is NAME; sacct column 2 is JobName.
+      // We take the shortest reasonable alphanumeric token right after jobId.
+      let idIdx = cols.findIndex((c) => c.split(".")[0] === jobId);
+      if (idIdx >= 0 && idIdx + 2 < cols.length) {
+        let candidate = cols[idIdx + 2];
+        if (candidate && !mapState(candidate) && !/^\d+$/.test(candidate)) {
+          name = candidate;
+        }
+      }
+
+      jobs.push({ jobId: jobId, name: name, calcStatus: state });
+    }
+    return jobs;
   },
 };

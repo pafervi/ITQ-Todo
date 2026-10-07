@@ -39,14 +39,21 @@ const mutations = {
     // ahead of that mount, so make sure the array exists instead of
     // crashing the whole commit on the first task.
     if (!state.todoLists[toDo.listId]) state.todoLists[toDo.listId] = [];
-    state.todoLists[toDo.listId].push(toDo);
+    const list = state.todoLists[toDo.listId];
+    // New open tasks land right after the last open task, i.e. ahead of the
+    // block of completed (struck-through) tasks that sits at the bottom.
+    // Completed tasks being moved in still go to the very end.
+    if (toDo.checked) {
+      list.push(toDo);
+      return;
+    }
+    let insertAt = list.length;
+    while (insertAt > 0 && list[insertAt - 1] && list[insertAt - 1].checked) insertAt--;
+    list.splice(insertAt, 0, toDo);
   },
   updateTodo(state, obj) {
     state.todoLists[obj.toDoListId][obj.index].repeatingEvent = null;
     state.todoLists[obj.toDoListId][obj.index].text = obj.text;
-  },
-  updateCalcStatus(state, obj) {
-    state.todoLists[obj.toDoListId][obj.index].calcStatus = obj.calcStatus;
   },
   removeTodo(state, obj) {
     state.todoLists[obj.toDoListId].splice(obj.index, 1);

@@ -17,7 +17,6 @@ function taskFactory(listId, overrides) {
       time: null,
       alarm: false,
       repeatingEvent: null,
-      calcStatus: null,
     },
     overrides
   );
@@ -33,7 +32,7 @@ function newListId(salt) {
 
 export default {
   // Seeds a realistic set of ITQ-flavoured lists and tasks that exercises
-  // every feature added on top of upstream WeekToDo: calc-status chips,
+  // every feature added on top of upstream WeekToDo:
   // kind-tagged lists (meeting / active learning watermarks), a linked
   // results folder, custom accent colors, a short back-dated streak, and a
   // list that's one click away from completion so the confetti/"Convergido"
@@ -47,9 +46,9 @@ export default {
         color: "#5e6ef2",
         folderPath: "C:\\Users\\pafervi2\\calculos\\MFI_defects",
         tasks: [
-          { text: "Generar defectos con MACE-MP en la celda 3x3x3", priority: 3, tags: ["MACE", "DFT"], deadline: d(-2), calcStatus: "done" },
-          { text: "Lanzar barrido de vacantes de Al en VASP", priority: 2, tags: ["VASP"], deadline: d(0), time: "10:00", calcStatus: "running" },
-          { text: "Revisar convergencia de las TS con PoTS", priority: 2, tags: ["PoTS"], deadline: d(1), calcStatus: "queued" },
+          { text: "Generar defectos con MACE-MP en la celda 3x3x3", priority: 3, tags: ["MACE", "DFT"], deadline: d(-2) },
+          { text: "Lanzar barrido de vacantes de Al en VASP", priority: 2, tags: ["VASP"], deadline: d(0), time: "10:00" },
+          { text: "Revisar convergencia de las TS con PoTS", priority: 2, tags: ["PoTS"], deadline: d(1) },
           { text: "Comparar energias DFT vs MLIP", priority: 1, tags: ["MACE", "DFT"], deadline: d(5) },
           { text: "Actualizar notebook de analisis", priority: 0, tags: ["writing"], checked: true },
           { text: "Reunion semanal con Mercedes", priority: 1, tags: ["meeting"], deadline: d(2), time: "09:30" },
@@ -61,8 +60,8 @@ export default {
         color: "#06b6d4",
         kind: "activelearning",
         tasks: [
-          { text: "Reentrenar potencial con nuevos frames", priority: 3, tags: ["MACE", "training"], deadline: d(-1), calcStatus: "running" },
-          { text: "Validar fuerzas contra test set", priority: 2, tags: ["MACE"], deadline: d(3), calcStatus: "review" },
+          { text: "Reentrenar potencial con nuevos frames", priority: 3, tags: ["MACE", "training"], deadline: d(-1) },
+          { text: "Validar fuerzas contra test set", priority: 2, tags: ["MACE"], deadline: d(3) },
           { text: "Documentar hiperparametros usados", priority: 0, tags: ["writing"], checked: true },
           { text: "Subir checkpoint a djangochem", priority: 1, tags: ["djangochem"] },
         ],
@@ -71,7 +70,7 @@ export default {
         listName: "PoTS Automation",
         archived: false,
         tasks: [
-          { text: "Arreglar bug en la busqueda de TS automatica", priority: 3, tags: ["PoTS", "bug"], deadline: d(0), calcStatus: "failed" },
+          { text: "Arreglar bug en la busqueda de TS automatica", priority: 3, tags: ["PoTS", "bug"], deadline: d(0) },
           { text: "Anadir soporte para geometrias MFI custom", priority: 2, tags: ["PoTS"], deadline: d(7) },
           { text: "Escribir tests unitarios", priority: 1, tags: ["testing"] },
           { text: "Code review con Rafael", priority: 1, tags: ["meeting"], deadline: d(4), time: "16:00" },
@@ -83,8 +82,8 @@ export default {
         color: "#f97316",
         folderPath: "C:\\Users\\pafervi2\\calculos\\CeO2_polarones",
         tasks: [
-          { text: "Calcular energias de formacion de vacantes O", priority: 2, tags: ["VASP", "DFT"], deadline: d(-5), calcStatus: "done" },
-          { text: "Mapear localizacion de polarones Ce3+", priority: 2, tags: ["DFT"], deadline: d(10), calcStatus: "queued" },
+          { text: "Calcular energias de formacion de vacantes O", priority: 2, tags: ["VASP", "DFT"], deadline: d(-5) },
+          { text: "Mapear localizacion de polarones Ce3+", priority: 2, tags: ["DFT"], deadline: d(10) },
           { text: "Comparar con literatura de Van Speybroeck", priority: 0, tags: ["reading"], checked: true },
         ],
       },
@@ -95,7 +94,7 @@ export default {
         tasks: [
           { text: "Onboarding y accesos al cluster", priority: 1, tags: ["onboarding"], checked: true },
           { text: "Introduccion al proyecto MFI", priority: 1, tags: ["onboarding"], checked: true },
-          { text: "Primeras tareas: correr ejemplos VASP", priority: 2, tags: ["VASP"], deadline: d(1), calcStatus: "queued" },
+          { text: "Primeras tareas: correr ejemplos VASP", priority: 2, tags: ["VASP"], deadline: d(1) },
           { text: "Reunion de seguimiento semanal", priority: 1, tags: ["meeting"], deadline: d(3), time: "12:00" },
         ],
       },
@@ -163,7 +162,7 @@ export default {
     const todayId = moment().format("YYYYMMDD");
     const todayTasks = [
       { text: "Responder emails pendientes", priority: 0, tags: [] },
-      { text: "Revisar calculo lanzado anoche", priority: 2, tags: ["VASP"], time: "09:00", calcStatus: "running" },
+      { text: "Revisar calculo lanzado anoche", priority: 2, tags: ["VASP"], time: "09:00" },
       { text: "Comer con el grupo", priority: 0, tags: [], time: "14:00" },
       { text: "Preparar slides para la reunion de manana", priority: 1, tags: ["writing"], deadline: todayId },
     ];

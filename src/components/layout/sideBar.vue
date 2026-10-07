@@ -64,9 +64,9 @@
           <span class="sb-label">{{ $t('ui.missionControl') }}</span>
         </div>
         <div class="sb-item" data-bs-toggle="modal"
-          data-bs-target="#peopleModal" :title="$t('ui.people') || 'People'">
-          <i class="ph ph-users-three sb-icon"></i>
-          <span class="sb-label">{{ $t('ui.people') || 'People' }}</span>
+          data-bs-target="#peopleModal" :title="$t('ui.people')">
+          <i class="ph ph-address-book sb-icon"></i>
+          <span class="sb-label">{{ $t('ui.people') }}</span>
         </div>
         <div v-if="isFriday" class="sb-item sb-item-friday" data-bs-toggle="modal"
           data-bs-target="#fridayRitualModal" :title="$t('ui.fridayRitual') || 'Friday wrap-up'">

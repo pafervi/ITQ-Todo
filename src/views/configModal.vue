@@ -203,14 +203,6 @@
                     @change="changeConfig('autoReorderTasks', configData.autoReorderTasks)" />
                 </div>
                 <div class="form-check form-switch d-flex px-1 mb-3 justify-content-between">
-                  <label class="form-check-label flex-fill" for="moveCompletedTaskToBottom">{{
-                    $t("settings.moveCompletedTaskToBottom")
-                  }}</label>
-                  <input class="form-check-input" type="checkbox" id="moveCompletedTaskToBottom"
-                    v-model="configData.moveCompletedTaskToBottom"
-                    @change="changeConfig('moveCompletedTaskToBottom', configData.moveCompletedTaskToBottom)" />
-                </div>
-                <div class="form-check form-switch d-flex px-1 mb-3 justify-content-between">
                   <label class="form-check-label flex-fill" for="moveCompletedSubTaskToBottom">{{
                     $t("settings.moveCompletedSubTaskToBottom")
                   }}</label>
@@ -528,7 +520,7 @@ export default {
     },
     backupNow: function () {
       if (!this.configData.backupFolderPath) {
-        this.backupErrText = this.$t("settings.backupErrNoPath") || "Set a backup folder first.";
+        this.backupErrText = this.$t("settings.backupErrNoPath");
         new Toast(document.getElementById("backupErr")).show();
         return;
       }
@@ -538,18 +530,14 @@ export default {
           this.changeConfig("lastBackupDate", today);
           this.configData.lastBackupDate = today;
           let kb = Math.max(1, Math.round(res.bytes / 1024));
-          this.backupToastText = (this.$t("settings.backupOkTemplate") ||
-            "Backup saved: {0} ({1} KB) in {2}")
-            .replace("{0}", res.filename)
-            .replace("{1}", kb)
-            .replace("{2}", res.folder);
+          this.backupToastText = this.$t("settings.backupOkTemplate", [res.filename, kb, res.folder]);
           new Toast(document.getElementById("backupOk")).show();
         } else {
           // Human-readable error messages per failure mode.
           let msg;
-          if (res.error === "not-electron") msg = this.$t("settings.backupErrBrowser") || "Backup requires the desktop app.";
-          else if (res.error === "foreign-path") msg = this.$t("settings.backupErrForeign") || "That looks like a Windows path on a non-Windows system.";
-          else msg = (this.$t("settings.backupErrGeneric") || "Backup failed: {0}").replace("{0}", res.error);
+          if (res.error === "not-electron") msg = this.$t("settings.backupErrBrowser");
+          else if (res.error === "foreign-path") msg = this.$t("settings.backupErrForeign");
+          else msg = this.$t("settings.backupErrGeneric", [res.error]);
           this.backupErrText = msg;
           new Toast(document.getElementById("backupErr")).show();
         }

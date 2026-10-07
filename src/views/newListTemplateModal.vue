@@ -186,7 +186,6 @@ export default {
           time: null,
           alarm: false,
           repeatingEvent: null,
-          calcStatus: null,
         });
       });
       toDoListRepository.update(listId, this.$store.getters.todoLists[listId]);

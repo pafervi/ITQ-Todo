@@ -22,7 +22,10 @@
           {{ $t("about.zeoliteToday", [latticeName]) }}
         </div>
         <div class="splash-flavor">"{{ flavorQuote }}"</div>
-        <div v-if="pendingLine" class="splash-pending">{{ pendingLine }}</div>
+        <div v-if="pendingLine" class="splash-pending" :class="{ 'splash-pending-empty': pendingCount === 0 }">
+          <i :class="pendingCount === 0 ? 'bi-check2-circle' : 'bi-calendar-check'"></i>
+          {{ pendingLine }}
+        </div>
       </div>
     </div>
   </transition>
@@ -31,7 +34,7 @@
 <script>
 import moment from "moment";
 import zeoliteHelper from "../helpers/zeoliteHelper";
-import tasksHelper from "../helpers/tasksHelper";
+import todayHelper from "../helpers/todayHelper";
 import streakHelper from "../helpers/streakHelper";
 
 // Rotating one-liners picked by day of the year, so the splash reads a bit
@@ -68,15 +71,28 @@ export default {
       darkTheme: this.$store.getters.config.darkTheme,
       lattice: zeoliteHelper.getTodayLattice(),
       streakCount: 0,
+      // Open tasks scheduled for today. null until the data is really loaded,
+      // so the splash never claims "nothing scheduled" while lists are still
+      // being read.
+      pendingCount: null,
+      pendingFallbackTimer: null,
     };
   },
   mounted() {
+    // App.vue announces when the lists are loaded (and old tasks rolled over
+    // to today); the timer is only a safety net in case that never fires.
+    window.addEventListener("wtd-initial-load-done", this.refreshPending);
+    this.pendingFallbackTimer = setTimeout(this.refreshPending, 3500);
     // Streak comes from an async DB query. The splash fades out around the
     // same time (handled by background.js), so we just update if we are
     // still visible when the number lands.
     streakHelper.computeStreak().then((v) => {
       this.streakCount = v || 0;
     });
+  },
+  unmounted() {
+    window.removeEventListener("wtd-initial-load-done", this.refreshPending);
+    clearTimeout(this.pendingFallbackTimer);
   },
   computed: {
     latticeName: function () {
@@ -109,18 +125,13 @@ export default {
     flavorQuote: function () {
       return FLAVOR_QUOTES[moment().dayOfYear() % FLAVOR_QUOTES.length];
     },
-    // Open tasks sitting in today's day list. We go through the store, which
-    // may not have today loaded yet when the splash first paints: in that
-    // case we silently skip the line rather than guessing a wrong number.
+    // Open tasks scheduled for today, counted with the same rule the Today
+    // list uses (own tasks + project tasks scheduled to today). Empty until
+    // the real number is known.
     pendingLine: function () {
-      let id = moment().format("YYYYMMDD");
-      let list = this.$store.getters.todoLists && this.$store.getters.todoLists[id];
-      if (!list) return "";
-      let pending = tasksHelper.pendingTasksCount(list);
-      if (pending === 0) {
-        return this.$t("notifications.noPendingTasksToday") || "No tasks pending today";
-      }
-      return this.$t("notifications.pendingTasksToday", [pending]) || `${pending} task(s) pending today`;
+      if (this.pendingCount === null) return "";
+      if (this.pendingCount === 0) return this.$t("notifications.noPendingTasksToday");
+      return this.$t("notifications.pendingTasksToday", [this.pendingCount]);
     },
     // Same per-day pore silhouette the app background uses, so the splash
     // flows into the app instead of cutting from a flat colour.
@@ -132,6 +143,12 @@ export default {
     },
   },
   methods: {
+    refreshPending: function () {
+      clearTimeout(this.pendingFallbackTimer);
+      todayHelper.summary(this.$store.getters.todoLists, this.$store.getters.cTodoListIds).then((res) => {
+        this.pendingCount = res.today;
+      });
+    },
     hideSplash: function () {
       this.show = false;
     },
@@ -321,12 +338,39 @@ export default {
   color: #7d8590;
 }
 
+/* The one line that matters when the app opens: a readable pill instead of
+   tiny accent-coloured text, with enough contrast in both themes. */
 .splash-pending {
-  margin-top: 0.3rem;
-  font-size: 0.74rem;
-  color: var(--accent-color, #5e6ef2);
-  font-weight: 500;
-  animation: splashFadeUp 0.7s ease 1.1s both;
+  margin-top: 0.5rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 16px;
+  border-radius: 999px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #3d4bd1;
+  background-color: rgba(94, 110, 242, 0.13);
+  border: 1px solid rgba(94, 110, 242, 0.3);
+  animation: splashFadeUp 0.5s ease both;
+}
+
+.splash-pending-empty {
+  color: #4b5563;
+  background-color: rgba(107, 114, 128, 0.1);
+  border-color: rgba(107, 114, 128, 0.25);
+}
+
+.dark-theme .splash-pending {
+  color: #c7d0ff;
+  background-color: rgba(94, 110, 242, 0.22);
+  border-color: rgba(125, 140, 255, 0.45);
+}
+
+.dark-theme .splash-pending-empty {
+  color: #cbd2dc;
+  background-color: rgba(148, 163, 184, 0.14);
+  border-color: rgba(148, 163, 184, 0.3);
 }
 
 @keyframes splashLogoIn {

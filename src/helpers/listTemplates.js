@@ -1,129 +1,123 @@
-const defaultTemplates = [
-    {
-      id: "blank",
-      labelKey: "ui.templateBlank",
-      icon: "bi-file-earmark",
-      color: "",
-      tasks: [],
-    },
-    {
-      id: "research",
-      labelKey: "ui.templateResearch",
-      icon: "bi-flask",
-      color: "#8b5cf6",
-      tasks: [
-        "Definir objetivos y alcance",
-        "Revision bibliografica",
-        "Preparar calculos / modelos",
-        "Analizar resultados",
-        "Redactar informe / paper",
-      ],
-    },
-    {
-      id: "intern",
-      labelKey: "ui.templateIntern",
-      icon: "bi-person-badge",
-      color: "#10b981",
-      tasks: [
-        "Onboarding y accesos",
-        "Introduccion al proyecto",
-        "Primeras tareas asignadas",
-        "Reunion de seguimiento semanal",
-      ],
-    },
-    {
-      id: "trip",
-      labelKey: "ui.templateTrip",
-      icon: "bi-airplane",
-      color: "#5e6ef2",
-      tasks: [
-        "Reservar vuelos",
-        "Reservar alojamiento",
-        "Preparar presentacion / poster",
-        "Gestionar visado / dietas",
-      ],
-    },
-    {
-      id: "activelearning",
-      labelKey: "ui.templateActiveLearning",
-      icon: "bi-cpu",
-      color: "#06b6d4",
-      kind: "activelearning",
-      tasks: [
-        "Seleccionar frames de la trayectoria",
-        "Generar inputs VASP (singlepoints)",
-        "Lanzar calculos en el cluster",
-        "Parsear OUTCARs a extxyz",
-        "Reentrenar modelo MACE",
-        "Validar y comparar con el modelo anterior",
-      ],
-    },
-    {
-      id: "paper",
-      labelKey: "ui.templatePaper",
-      icon: "bi-file-earmark-text",
-      color: "#f97316",
-      tasks: [
-        "Definir estructura y mensaje principal",
-        "Generar figuras y tablas",
-        "Redactar primer borrador",
-        "Revision interna (coautores)",
-        "Responder comentarios / revision",
-        "Enviar a la revista",
-      ],
-    },
-    {
-      id: "meeting",
-      labelKey: "ui.templateMeeting",
-      icon: "bi-people",
-      color: "#ed56a1",
-      promptForName: true,
-      kind: "meeting",
-      tasks: ["Temas a comentar", "Seguimiento de la ultima reunion"],
-    },
-    {
-      id: "conference",
-      labelKey: "ui.templateConference",
-      icon: "bi-mic-fill",
-      color: "#e11d48",
-      promptForDate: true,
-      kind: "conference",
-      tasks: [
-        "Preparar diapositivas",
-        "Seleccionar resultados clave a mostrar",
-        "Ensayar la charla",
-        "Preparar portatil / clicker de repuesto",
-        "Subir diapositivas al portal del congreso",
-      ],
-    },
-  ];
+// Catalogue of list templates used by newListTemplateModal and
+// editTemplatesModal. Each template defines its icon, color, i18n label and
+// its default tasks. Users can override the tasks per-template through
+// editTemplatesModal; that override lives in config.customTemplates keyed by
+// template id ({ [id]: { tasks: [...] } }), and takes precedence over the
+// defaults returned here.
+
+const TEMPLATES = [
+  {
+    id: "blank",
+    labelKey: "ui.templateBlank",
+    icon: "ph ph-note",
+    color: "",
+    kind: "",
+    tasks: [],
+  },
+  {
+    id: "active-learning",
+    labelKey: "ui.templateActiveLearning",
+    icon: "ph ph-atom",
+    color: "#5e6ef2",
+    kind: "activelearning",
+    tasks: [
+      "Prepare singlepoint set from NNP trajectories",
+      "Launch VASP singlepoints on cluster",
+      "Collect OUTCARs and convert to extxyz",
+      "Retrain MACE on the updated dataset",
+      "Validate against held-out frames",
+    ],
+  },
+  {
+    id: "paper",
+    labelKey: "ui.templatePaper",
+    icon: "ph ph-article",
+    color: "#f97316",
+    kind: "",
+    tasks: [
+      "Outline the paper",
+      "Draft figures",
+      "Write methods",
+      "Write results",
+      "Write introduction and conclusion",
+      "Internal review",
+      "Submit",
+    ],
+  },
+  {
+    id: "meeting",
+    labelKey: "ui.templateMeeting",
+    icon: "ph ph-users",
+    color: "#10b981",
+    kind: "meeting",
+    promptForName: true,
+    tasks: [
+      "Agenda",
+      "Topics to discuss",
+      "Open questions",
+      "Follow-ups",
+    ],
+  },
+  {
+    id: "travel",
+    labelKey: "ui.templateTravel",
+    icon: "ph ph-airplane-takeoff",
+    color: "#8b5cf6",
+    kind: "",
+    tasks: [
+      "Book transport",
+      "Book accommodation",
+      "Register for the event",
+      "ITQ travel paperwork",
+      "Prepare per diem forms",
+      "Keep receipts",
+    ],
+  },
+  {
+    id: "conference",
+    labelKey: "ui.templateConference",
+    icon: "ph ph-microphone-stage",
+    color: "#e11d48",
+    kind: "",
+    promptForDate: true,
+    tasks: [
+      "Abstract",
+      "Outline slides",
+      "Build figures",
+      "First draft of the talk",
+      "Rehearse",
+      "Final polish",
+    ],
+  },
+];
+
+function defaultTasksFor(tpl) {
+  return Array.isArray(tpl.tasks) ? tpl.tasks.slice() : [];
+}
 
 export default {
-  // Pristine, code-defined defaults. Never mutated at runtime.
-  defaultTemplates: defaultTemplates,
+  // Full catalogue, in UI order.
+  templates: TEMPLATES,
 
-  // Back-compat: components that read `.templates` keep working. This is the
-  // plain default list; use resolve(config) when you need the user's edits.
-  templates: defaultTemplates,
-
-  // The task list a template actually creates with, honouring the user's
-  // per-template edits saved in config.customTemplates (see editTemplatesModal).
-  // Only the `tasks` array is overridable; identity/behaviour (icon, kind,
-  // promptForName/Date) always come from the code default.
-  tasksFor(tpl, config) {
-    let custom = config && config.customTemplates && config.customTemplates[tpl.id];
-    if (custom && Array.isArray(custom.tasks)) return custom.tasks.slice();
-    return tpl.tasks.slice();
-  },
-
-  // Whether this template's tasks have been customised by the user.
-  isCustomized(tplId, config) {
-    return !!(config && config.customTemplates && config.customTemplates[tplId] && Array.isArray(config.customTemplates[tplId].tasks));
-  },
-
-  // Templates a user can edit the checklist of: everything except the empty
-  // "blank" one (which is meant to stay empty).
+  // Templates the user can edit in editTemplatesModal (everything except the
+  // "blank" entry, which is intentionally empty).
   editableTemplates() {
-    return defaultTemplates.filter((t) => t.id !== "blank");
+    return TEMPLATES.filter((t) => t.id !== "blank");
+  },
+
+  // Returns the tasks for a template, honoring the user's override from
+  // config.customTemplates if present.
+  tasksFor(tpl, config) {
+    if (!tpl) return [];
+    let custom = config && config.customTemplates ? config.customTemplates[tpl.id] : null;
+    if (custom && Array.isArray(custom.tasks)) return custom.tasks.slice();
+    return defaultTasksFor(tpl);
+  },
+
+  // True when the user has saved a custom task list for this template id.
+  isCustomized(id, config) {
+    if (!config || !config.customTemplates) return false;
+    let entry = config.customTemplates[id];
+    return !!(entry && Array.isArray(entry.tasks));
   },
 };

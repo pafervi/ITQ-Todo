@@ -48,8 +48,6 @@ export default {
         todayDone: 0,
         todayTotal: 0,
         topList: null,
-        failedJobsCount: 0,
-        failedJobsPreview: [],
         tomorrowCount: 0,
         tomorrowPreview: [],
       },
@@ -84,14 +82,6 @@ export default {
           kind: "progress",
           icon: "ph ph-trend-up",
           text: this.$t("ui.dailySummaryProgressGeneric", [s.todayDone]),
-        });
-      }
-
-      if (s.failedJobsCount > 0) {
-        lines.push({
-          kind: "failed",
-          icon: "ph-fill ph-x-circle",
-          text: this.$t("ui.dailySummaryFailed", [s.failedJobsCount]),
         });
       }
 
@@ -221,10 +211,6 @@ export default {
 
 .ds-line-progress i {
   color: #10b981;
-}
-
-.ds-line-failed i {
-  color: #ed544b;
 }
 
 .ds-line-tomorrow i {

@@ -47,7 +47,22 @@ export default {
       // inline-block, and a bare ASCII " " inside one collapses visually,
       // which was turning "Good evening" into "Goodevening".
       nbsp: " ",
+      // Reactive clock. `moment()` is a plain function call, so a computed
+      // that uses it only re-runs when something else it depends on changes.
+      // That is why the greeting kept saying "Good morning" past noon:
+      // nothing ever told Vue to re-evaluate. Bumping nowTick every minute
+      // makes any computed that reads it refresh with the current hour.
+      nowTick: Date.now(),
+      clockTimer: null,
     };
+  },
+  mounted() {
+    this.clockTimer = setInterval(() => {
+      this.nowTick = Date.now();
+    }, 60 * 1000);
+  },
+  beforeUnmount() {
+    if (this.clockTimer) clearInterval(this.clockTimer);
   },
   computed: {
     collapseStyle: function () {
@@ -63,7 +78,11 @@ export default {
       return this.$store.getters.config.language;
     },
     greeting: function () {
+      // Depend on nowTick so Vue re-runs this when the clock advances.
+      // eslint-disable-next-line no-unused-vars
+      let _tick = this.nowTick;
       let h = moment().hour();
+      if (h < 6) return this.$t("ui.greetingNight") || this.$t("ui.greetingEvening");
       if (h < 12) return this.$t("ui.greetingMorning");
       if (h < 20) return this.$t("ui.greetingAfternoon");
       return this.$t("ui.greetingEvening");

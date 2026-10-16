@@ -99,6 +99,7 @@
               <label v-show="!editingTitle" class="form-check-label todo-title" for="todo-header"
                 :class="{ 'completed-task': todo.checked }" @dblclick="editTitle">
                 <span v-html="todoText"></span>
+                <i class="bi-pencil todo-title-edit-btn" :title="$t('ui.renameTask')" @click.prevent.stop="editTitle"></i>
               </label>
               <label v-show="!editingTitle && todo.text == ''" class="form-check-label todo-title todo-title-empty-title"
                 for="todo-header" @dblclick="editTitle">
@@ -684,6 +685,17 @@ export default {
   line-height: 22px;
   border: 2px solid transparent;
   padding: 1px 2px 1px 2px;
+}
+
+.todo-title-edit-btn {
+  font-size: 0.8rem;
+  margin-left: 8px;
+  cursor: pointer;
+  opacity: 0.45;
+
+  &:hover {
+    opacity: 1;
+  }
 }
 
 .todo-title-input {

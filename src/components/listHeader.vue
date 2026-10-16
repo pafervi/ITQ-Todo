@@ -63,8 +63,8 @@
     <i class="bi-chevron-up header-menu-icons collapse-toggle align-self-center" :class="{ 'collapsed-icon': collapsed }"
       @click="$emit('toggleCollapse')" :title="collapsed ? $t('ui.expandList') : $t('ui.collapseList')"></i>
     <i v-show="!editing" class="bi-three-dots-vertical header-menu-icons dropdown-toggle-split align-self-center"
-      type="button" data-bs-toggle="dropdown"></i>
-    <ul class="dropdown-menu" aria-labelledby="btnTaskOptionMenu">
+      type="button" data-bs-toggle="dropdown" data-bs-popper-config='{"strategy":"fixed"}'></i>
+    <ul class="dropdown-menu floating-menu" aria-labelledby="btnTaskOptionMenu">
       <li>
         <button class="dropdown-item" type="button" @click="newTask">
           <i class="bi-plus-lg"></i> <span>{{ $t('ui.newTask') }}</span>

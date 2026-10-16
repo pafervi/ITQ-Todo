@@ -182,6 +182,7 @@
       <focus-mode></focus-mode>
       <batch-tracker-modal :target-list-id="$store.getters.batchTrackerTarget"></batch-tracker-modal>
       <paper-tracker-modal :target-list-id="$store.getters.paperTrackerTarget"></paper-tracker-modal>
+      <feature-guide-modal></feature-guide-modal>
       <mission-control-modal></mission-control-modal>
       <weekly-summary-modal></weekly-summary-modal>
       <daily-summary-modal></daily-summary-modal>
@@ -255,6 +256,7 @@ import focusMode from "./components/focusMode.vue";
 import dayGreeting from "./components/dayGreeting.vue";
 import batchTrackerModal from "./views/batchTrackerModal.vue";
 import paperTrackerModal from "./views/paperTrackerModal.vue";
+import featureGuideModal from "./views/featureGuideModal.vue";
 import missionControlModal from "./components/missionControlModal.vue";
 import weeklySummaryModal from "./components/weeklySummaryModal.vue";
 import dailySummaryModal from "./components/dailySummaryModal.vue";
@@ -297,6 +299,7 @@ export default {
     dayGreeting,
     batchTrackerModal,
     paperTrackerModal,
+    featureGuideModal,
     missionControlModal,
     weeklySummaryModal,
     dailySummaryModal,
@@ -318,6 +321,13 @@ export default {
       backupCheckInterval: null,
       nowHour: moment().hour(),
       timeTintInterval: null,
+      // YYYYMMDD of the day the app considers "today"; compared against the
+      // clock to detect a day change while the app stays open.
+      currentDayId: moment().format("YYYYMMDD"),
+      dayChangeTimer: null,
+      dayCheckInterval: null,
+      initialLoadFallbackTimer: null,
+      rollingOver: false,
       scrollProgress: 0,
       typingActive: false,
       typingIdleTimer: null,
@@ -343,6 +353,12 @@ export default {
         this.initialListToLoad = totalDaysCount + totalCustomListCount;
         this.deleteOldRepeatingEvents();
         this.selected_date = moment().format("YYYYMMDD");
+        // Only the lists that are actually rendered will report in: in the
+        // default "today only" layout that is a single day plus the visible
+        // (non-archived) projects, not the whole week and every archived
+        // project. Waiting for more than that meant the start-up routine
+        // (move old tasks, notification, deadline toast) never ran.
+        this.initialListToLoad = this.visibleDates.length + this.visibleCTodoList.length;
         this.$nextTick(() => {
           this.weekResetScroll();
         });
@@ -383,6 +399,12 @@ export default {
     }
 
     this.resetAppOnDayChange();
+    window.addEventListener("focus", this.checkDayRollover);
+    document.addEventListener("visibilitychange", this.checkDayRollover);
+    this.dayCheckInterval = setInterval(this.checkDayRollover, 60 * 1000);
+    // Safety net: if for any reason a list never reports in, still run the
+    // start-up routine instead of silently skipping it.
+    this.initialLoadFallbackTimer = setTimeout(this.finishInitialLoad, 6000);
     this.maybeAutoLoadBackup();
     this.initBackupScheduler();
     this.maybeShowWeeklySummary();
@@ -394,6 +416,11 @@ export default {
   },
   unmounted() {
     clearInterval(this.timeTintInterval);
+    clearInterval(this.dayCheckInterval);
+    clearTimeout(this.dayChangeTimer);
+    clearTimeout(this.initialLoadFallbackTimer);
+    window.removeEventListener("focus", this.checkDayRollover);
+    document.removeEventListener("visibilitychange", this.checkDayRollover);
     clearTimeout(this.typingIdleTimer);
     document.removeEventListener("input", this.markTypingActive, true);
   },
@@ -671,26 +698,30 @@ export default {
     methodsAfterInitialLoad: function () {
       if (!this.initialLoadCompleted) {
         this.initialListLoaded++;
-        if (this.initialListLoaded == this.initialListToLoad) {
-          this.initialLoadCompleted = true;
-          if (this.$store.getters.config.moveOldTasks) {
-            this.moveOldTasksToToday().then(() => {
-              this.refreshTodayNotifications();
-              this.$store.commit("updateConfig", { val: moment().format("YYYYMMDD"), key: "lastDayOpened" });
-              configRepository.update(this.$store.getters.config);
-              if (isElectron()) this.showInitialNotification();
-              this.checkDeadlinesSoon();
-              window.dispatchEvent(new CustomEvent("wtd-initial-load-done"));
-            });
-          } else {
-            this.refreshTodayNotifications();
-            if (isElectron()) this.showInitialNotification();
-            this.$store.commit("updateConfig", { val: moment().format("YYYYMMDD"), key: "lastDayOpened" });
-            configRepository.update(this.$store.getters.config);
-            this.checkDeadlinesSoon();
-            window.dispatchEvent(new CustomEvent("wtd-initial-load-done"));
-          }
+        if (this.initialListToLoad > 0 && this.initialListLoaded >= this.initialListToLoad) {
+          this.finishInitialLoad();
         }
+      }
+    },
+    // Start-up routine, run once when the rendered lists are loaded: carry
+    // over unfinished tasks, refresh notifications, announce, hand over to the
+    // splash screen.
+    finishInitialLoad: function () {
+      if (this.initialLoadCompleted) return;
+      this.initialLoadCompleted = true;
+      clearTimeout(this.initialLoadFallbackTimer);
+      let finish = () => {
+        this.refreshTodayNotifications();
+        this.$store.commit("updateConfig", { val: moment().format("YYYYMMDD"), key: "lastDayOpened" });
+        configRepository.update(this.$store.getters.config);
+        if (isElectron()) this.showInitialNotification();
+        this.checkDeadlinesSoon();
+        window.dispatchEvent(new CustomEvent("wtd-initial-load-done"));
+      };
+      if (this.$store.getters.config.moveOldTasks) {
+        this.moveOldTasksToToday().then(finish, finish);
+      } else {
+        finish();
       }
     },
     showInitialNotification: function () {
@@ -734,47 +765,72 @@ export default {
         }
       });
     },
+    // Schedules the next midnight check. Timers can fire late (sleep, hibernate)
+    // or be lost, so checkDayRollover also runs on focus, on visibility change
+    // and once a minute; all of them are cheap string comparisons.
     resetAppOnDayChange: function () {
-      var x = new moment();
-      var y = new moment().add(1, "d").startOf("date");
-      var duration = moment.duration(y.diff(x)).asMilliseconds();
-
-      setTimeout(
-        function () {
-          if (isElectron() && !this.ipcRenderer.sendSync("is-windows-visible")) {
-            window.location.reload();
-          }
-          this.refreshTodayNotifications();
-          this.resetAppOnDayChange();
-        }.bind(this),
-        duration
-      );
+      clearTimeout(this.dayChangeTimer);
+      let duration = moment().add(1, "d").startOf("date").diff(moment()) + 1500;
+      this.dayChangeTimer = setTimeout(() => {
+        this.checkDayRollover();
+        this.resetAppOnDayChange();
+      }, duration);
     },
-    moveOldTasksToToday: async function () {
-      var promise = new Promise((resolve) => {
-        var todayListId = moment().format("YYYYMMDD");
-        let daysBefore = moment().diff(moment(this.$store.getters.config.lastDayOpened), "days");
-        if (daysBefore == 0) daysBefore = 7;
-        for (let i = 1; i <= daysBefore; i++) {
-          let listId = moment().subtract(i, "d").format("YYYYMMDD");
-          this.$store.dispatch("loadTodoLists", listId).then(() => {
-            this.$store.commit("moveUndoneItems", { origenId: listId, destinyId: todayListId });
-            toDoListRepository.update(listId, this.$store.getters.todoLists[listId]);
-            if (this.$store.getters.config.autoReorderTasks) {
-              toDoListRepository.update(
-                todayListId,
-                tasksHelper.reorderTasksList(this.$store.getters.todoLists[todayListId])
-              );
-            } else {
-              toDoListRepository.update(todayListId, this.$store.getters.todoLists[todayListId]);
-            }
-            if (i == daysBefore) {
-              resolve("done!");
-            }
-          });
+    checkDayRollover: async function () {
+      let todayId = moment().format("YYYYMMDD");
+      if (todayId === this.currentDayId || this.rollingOver) return;
+      this.rollingOver = true;
+      try {
+        // Window hidden in the tray: a reload re-runs the whole start-up
+        // routine (including the carry-over) with a clean state.
+        if (isElectron() && this.ipcRenderer && !this.ipcRenderer.sendSync("is-windows-visible")) {
+          window.location.reload();
+          return;
         }
-      });
-      return promise;
+        // Do not pull the rug while the user is typing; try again next minute.
+        let el = document.activeElement;
+        if (el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA") && el.value) return;
+
+        let viewingToday = !this.selected_date || this.selected_date === this.currentDayId;
+        this.currentDayId = todayId;
+        if (this.$store.getters.config.moveOldTasks) await this.moveOldTasksToToday();
+        this.$store.commit("updateConfig", { val: todayId, key: "lastDayOpened" });
+        configRepository.update(this.$store.getters.config);
+        // Follow the new day if the user was looking at "today".
+        if (viewingToday) this.selected_date = todayId;
+        this.$nextTick(() => this.refreshTodayNotifications());
+      } finally {
+        this.rollingOver = false;
+      }
+    },
+    // Moves every unfinished task from the days since the app was last opened
+    // (or the last 7 days when it was already opened today) to today's list.
+    // Resolves with the number of tasks moved. Writes are awaited so a list
+    // component that mounts right afterwards reads the updated data.
+    moveOldTasksToToday: async function () {
+      let todayListId = moment().format("YYYYMMDD");
+      let last = moment(String(this.$store.getters.config.lastDayOpened || ""), ["YYYYMMDD", "YYYY-MM-DD"]);
+      let daysBefore = last.isValid() ? moment().startOf("day").diff(last.startOf("day"), "days") : 7;
+      if (daysBefore <= 0) daysBefore = 7;
+      daysBefore = Math.min(daysBefore, 60);
+
+      await this.$store.dispatch("loadTodoLists", todayListId);
+      let moved = 0;
+      for (let i = 1; i <= daysBefore; i++) {
+        let listId = moment().subtract(i, "d").format("YYYYMMDD");
+        await this.$store.dispatch("loadTodoLists", listId);
+        let pending = (this.$store.getters.todoLists[listId] || []).filter((t) => !t.checked).length;
+        if (!pending) continue;
+        this.$store.commit("moveUndoneItems", { origenId: listId, destinyId: todayListId });
+        await toDoListRepository.updateAsync(listId, this.$store.getters.todoLists[listId]);
+        moved += pending;
+      }
+      if (moved) {
+        let todayList = this.$store.getters.todoLists[todayListId];
+        if (this.$store.getters.config.autoReorderTasks) todayList = tasksHelper.reorderTasksList(todayList);
+        await toDoListRepository.updateAsync(todayListId, todayList);
+      }
+      return moved;
     },
     setDividerPosition: function (position) {
       this.$nextTick(function () {

@@ -12,6 +12,7 @@ const i18n = createI18n({
 });
 
 import "bootstrap";
+import { installFloatingDropdowns } from "./helpers/floatingDropdown";
 import "bootstrap/dist/css/bootstrap.min.css";
 
 import "bootstrap-icons/font/bootstrap-icons.css";
@@ -26,3 +27,4 @@ const app = createApp(App);
 app.use(store);
 app.use(i18n);
 app.mount("#app");
+installFloatingDropdowns();

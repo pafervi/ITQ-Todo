@@ -20,20 +20,76 @@
                 @click="pickTemplate(tpl.id)"
               >
                 <i :class="tpl.icon"></i>
-                <span>{{ $t(tpl.labelKey) }}</span>
-                <i v-if="isCustomized(tpl.id)" class="ph ph-pencil-simple et-custom-dot" :title="$t('ui.templateCustomized')"></i>
+                <span>{{ tplLabel(tpl) }}</span>
+              </button>
+              <button type="button" class="et-picker-new" @click="newTemplate">
+                <i class="ph ph-plus"></i>
+                <span>{{ $t("ui.templateNew") }}</span>
               </button>
             </div>
 
-            <div class="et-editor" v-if="selectedTpl">
+            <div class="et-editor et-editor-empty" v-if="!selectedTpl">
+              <p class="et-empty">{{ $t("ui.templatesEmpty") }}</p>
+            </div>
+            <div class="et-editor" v-else>
+              <div class="et-identity">
+                <input
+                  type="text"
+                  class="form-control et-name-input"
+                  v-model="draftName"
+                  :placeholder="$t('ui.templateNamePlaceholder')"
+                  maxlength="60"
+                />
+                <div class="et-icons">
+                  <button
+                    v-for="ic in iconChoices"
+                    :key="ic"
+                    type="button"
+                    class="et-icon-btn"
+                    :class="{ active: ic === draftIcon }"
+                    @click="draftIcon = ic"
+                  >
+                    <i :class="ic"></i>
+                  </button>
+                </div>
+                <div class="et-colors">
+                  <button
+                    v-for="c in colorChoices"
+                    :key="c || 'none'"
+                    type="button"
+                    class="et-color-dot"
+                    :class="{ active: c === draftColor, 'et-color-none': !c }"
+                    :style="c ? { backgroundColor: c } : null"
+                    @click="draftColor = c"
+                  ></button>
+                </div>
+              </div>
               <div class="et-lines">
-                <div class="et-line" v-for="(line, i) in lines" :key="i">
+                <div
+                  class="et-line"
+                  :class="{ 'et-line-dragging': dragIndex === i, 'et-line-over': overIndex === i && dragIndex !== i }"
+                  v-for="(line, i) in lines"
+                  :key="i"
+                  @dragover.prevent="onLineDragOver(i)"
+                  @drop.prevent="onLineDrop(i)"
+                >
+                  <span
+                    class="et-line-handle"
+                    draggable="true"
+                    :title="$t('ui.dragToReorder')"
+                    @dragstart="onLineDragStart(i, $event)"
+                    @dragend="onLineDragEnd"
+                  >
+                    <i class="bi-grip-vertical"></i>
+                  </span>
                   <input
                     type="text"
                     class="form-control et-line-input"
                     v-model="lines[i]"
                     :placeholder="$t('ui.editTemplatesLinePlaceholder')"
                     @keyup.enter="addLineAfter(i)"
+                    @keydown.alt.up.prevent="moveLine(i, -1)"
+                    @keydown.alt.down.prevent="moveLine(i, 1)"
                   />
                   <button type="button" class="et-line-remove" :title="$t('ui.remove')" @click="removeLine(i)">
                     <i class="ph ph-x-circle"></i>
@@ -47,16 +103,11 @@
               </button>
 
               <div class="et-actions">
-                <button
-                  type="button"
-                  class="et-reset"
-                  v-if="isCustomized(selectedId)"
-                  @click="resetToDefault"
-                >
-                  <i class="ph ph-arrows-clockwise"></i> {{ $t("ui.editTemplatesReset") }}
+                <button type="button" class="et-reset et-delete" @click="deleteTemplate">
+                  <i class="ph ph-x-circle"></i> {{ confirmDelete ? $t("ui.templateDeleteConfirm") : $t("ui.templateDelete") }}
                 </button>
                 <span class="et-saved" v-if="justSaved">{{ $t("ui.editTemplatesSaved") }}</span>
-                <button type="button" class="et-save" @click="save">{{ $t("ui.save") }}</button>
+                <button type="button" class="et-save" :disabled="!draftName.trim()" @click="save">{{ $t("ui.save") }}</button>
               </div>
             </div>
           </div>
@@ -74,10 +125,17 @@ export default {
   name: "editTemplatesModal",
   data() {
     return {
-      editableTemplates: listTemplates.editableTemplates(),
       selectedId: null,
       lines: [],
       justSaved: false,
+      iconChoices: listTemplates.iconChoices,
+      colorChoices: listTemplates.colorChoices,
+      draftName: "",
+      draftIcon: "",
+      draftColor: "",
+      confirmDelete: false,
+      dragIndex: null,
+      overIndex: null,
     };
   },
   mounted() {
@@ -96,8 +154,51 @@ export default {
     pickTemplate: function (id) {
       this.selectedId = id;
       this.justSaved = false;
+      this.confirmDelete = false;
       let tpl = this.editableTemplates.find((t) => t.id === id);
-      this.lines = tpl ? listTemplates.tasksFor(tpl, this.$store.getters.config) : [];
+      this.lines = tpl ? listTemplates.tasksFor(tpl) : [];
+      if (tpl) {
+        this.draftName = tpl.name;
+        this.draftIcon = tpl.icon;
+        this.draftColor = tpl.color || "";
+      }
+    },
+    tplLabel: function (tpl) {
+      return listTemplates.labelFor(tpl, (key) => this.$t(key));
+    },
+    persistUserTemplates: function (list) {
+      this.$store.commit("updateConfig", { val: list, key: "userTemplates" });
+      configRepository.update(this.$store.getters.config);
+    },
+    newTemplate: function () {
+      let created = {
+        id: listTemplates.newUserId(),
+        name: this.$t("ui.templateNewName"),
+        icon: listTemplates.iconChoices[0],
+        color: "",
+        tasks: [],
+      };
+      let current = this.$store.getters.config.userTemplates || [];
+      this.persistUserTemplates(current.concat([created]));
+      this.pickTemplate(created.id);
+      this.$nextTick(() => {
+        let input = this.$el.querySelector(".et-name-input");
+        if (input) {
+          input.focus();
+          input.select();
+        }
+      });
+    },
+    deleteTemplate: function () {
+      if (!this.confirmDelete) {
+        this.confirmDelete = true;
+        return;
+      }
+      let current = this.$store.getters.config.userTemplates || [];
+      this.persistUserTemplates(current.filter((u) => u.id !== this.selectedId));
+      this.selectedId = null;
+      this.confirmDelete = false;
+      if (this.editableTemplates.length) this.pickTemplate(this.editableTemplates[0].id);
     },
     addLine: function () {
       this.lines.push("");
@@ -114,25 +215,53 @@ export default {
     removeLine: function (i) {
       this.lines.splice(i, 1);
     },
+    // Moves a line to another position; keeps the focus on the moved input.
+    reorderLine: function (from, to) {
+      if (from === to || from < 0 || to < 0 || from >= this.lines.length || to >= this.lines.length) return false;
+      let moved = this.lines.splice(from, 1)[0];
+      this.lines.splice(to, 0, moved);
+      return true;
+    },
+    moveLine: function (i, delta) {
+      if (!this.reorderLine(i, i + delta)) return;
+      this.$nextTick(() => {
+        let inputs = this.$el.querySelectorAll(".et-line-input");
+        if (inputs[i + delta]) inputs[i + delta].focus();
+      });
+    },
+    onLineDragStart: function (i, event) {
+      this.dragIndex = i;
+      if (event.dataTransfer) {
+        event.dataTransfer.effectAllowed = "move";
+        event.dataTransfer.setData("text/plain", String(i));
+        let row = event.target.closest(".et-line");
+        if (row && event.dataTransfer.setDragImage) event.dataTransfer.setDragImage(row, 12, 14);
+      }
+    },
+    onLineDragOver: function (i) {
+      if (this.dragIndex === null) return;
+      this.overIndex = i;
+    },
+    onLineDrop: function (i) {
+      if (this.dragIndex !== null) this.reorderLine(this.dragIndex, i);
+      this.onLineDragEnd();
+    },
+    onLineDragEnd: function () {
+      this.dragIndex = null;
+      this.overIndex = null;
+    },
     save: function () {
       let cleaned = this.lines.map((l) => l.trim()).filter((l) => l.length);
-      // Copy the whole map so the assignment is a fresh object (reactivity),
-      // then persist through the same config channel as every other setting.
-      let current = this.$store.getters.config.customTemplates || {};
-      let next = Object.assign({}, current);
-      next[this.selectedId] = { tasks: cleaned };
-      this.$store.commit("updateConfig", { val: next, key: "customTemplates" });
-      configRepository.update(this.$store.getters.config);
+      let name = this.draftName.trim();
+      if (!this.selectedTpl || !name) return;
+      let current = this.$store.getters.config.userTemplates || [];
+      this.persistUserTemplates(
+        current.map((u) =>
+          u.id === this.selectedId ? { id: u.id, name: name, icon: this.draftIcon, color: this.draftColor, tasks: cleaned } : u
+        )
+      );
       this.lines = cleaned.slice();
       this.flashSaved();
-    },
-    resetToDefault: function () {
-      let current = this.$store.getters.config.customTemplates || {};
-      let next = Object.assign({}, current);
-      delete next[this.selectedId];
-      this.$store.commit("updateConfig", { val: next, key: "customTemplates" });
-      configRepository.update(this.$store.getters.config);
-      this.pickTemplate(this.selectedId);
     },
     flashSaved: function () {
       this.justSaved = true;
@@ -141,11 +270,11 @@ export default {
         this.justSaved = false;
       }, 1600);
     },
-    isCustomized: function (id) {
-      return listTemplates.isCustomized(id, this.$store.getters.config);
-    },
   },
   computed: {
+    editableTemplates: function () {
+      return listTemplates.editableTemplates(this.$store.getters.config);
+    },
     selectedTpl: function () {
       return this.editableTemplates.find((t) => t.id === this.selectedId) || null;
     },
@@ -244,12 +373,6 @@ export default {
   }
 }
 
-.et-custom-dot {
-  margin-left: auto;
-  font-size: 0.8rem;
-  opacity: 0.7;
-}
-
 .et-editor {
   flex: 1 1 auto;
   min-width: 0;
@@ -267,6 +390,37 @@ export default {
   display: flex;
   align-items: center;
   gap: 6px;
+}
+
+.et-line-over {
+  box-shadow: 0 -2px 0 0 var(--accent-color, #5e6ef2);
+}
+
+.et-line-dragging {
+  opacity: 0.45;
+}
+
+.et-line-handle {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  cursor: grab;
+  color: grey;
+  font-size: 1.1rem;
+  padding: 4px 0;
+  user-select: none;
+
+  &:hover {
+    color: var(--accent-color, #5e6ef2);
+  }
+
+  &:active {
+    cursor: grabbing;
+  }
+}
+
+.et-editor-empty {
+  justify-content: center;
 }
 
 .et-line-input {
@@ -377,6 +531,120 @@ export default {
   &:hover {
     filter: brightness(1.06);
   }
+}
+
+.et-picker-new {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  border: 1px dashed #c9ccd1;
+  background: none;
+  padding: 7px 9px;
+  margin-top: 6px;
+  border-radius: 7px;
+  text-align: left;
+  cursor: pointer;
+  font-size: 0.82rem;
+  color: grey;
+
+  .dark-theme & {
+    border-color: #30363d;
+    color: #8b949e;
+  }
+
+  &:hover {
+    color: var(--accent-color, #5e6ef2);
+    border-color: var(--accent-color, #5e6ef2);
+  }
+
+  > i {
+    width: 20px;
+    text-align: center;
+  }
+}
+
+.et-identity {
+  margin-bottom: 14px;
+}
+
+.et-name-input {
+  font-size: 0.95rem;
+  font-weight: 600;
+  padding: 6px 10px;
+  margin-bottom: 10px;
+}
+
+.et-icons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 10px;
+}
+
+.et-icon-btn {
+  width: 32px;
+  height: 32px;
+  border: 1px solid transparent;
+  background: none;
+  border-radius: 7px;
+  cursor: pointer;
+  color: #3c3c3c;
+  font-size: 1.05rem;
+
+  .dark-theme & {
+    color: #c9d1d9;
+  }
+
+  &:hover {
+    background-color: #eaecef;
+
+    .dark-theme & {
+      background-color: #21262d;
+    }
+  }
+
+  &.active {
+    border-color: var(--accent-color, #5e6ef2);
+    color: var(--accent-color, #5e6ef2);
+  }
+}
+
+.et-colors {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.et-color-dot {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  padding: 0;
+
+  &.active {
+    border-color: #3c3c3c;
+    box-shadow: 0 0 0 2px #fff inset;
+
+    .dark-theme & {
+      border-color: #fff;
+      box-shadow: 0 0 0 2px #0d1117 inset;
+    }
+  }
+
+  &.et-color-none {
+    background: repeating-linear-gradient(45deg, #d0d7de, #d0d7de 3px, transparent 3px, transparent 6px);
+  }
+}
+
+.et-delete:hover {
+  color: #ed544b;
+}
+
+.et-save:disabled {
+  opacity: 0.45;
+  cursor: default;
 }
 
 @media (max-width: 600px) {

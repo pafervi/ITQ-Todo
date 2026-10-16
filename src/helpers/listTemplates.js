@@ -1,9 +1,8 @@
 // Catalogue of list templates used by newListTemplateModal and
-// editTemplatesModal. Each template defines its icon, color, i18n label and
-// its default tasks. Users can override the tasks per-template through
-// editTemplatesModal; that override lives in config.customTemplates keyed by
-// template id ({ [id]: { tasks: [...] } }), and takes precedence over the
-// defaults returned here.
+// editTemplatesModal. The only built-in entry is "blank"; every other template
+// is created by the user in editTemplatesModal and lives in
+// config.userTemplates as [{ id, name, icon, color, tasks }], merged after
+// the built-in one by all().
 
 const TEMPLATES = [
   {
@@ -14,110 +13,79 @@ const TEMPLATES = [
     kind: "",
     tasks: [],
   },
-  {
-    id: "active-learning",
-    labelKey: "ui.templateActiveLearning",
-    icon: "ph ph-atom",
-    color: "#5e6ef2",
-    kind: "activelearning",
-    tasks: [
-      "Prepare singlepoint set from NNP trajectories",
-      "Launch VASP singlepoints on cluster",
-      "Collect OUTCARs and convert to extxyz",
-      "Retrain MACE on the updated dataset",
-      "Validate against held-out frames",
-    ],
-  },
-  {
-    id: "paper",
-    labelKey: "ui.templatePaper",
-    icon: "ph ph-article",
-    color: "#f97316",
-    kind: "",
-    tasks: [
-      "Outline the paper",
-      "Draft figures",
-      "Write methods",
-      "Write results",
-      "Write introduction and conclusion",
-      "Internal review",
-      "Submit",
-    ],
-  },
-  {
-    id: "meeting",
-    labelKey: "ui.templateMeeting",
-    icon: "ph ph-users",
-    color: "#10b981",
-    kind: "meeting",
-    promptForName: true,
-    tasks: [
-      "Agenda",
-      "Topics to discuss",
-      "Open questions",
-      "Follow-ups",
-    ],
-  },
-  {
-    id: "travel",
-    labelKey: "ui.templateTravel",
-    icon: "ph ph-airplane-takeoff",
-    color: "#8b5cf6",
-    kind: "",
-    tasks: [
-      "Book transport",
-      "Book accommodation",
-      "Register for the event",
-      "ITQ travel paperwork",
-      "Prepare per diem forms",
-      "Keep receipts",
-    ],
-  },
-  {
-    id: "conference",
-    labelKey: "ui.templateConference",
-    icon: "ph ph-microphone-stage",
-    color: "#e11d48",
-    kind: "",
-    promptForDate: true,
-    tasks: [
-      "Abstract",
-      "Outline slides",
-      "Build figures",
-      "First draft of the talk",
-      "Rehearse",
-      "Final polish",
-    ],
-  },
 ];
 
 function defaultTasksFor(tpl) {
   return Array.isArray(tpl.tasks) ? tpl.tasks.slice() : [];
 }
 
+// Icons offered for user templates; all of them exist in the bundled
+// Phosphor subset (see assets/style/phosphorIcons.scss).
+const USER_ICONS = [
+  "ph ph-note",
+  "ph ph-article",
+  "ph ph-file-text",
+  "ph ph-target",
+  "ph ph-atom",
+  "ph ph-cpu",
+  "ph ph-users",
+  "ph ph-handshake",
+  "ph ph-airplane-takeoff",
+  "ph ph-microphone-stage",
+  "ph ph-chart-bar",
+  "ph ph-sparkle",
+  "ph ph-stack",
+  "ph ph-hexagon",
+];
+
+const USER_COLORS = ["", "#77e785", "#06b6d4", "#5e6ef2", "#8b5cf6", "#ed56a1", "#ed544b", "#f97316", "#f9d54a", "#10b981"];
+
+function userTemplatesFrom(config) {
+  let list = config && Array.isArray(config.userTemplates) ? config.userTemplates : [];
+  return list
+    .filter((u) => u && u.id)
+    .map((u) => ({
+      id: u.id,
+      name: String(u.name || ""),
+      labelKey: "",
+      icon: u.icon || USER_ICONS[0],
+      color: u.color || "",
+      kind: "",
+      tasks: Array.isArray(u.tasks) ? u.tasks.slice() : [],
+      isUser: true,
+    }));
+}
+
 export default {
   // Full catalogue, in UI order.
   templates: TEMPLATES,
 
-  // Templates the user can edit in editTemplatesModal (everything except the
-  // "blank" entry, which is intentionally empty).
-  editableTemplates() {
-    return TEMPLATES.filter((t) => t.id !== "blank");
+  iconChoices: USER_ICONS,
+  colorChoices: USER_COLORS,
+
+  // Built-in templates followed by the user's own, in UI order.
+  all(config) {
+    return TEMPLATES.concat(userTemplatesFrom(config));
   },
 
-  // Returns the tasks for a template, honoring the user's override from
-  // config.customTemplates if present.
-  tasksFor(tpl, config) {
-    if (!tpl) return [];
-    let custom = config && config.customTemplates ? config.customTemplates[tpl.id] : null;
-    if (custom && Array.isArray(custom.tasks)) return custom.tasks.slice();
-    return defaultTasksFor(tpl);
+  // Templates the user can edit in editTemplatesModal: only their own.
+  editableTemplates(config) {
+    return userTemplatesFrom(config);
   },
 
-  // True when the user has saved a custom task list for this template id.
-  isCustomized(id, config) {
-    if (!config || !config.customTemplates) return false;
-    let entry = config.customTemplates[id];
-    return !!(entry && Array.isArray(entry.tasks));
+  // Display name: the user's own name, or the translated built-in label.
+  labelFor(tpl, translate) {
+    if (!tpl) return "";
+    if (tpl.isUser) return tpl.name || "";
+    return translate ? translate(tpl.labelKey) : tpl.labelKey;
+  },
+
+  newUserId() {
+    return "user-" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  },
+
+  // Returns the tasks for a template.
+  tasksFor(tpl) {
+    return tpl ? defaultTasksFor(tpl) : [];
   },
 };

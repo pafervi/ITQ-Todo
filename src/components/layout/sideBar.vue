@@ -7,8 +7,8 @@
     <div class="side-bar-rail" :class="{ 'is-expanded': expanded }">
       <div class="sb-item sb-logo-item" data-bs-toggle="modal" data-bs-target="#aboutModal" :title="$t('about.about')">
         <div class="logo-badge">
-          <img class="logo" src="/img/logo-color.svg" width="30" height="30" alt="ITQ Todo Logo" />
-          <img class="logo logo-white" src="/img/logo-white.svg" width="30" height="30" alt="ITQ Todo Logo" />
+          <img class="logo" src="/img/itq-todo-mark-color.svg" width="30" height="30" alt="ITQ Todo Logo" />
+          <img class="logo logo-white" src="/img/itq-todo-mark-white.svg" width="30" height="30" alt="ITQ Todo Logo" />
         </div>
         <span class="sb-label sb-brand-label">ITQ&nbsp;Todo</span>
       </div>
@@ -111,12 +111,13 @@
         </span>
       </div>
 
-      <div class="dropend sidebar-extra-menu">
-        <div class="sb-item sb-dropdown-trigger" type="button" data-bs-toggle="dropdown">
+      <div ref="moreMenu" class="dropend sidebar-extra-menu">
+        <div class="sb-item sb-dropdown-trigger" type="button" data-bs-toggle="dropdown"
+          data-bs-popper-config='{"strategy":"fixed"}'>
           <i class="ph ph-dots-three sb-icon"></i>
           <span class="sb-label">{{ $t('ui.more') || 'More' }}</span>
         </div>
-        <ul class="dropdown-menu mx-3" aria-labelledby="btnTaskOptionMenu">
+        <ul class="dropdown-menu floating-menu" aria-labelledby="btnTaskOptionMenu">
           <li>
             <button class="dropdown-item" type="button" @click="print">
               <i class="ph ph-printer"></i> <span>{{ $t("ui.print") }} </span>
@@ -132,9 +133,14 @@
           </li>
           <li>
             <button class="dropdown-item" type="button" data-bs-toggle="modal" data-bs-target="#aboutModal">
-              <img class="about-menu-logo about-menu-logo-color" src="/img/logo-color.svg" alt="" width="14" height="14" />
-              <img class="about-menu-logo about-menu-logo-white" src="/img/logo-white.svg" alt="" width="14" height="14" />
+              <img class="about-menu-logo about-menu-logo-color" src="/img/itq-todo-mark-color.svg" alt="" width="14" height="14" />
+              <img class="about-menu-logo about-menu-logo-white" src="/img/itq-todo-mark-white.svg" alt="" width="14" height="14" />
               <span>{{ $t("about.about") }}</span>
+            </button>
+          </li>
+          <li>
+            <button class="dropdown-item" type="button" @click="openFeatureGuide">
+              <i class="ph ph-sparkle"></i> <span>{{ $t("ui.featureGuide") }}</span>
             </button>
           </li>
           <li>
@@ -194,6 +200,9 @@ export default {
       // somewhere else; the leave is immediate so it never feels sticky.
       expanded: false,
       enterTimer: null,
+      // True while the "More" menu is open, so the rail stays expanded while the
+      // pointer travels to the (floating) menu.
+      moreOpen: false,
     };
   },
   mounted() {
@@ -210,6 +219,8 @@ export default {
         document.getElementById("app-container").classList.add("dark-theme");
     });
 
+    this.$refs.moreMenu.addEventListener("show.bs.dropdown", this.onMoreShow);
+    this.$refs.moreMenu.addEventListener("hidden.bs.dropdown", this.onMoreHidden);
     window.addEventListener("wtd-saved", this.onSaved);
     window.addEventListener("wtd-day-completed", this.onDayCompleted);
   },
@@ -230,7 +241,16 @@ export default {
     },
     handleLeave: function () {
       clearTimeout(this.enterTimer);
+      if (this.moreOpen) return;
       this.expanded = false;
+    },
+    onMoreShow: function () {
+      this.moreOpen = true;
+    },
+    onMoreHidden: function () {
+      this.moreOpen = false;
+      // Collapse again unless the pointer is still over the rail.
+      if (!this.$el.matches(":hover")) this.expanded = false;
     },
     changeDate: function () {
       this.datepickerEnabled = true;
@@ -252,6 +272,9 @@ export default {
     },
     openConfigModal: function () {
       document.getElementById("config-general-tab").click();
+    },
+    openFeatureGuide: function () {
+      window.dispatchEvent(new CustomEvent("open-feature-guide", { detail: {} }));
     },
     print: function () {
       window.print();

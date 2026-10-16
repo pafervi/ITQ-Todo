@@ -67,8 +67,20 @@ function mentionsIn(text) {
   return out;
 }
 
+// #hashtags typed inside the task text count as tags too, so "#waiting" works
+// from the plain task field and not only from the task details tag box.
+const HASHTAG_RE = new RegExp("(^|[^" + LETTERS + "0-9_])#([" + LETTERS + "][" + LETTERS + "0-9_-]*)", "g");
+
+function inlineTags(text) {
+  let out = [];
+  let m;
+  HASHTAG_RE.lastIndex = 0;
+  while ((m = HASHTAG_RE.exec(String(text || "")))) out.push(m[2].toLowerCase());
+  return out;
+}
+
 function classify(task) {
-  let tags = (task.tags || []).map((t) => String(t).toLowerCase());
+  let tags = (task.tags || []).map((t) => String(t).toLowerCase()).concat(inlineTags(task.text));
   if (tags.some((t) => WAITING_TAGS.includes(t))) return "waiting_on_them";
   if (tags.some((t) => OWE_TAGS.includes(t))) return "they_waiting_on_us";
   // Soft heuristic for English + Spanish verbs that imply the ball is on

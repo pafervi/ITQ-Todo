@@ -20,6 +20,7 @@
       </span>
       <!-- Three-dots menu: opens a dropdown with the snooze shortcuts, an
            arbitrary-day picker, a clear option, and the task-details entry. -->
+      <i class="bi-pencil todo-item-edit" :title="$t('ui.renameTask')" @click.stop="editTask"></i>
       <span class="todo-item-menu-wrap" @click.stop>
         <i class="bi-three-dots todo-item-menu" type="button" @click="toggleActionsMenu"></i>
         <div v-if="actionsMenuOpen" class="actions-menu" @click.stop>
@@ -128,6 +129,13 @@ export default {
 
       let modal = new Modal(document.getElementById("toDoModal"), { keyboard: false });
       modal.show();
+    },
+    // Explicit rename: clicking the task text toggles it done (and moves it
+    // to the bottom), which makes the double-click shortcut unreliable, so the
+    // hover bar also offers a plain pencil button.
+    editTask: function () {
+      this.closeActionsMenu();
+      if (this.activeTodo && this.activeTodo.edit) this.activeTodo.edit();
     },
     openDetails: function () {
       this.closeActionsMenu();
@@ -412,6 +420,16 @@ export default {
   flex-grow: 0;
 }
 
+.todo-item-edit {
+  font-size: 0.95rem;
+  cursor: pointer;
+  margin-top: 3px;
+  margin-left: 5px;
+  color: grey;
+  height: 1.1rem;
+  flex-grow: 0;
+}
+
 .todo-item-menu {
   font-size: 1rem;
   cursor: pointer;
@@ -424,16 +442,19 @@ export default {
 }
 
 .todo-item-remove:hover,
+.todo-item-edit:hover,
 .todo-item-menu:hover {
   color: black;
 }
 
 .dark-theme .todo-item-remove,
+.dark-theme .todo-item-edit,
 .dark-theme .todo-item-menu {
   color: #c9d1d9;
 }
 
 .dark-theme .todo-item-remove:hover,
+.dark-theme .todo-item-edit:hover,
 .dark-theme .todo-item-menu:hover {
   color: white;
 }

@@ -11,6 +11,9 @@
             <i class="ph ph-at"></i>
             {{ $t('ui.peopleHint') }}
           </span>
+          <button type="button" class="people-guide-btn" :title="$t('ui.peopleGuide')" @click="openGuide">
+            <i class="bi-question-circle"></i>
+          </button>
           <i class="bi-x close-modal" data-bs-dismiss="modal"></i>
         </div>
         <div class="modal-body">
@@ -146,6 +149,10 @@ export default {
     window.removeEventListener("open-people", this.openByEvent);
   },
   methods: {
+    // Hands over to the feature guide, on its People topic.
+    openGuide: function () {
+      window.dispatchEvent(new CustomEvent("open-feature-guide", { detail: { topic: "people" } }));
+    },
     // Opened programmatically from a task's @chip so that person is selected.
     openByEvent: function (e) {
       this.pendingSlug = e && e.detail && e.detail.slug ? e.detail.slug : null;
@@ -247,6 +254,20 @@ export default {
 </script>
 
 <style scoped lang="scss">
+.people-guide-btn {
+  border: none;
+  background: none;
+  color: grey;
+  cursor: pointer;
+  font-size: 1.05rem;
+  padding: 0 6px;
+  margin-left: auto;
+
+  &:hover {
+    color: var(--accent-color, #5e6ef2);
+  }
+}
+
 .people-content {
   border-radius: 14px;
   padding: 0;

@@ -177,6 +177,9 @@
       <shortcuts-modal></shortcuts-modal>
       <new-list-template-modal></new-list-template-modal>
       <edit-templates-modal></edit-templates-modal>
+      <phase-editor-modal></phase-editor-modal>
+      <add-log-entry-modal></add-log-entry-modal>
+      <snapshot-prompt-modal></snapshot-prompt-modal>
       <zeolite-info-modal></zeolite-info-modal>
       <deadline-radar-modal></deadline-radar-modal>
       <focus-mode></focus-mode>
@@ -242,6 +245,10 @@ import searchModal from "./views/searchModal.vue";
 import shortcutsModal from "./views/shortcutsModal.vue";
 import newListTemplateModal from "./views/newListTemplateModal.vue";
 import editTemplatesModal from "./views/editTemplatesModal.vue";
+import phaseEditorModal from "./views/phaseEditorModal.vue";
+import addLogEntryModal from "./views/addLogEntryModal.vue";
+import snapshotPromptModal from "./views/snapshotPromptModal.vue";
+import phasedProjectHelper from "./helpers/phasedProjectHelper";
 import zeoliteInfoModal from "./views/zeoliteInfoModal.vue";
 import deadlineRadarModal from "./views/deadlineRadarModal.vue";
 import tagFilterBar from "./components/tagFilterBar.vue";
@@ -291,6 +298,9 @@ export default {
     shortcutsModal,
     newListTemplateModal,
     editTemplatesModal,
+    phaseEditorModal,
+    addLogEntryModal,
+    snapshotPromptModal,
     zeoliteInfoModal,
     deadlineRadarModal,
     tagFilterBar,
@@ -345,6 +355,15 @@ export default {
     this.$store.commit("loadCustomTodoListsIds", customToDoListIdsRepository.load());
     this.$store.commit("loadConfig", configRepository.load());
     this.$i18n.locale = this.$store.getters.config.language;
+    // Preload phases and log entries for every phased project. The project
+    // card itself also loads on mount, but doing it here means the weekly
+    // snapshot prompt can see the full set of phased projects right away.
+    this.$store.getters.cTodoListIds.forEach((cList) => {
+      if (phasedProjectHelper.isPhased(cList)) {
+        this.$store.dispatch("loadPhases", cList.listId);
+        this.$store.dispatch("loadLogEntries", cList.listId);
+      }
+    });
 
     this.$store.dispatch("loadAllRepeatingEvent").then(
       function () {
@@ -692,6 +711,32 @@ export default {
     openDeadlinesModal: function () {
       new Modal(document.getElementById("deadlinesModal")).show();
     },
+    // Weekly snapshot: on Monday open and Friday close, show the prompt once
+    // per day for every active phased project. Config carries lastMondaySnapshot
+    // and lastFridaySnapshot (ISO date strings) so a reload later the same day
+    // does not re-trigger. The modal itself stamps those keys on save/skip.
+    maybeShowWeeklySnapshot: function () {
+      if (!this.$store.getters.config.phasedSnapshotsEnabled) return;
+      let kind = phasedProjectHelper.snapshotDueKind(this.$store.getters.config);
+      if (!kind) return;
+      // Only prompt when the user actually has a phased project worth
+      // snapshotting. Otherwise skip quietly and leave the config dates
+      // untouched, so the next time a phased project is created the prompt
+      // still fires the same day.
+      let hasPhased = (this.$store.getters.cTodoListIds || []).some(
+        (c) => phasedProjectHelper.isPhased(c) && !c.archived
+      );
+      if (!hasPhased) return;
+      this.$store.commit("setSnapshotPromptTarget", { kind: kind });
+      // Delay a bit so the splash hiding animation does not fight the modal
+      // open transition.
+      setTimeout(() => {
+        let modalEl = document.getElementById("snapshotPromptModal");
+        if (!modalEl) return;
+        let modal = Modal.getInstance(modalEl) || new Modal(modalEl);
+        modal.show();
+      }, 1800);
+    },
     todoListMounted: function () {
       this.methodsAfterInitialLoad();
     },
@@ -716,6 +761,7 @@ export default {
         configRepository.update(this.$store.getters.config);
         if (isElectron()) this.showInitialNotification();
         this.checkDeadlinesSoon();
+        this.maybeShowWeeklySnapshot();
         window.dispatchEvent(new CustomEvent("wtd-initial-load-done"));
       };
       if (this.$store.getters.config.moveOldTasks) {

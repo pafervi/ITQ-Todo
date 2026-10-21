@@ -42,8 +42,25 @@
           </span>
           <span class="stat-badge badge-progress">{{ progressStats.done }}/{{ progressStats.total }}</span>
         </div>
-        <div v-show="!editing && toDoList.length" class="list-progress-bar">
+        <div v-show="!editing && toDoList.length && !isPhased" class="list-progress-bar">
           <div class="list-progress-fill" :style="{ width: progressStats.percent + '%' }"></div>
+        </div>
+        <div v-if="!editing && customTodoList && isPhased" class="phased-view-toggle" @click.stop>
+          <button
+            type="button"
+            :class="{ active: phasedView === 'tasks' }"
+            @click="$emit('setPhasedView', 'tasks')"
+          ><i class="bi-check2-square"></i>{{ $t('phased.viewTasks') || 'Tasks' }}</button>
+          <button
+            type="button"
+            :class="{ active: phasedView === 'timeline' }"
+            @click="$emit('setPhasedView', 'timeline')"
+          ><i class="bi-bar-chart-steps"></i>{{ $t('phased.viewTimeline') || 'Timeline' }}</button>
+          <button
+            type="button"
+            :class="{ active: phasedView === 'feed' }"
+            @click="$emit('setPhasedView', 'feed')"
+          ><i class="bi-journal-text"></i>{{ $t('phased.viewFeed') || 'Feed' }}</button>
         </div>
         <button v-if="!editing && customTodoList && paperSummary" type="button" class="paper-chip"
           :title="$t('ui.paperTracker')" @click.stop="openPaperTracker">
@@ -91,6 +108,19 @@
         </button>
       </li>
       <li>
+        <hr class="dropdown-divider" />
+      </li>
+      <li v-show="customTodoList && isPhased">
+        <button class="dropdown-item" type="button" @click="$emit('addPhase')">
+          <i class="bi-bar-chart-steps"></i> <span>{{ $t('phased.addPhase') || 'Add phase' }}</span>
+        </button>
+      </li>
+      <li v-show="customTodoList && isPhased">
+        <button class="dropdown-item" type="button" @click="$emit('addLogEntry')">
+          <i class="bi-journal-plus"></i> <span>{{ $t('phased.addEntry') || 'Add log entry' }}</span>
+        </button>
+      </li>
+      <li v-show="customTodoList && isPhased">
         <hr class="dropdown-divider" />
       </li>
       <li v-show="customTodoList">
@@ -158,8 +188,10 @@ export default {
     cTodoListIndex: { required: false, type: Number },
     toDoList: { required: false, type: Array },
     collapsed: { required: false, default: false, type: Boolean },
+    isPhased: { required: false, default: false, type: Boolean },
+    phasedView: { required: false, default: "tasks", type: String },
   },
-  emits: ["toggleCollapse", "forceCollapse"],
+  emits: ["toggleCollapse", "forceCollapse", "setPhasedView", "addPhase", "addLogEntry"],
   data() {
     return {
       editing: false,
@@ -840,6 +872,59 @@ export default {
     background-color: #13171d;
     border-color: #30363d;
     color: #c9d1d9;
+  }
+}
+
+/* Phased project view toggle: three mini-tabs that live in the header of a
+   phased project card. The toggle sits inside the header so it is only
+   visible when the project itself is open on screen, with no competing
+   stat badges above it. */
+.phased-view-toggle {
+  display: inline-flex;
+  gap: 4px;
+  margin-top: 6px;
+  background: rgba(140, 140, 140, 0.08);
+  padding: 2px;
+  border-radius: 5px;
+
+  .dark-theme & {
+    background: rgba(255, 255, 255, 0.04);
+  }
+
+  button {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    border: none;
+    background: transparent;
+    color: #5c5c5c;
+    font-size: 0.72rem;
+    padding: 3px 8px;
+    border-radius: 3px;
+    cursor: pointer;
+
+    i {
+      font-size: 0.78rem;
+    }
+
+    .dark-theme & {
+      color: #c9d1d9;
+    }
+
+    &:hover {
+      color: var(--accent-color, #5e6ef2);
+    }
+
+    &.active {
+      background: #fff;
+      color: var(--accent-color, #5e6ef2);
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+
+      .dark-theme & {
+        background: #21262d;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+      }
+    }
   }
 }
 </style>

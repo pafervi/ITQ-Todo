@@ -1,10 +1,45 @@
 <template>
+  <!-- Backdrop teleported to body so the phased panel floats above every
+       other card and the sidebar. Dismisses with the mousedown+mouseup
+       pattern so a click that STARTED inside the panel (e.g. hitting
+       "+ Add phase" and releasing after Bootstrap mounted its own stacking
+       context) does not accidentally close the overlay. Only a press-and-
+       release that both occur on the backdrop itself counts. ESC still
+       works through handlePhasedEscape. -->
+  <Teleport to="body" v-if="isElevated">
+    <div
+      class="phased-overlay-backdrop"
+      @mousedown="onBackdropMouseDown"
+      @mouseup="onBackdropMouseUp"
+    ></div>
+  </Teleport>
+  <!-- The project card itself is teleported to body only while elevated.
+       position:fixed inside the app shell was being broken by an ancestor
+       with a transform / filter, which makes "fixed" behave like
+       "absolute" relative to that ancestor and causes the panel to drift
+       and flicker as the parent reflows. Teleporting the node to body
+       moves it out from under any transformed ancestor so the viewport is
+       the actual containing block. :disabled flips the teleport off when
+       the panel is back to the Tasks view, so the DOM returns to the
+       normal column grid without re-mounting the subtree. -->
+  <Teleport to="body" :disabled="!isElevated">
   <div :id="'list' + id" class="to-do-list-container d-flex flex-column" ref="listContainer" :class="{
     'old-date': !customTodoList && moments(id).isBefore(Date(), 'day'),
     'has-accent-color': listColor || customTodoList,
     'kind-meeting': listKind === 'meeting',
     'kind-activelearning': listKind === 'activelearning',
+    'phased-elevated': isElevated,
   }" :style="containerStyle">
+  <!-- Close button lives on top of the elevated panel. Hidden when the
+       panel is in its collapsed-card state. -->
+  <button
+    v-if="isElevated"
+    type="button"
+    class="phased-close-btn"
+    @click="closePhasedPanel"
+    :title="($t('phased.closePanel') || 'Close') + ' (ESC)'"
+    aria-label="Close phased panel"
+  ><i class="bi-x-lg"></i></button>
     <i v-if="listKind === 'meeting'" class="bi-people-fill kind-watermark" aria-hidden="true"></i>
     <i v-if="listKind === 'activelearning'" class="bi-cpu-fill kind-watermark" aria-hidden="true"></i>
 
@@ -45,16 +80,41 @@
     </div>
 
     <list-header :id="id" :customTodoList="customTodoList" :cTodoListIndex="cTodoListIndex" :toDoList="toDoListState"
-      :collapsed="collapsed" @toggle-collapse="toggleCollapse" @force-collapse="forceCollapse">
+      :collapsed="collapsed" :is-phased="isPhased" :phased-view="phasedView"
+      @toggle-collapse="toggleCollapse" @force-collapse="forceCollapse"
+      @set-phased-view="setPhasedView" @add-phase="openPhaseEditor" @add-log-entry="openAddLogEntry">
     </list-header>
     <transition name="fade-collapse">
-      <div v-if="!collapsed && firstLoadDone && toDoListState && toDoListState.length === 0" class="empty-list-placeholder">
+      <phase-timeline
+        v-if="!collapsed && isPhased && phasedView === 'timeline' && cList"
+        :project-id="id"
+        :c-list="cList"
+        :phases="phasedPhases"
+        :log-entries="phasedLogEntries"
+        @add-phase="openPhaseEditor"
+        @edit-phase="openPhaseEditor"
+      />
+    </transition>
+    <transition name="fade-collapse">
+      <phase-feed
+        v-if="!collapsed && isPhased && phasedView === 'feed' && cList"
+        :project-id="id"
+        :c-list="cList"
+        :phases="phasedPhases"
+        :log-entries="phasedLogEntries"
+        @add-entry="openAddLogEntry"
+        @edit-entry="(entry) => openAddLogEntry({ entry: entry })"
+        @remove-entry="removeLogEntry"
+      />
+    </transition>
+    <transition name="fade-collapse">
+      <div v-if="!collapsed && showTasksView && firstLoadDone && toDoListState && toDoListState.length === 0" class="empty-list-placeholder">
         <i :class="customTodoList ? 'bi-inbox' : 'bi-emoji-smile'"></i>
         <span>{{ customTodoList ? $t('ui.emptyListPlaceholder') : $t('ui.emptyListPlaceholderToday') }}</span>
       </div>
     </transition>
     <transition name="fade-collapse">
-      <div v-if="!collapsed && allDone" class="all-done-banner">
+      <div v-if="!collapsed && showTasksView && allDone" class="all-done-banner">
         <i class="bi-check2-circle"></i>
         <span>{{ $t('ui.allTasksDone') }}</span>
         <!-- Nucleation celebration: a small cluster of particles converges
@@ -72,7 +132,7 @@
       </div>
     </transition>
     <transition name="fade-collapse">
-      <ul class="to-do-list" v-show="!collapsed">
+      <ul class="to-do-list" v-show="!collapsed && showTasksView">
         <li v-for="entry in toDoListEntries" :key="entry.hostListId + '-' + entry.trueIndex">
           <div class="drop-zone" @drop="onDrop($event, entry.hostListId, entry.trueIndex)" @dragover.prevent @dragenter.prevent>
             <to-do-item :to-do="entry.toDo" :index="entry.trueIndex" :to-do-list-id="entry.hostListId" :render-context="id"></to-do-item>
@@ -81,7 +141,7 @@
       </ul>
     </transition>
     <transition name="fade-collapse">
-      <div v-show="!collapsed" class="fake-drop-zone flex-grow-1 margin-bottom-2" @drop="onDropAtEnd($event, id)"
+      <div v-show="!collapsed && showTasksView" class="fake-drop-zone flex-grow-1 margin-bottom-2" @drop="onDropAtEnd($event, id)"
         @dragenter.self="onDragenter" @dragleave.self="onDragleave" @dragover.prevent
         :class="{ 'fake-drag-hover': fakeItemsDragHover }">
         <div class="todo-item-container">
@@ -92,6 +152,7 @@
       </div>
     </transition>
   </div>
+  </Teleport>
 </template>
 
 <script>
@@ -106,11 +167,17 @@ import collapsedListsRepository from "../repositories/collapsedListsRepository";
 import projectColorHelper from "../helpers/projectColorHelper";
 import autoTagHelper from "../helpers/autoTagHelper";
 import zeoliteHelper from "../helpers/zeoliteHelper";
+import phaseTimeline from "./phased/phaseTimeline.vue";
+import phaseFeed from "./phased/phaseFeed.vue";
+import phasedProjectHelper from "../helpers/phasedProjectHelper";
+import { Modal } from "bootstrap";
 
 export default {
   components: {
     listHeader,
     toDoItem,
+    phaseTimeline,
+    phaseFeed,
   },
   props: {
     id: { required: false, type: String },
@@ -129,6 +196,16 @@ export default {
       celebrate: false,
       celebrateTimeout: null,
       firstLoadDone: false,
+      // Which view is active for a phased project. Ignored for day lists and
+      // for checklist projects. Lives in the component so it does not persist
+      // across sessions, i.e. opening a project always lands on Tasks first.
+      phasedView: "tasks",
+      // Panel open is separate from phasedView so the user can switch to the
+      // Tasks tab from inside the elevated modal and still keep the panel
+      // open. The panel is dismissed only by the X button, the backdrop, or
+      // the ESC key.
+      phasedPanelOpen: false,
+      backdropArmed: false,
     };
   },
   mounted() {
@@ -148,9 +225,22 @@ export default {
         this.firstLoadDone = true;
       });
     });
+    // For phased projects, pull the phases and log entries into the store so
+    // the Timeline/Feed views can render straight from state once the user
+    // toggles into them. Cheap enough to always do on project mount.
+    if (this.customTodoList && this.isPhased) {
+      this.$store.dispatch("loadPhases", listId);
+      this.$store.dispatch("loadLogEntries", listId);
+    }
+    // ESC closes the elevated phased panel. Scoped to window because the
+    // listener fires while the overlay has focus and no form input is
+    // interfering.
+    window.addEventListener("keydown", this.handlePhasedEscape);
   },
   unmounted() {
     window.removeEventListener("resize", this.setTodoListHeight);
+    window.removeEventListener("keydown", this.handlePhasedEscape);
+    document.body.classList.remove("phased-overlay-open");
     clearTimeout(this.celebrateTimeout);
   },
   beforeCreate() {
@@ -285,6 +375,78 @@ export default {
       if (this.customTodoList) return;
       repeatingEventHelper.removeGeneratedRepeatingEvents(this.id, this);
     },
+    // Phased project view switching, driven from listHeader.
+    setPhasedView: function (view) {
+      if (!this.isPhased) return;
+      this.phasedView = view || "tasks";
+      // Switching to Timeline or Feed opens the elevated panel if it was not
+      // already up. Switching to Tasks does NOT close the panel, so the user
+      // can bounce between Timeline, Feed and the task list without losing
+      // the modal context. Explicit dismissal is the X, the backdrop or ESC.
+      if (this.phasedView === "timeline" || this.phasedView === "feed") {
+        this.phasedPanelOpen = true;
+        document.body.classList.add("phased-overlay-open");
+      }
+    },
+    closePhasedPanel: function () {
+      this.phasedPanelOpen = false;
+      this.phasedView = "tasks";
+      document.body.classList.remove("phased-overlay-open");
+    },
+    handlePhasedEscape: function (e) {
+      if (e.key === "Escape" && this.isElevated) {
+        this.closePhasedPanel();
+      }
+    },
+    // Backdrop dismiss uses a down/up pair so a click that started inside
+    // the panel (its mousedown was on a button, not on the backdrop) does
+    // not close the overlay when the pointer happens to be over the
+    // backdrop at mouseup time. The dismiss only fires when BOTH press and
+    // release landed on the backdrop itself.
+    onBackdropMouseDown: function (e) {
+      if (e.target === e.currentTarget) {
+        this.backdropArmed = true;
+      } else {
+        this.backdropArmed = false;
+      }
+    },
+    onBackdropMouseUp: function (e) {
+      let armed = this.backdropArmed;
+      this.backdropArmed = false;
+      if (armed && e.target === e.currentTarget) {
+        this.closePhasedPanel();
+      }
+    },
+    openPhaseEditor: function (phase) {
+      this.$store.commit("setPhaseEditorTarget", {
+        projectId: this.id,
+        phase: phase || null,
+      });
+      let modalEl = document.getElementById("phaseEditorModal");
+      if (!modalEl) return;
+      let modal = Modal.getInstance(modalEl) || new Modal(modalEl);
+      modal.show();
+    },
+    openAddLogEntry: function (payload) {
+      this.$store.commit("setLogEntryEditorTarget", {
+        projectId: this.id,
+        entry: payload && payload.entry ? payload.entry : null,
+        kind: payload && payload.kind ? payload.kind : null,
+        phaseId: payload && payload.phaseId ? payload.phaseId : null,
+      });
+      let modalEl = document.getElementById("addLogEntryModal");
+      if (!modalEl) return;
+      let modal = Modal.getInstance(modalEl) || new Modal(modalEl);
+      modal.show();
+    },
+    removeLogEntry: function (entry) {
+      if (!entry) return;
+      let ok = window.confirm(this.$t("phased.confirmRemoveEntry") || "Remove this log entry?");
+      if (!ok) return;
+      this.$store.commit("removeLogEntry", { projectId: this.id, entryId: entry.id });
+      let logEntryRepository = require("../repositories/logEntryRepository").default;
+      logEntryRepository.update(this.id, this.$store.getters.logEntries[this.id] || []);
+    },
   },
   watch: {
     showCustomList: function () {
@@ -377,6 +539,9 @@ export default {
       return list ? list.kind || "" : "";
     },
     containerStyle: function () {
+      // Column-grid card as always. The elevated state (phased in Timeline
+      // or Feed view) is handled by the .phased-elevated class in CSS, not
+      // here, so this computed can stay a simple column-width expression.
       let style = { flex: `0 0 ${100 / this.columns}%` };
       // Resolve the single colour that identifies this project: the user's
       // manual pick wins, otherwise a stable auto-colour derived from the
@@ -395,8 +560,32 @@ export default {
       }
       return style;
     },
+    isElevated: function () {
+      return !!(this.customTodoList && this.isPhased && this.phasedPanelOpen);
+    },
     allDone: function () {
       return !!(this.toDoListState && this.toDoListState.length > 0 && this.toDoListState.every((t) => t.checked));
+    },
+    cList: function () {
+      if (!this.customTodoList || this.cTodoListIndex == null) return null;
+      return this.$store.getters.cTodoListIds[this.cTodoListIndex] || null;
+    },
+    isPhased: function () {
+      return phasedProjectHelper.isPhased(this.cList);
+    },
+    phasedPhases: function () {
+      if (!this.isPhased) return [];
+      return this.$store.getters.phases[this.id] || [];
+    },
+    phasedLogEntries: function () {
+      if (!this.isPhased) return [];
+      return this.$store.getters.logEntries[this.id] || [];
+    },
+    // Tasks view is shown unless the project is phased AND the user picked
+    // Timeline or Feed from the header toggle. For checklist projects and
+    // day lists this is always true.
+    showTasksView: function () {
+      return !this.isPhased || this.phasedView === "tasks";
     },
     // ---- Project cover (feature 8) ----
     //
@@ -841,5 +1030,190 @@ export default {
 .kind-meeting .project-cover,
 .kind-activelearning .project-cover {
   display: none;
+}
+
+/* ---- Phased elevated panel ----
+
+   When a phased project toggles into Timeline or Feed, it lifts out of the
+   column grid and pins itself over the whole app as a wide modal panel.
+   Clicking the backdrop or pressing ESC drops it back to Tasks.
+
+   The !important on position/width overrides whatever containerStyle set
+   via the inline style attribute, so a card that was flex: 0 0 <N>%
+   becomes a fixed, centred rectangle for as long as the elevated state
+   holds. The slide-up and fade-in come from a short CSS animation that
+   plays once at mount; closing is instant to not drag out the backdrop. */
+.to-do-list-container.phased-elevated {
+  position: fixed !important;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(94vw, 940px);
+  max-height: 90vh;
+  min-height: 420px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  z-index: 1055;
+  background: #fff;
+  border-radius: 14px;
+  box-shadow:
+    0 24px 70px rgba(0, 0, 0, 0.28),
+    0 10px 24px rgba(0, 0, 0, 0.16);
+  padding: 14px 26px 24px !important;
+  margin: 0 !important;
+  flex: none !important;
+  max-width: none !important;
+  animation: phasedPanelIn 0.22s ease-out forwards;
+  will-change: transform, opacity;
+
+  .dark-theme & {
+    background: #1c1f22;
+    box-shadow:
+      0 24px 70px rgba(0, 0, 0, 0.6),
+      0 10px 24px rgba(0, 0, 0, 0.45);
+  }
+
+  /* Keep the project colour bar on the elevated panel too, but anchored
+     to the left edge of the bigger rectangle so it still reads as the
+     project's identity strip. */
+  &.has-accent-color::after {
+    top: 14px;
+    bottom: 14px;
+    left: 0;
+    width: 5px;
+    border-radius: 0 3px 3px 0;
+  }
+
+  /* The base .has-accent-color card paints a diagonal tint gradient and
+     flips to a stronger gradient on hover; on top of the panel's solid
+     white that reads as the background going transparent when the mouse
+     enters. Lock the elevated panel to a solid, opaque background in both
+     themes, idle and hover. */
+  &.has-accent-color,
+  &.has-accent-color:hover {
+    background: #fff !important;
+  }
+
+  .dark-theme &.has-accent-color,
+  .dark-theme &.has-accent-color:hover {
+    background: #1c1f22 !important;
+  }
+}
+
+/* Close button pinned to the panel's top-right corner. Only rendered
+   while the panel is elevated. ESC and the backdrop are the other two
+   dismiss routes. */
+.phased-close-btn {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: rgba(140, 140, 140, 0.1);
+  color: #5c5c5c;
+  border-radius: 8px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 6;
+  transition: background 0.15s, color 0.15s;
+  i { font-size: 1rem; }
+  &:hover {
+    background: rgba(200, 75, 59, 0.14);
+    color: #c84b3b;
+  }
+  .dark-theme & {
+    background: rgba(255, 255, 255, 0.07);
+    color: #c9d1d9;
+    &:hover {
+      background: rgba(224, 120, 102, 0.18);
+      color: #e07866;
+    }
+  }
+}
+
+/* Soft fade at the bottom of the scrollable panel to hint at more
+   content below the fold. The gradient fades to the panel background in
+   both themes. */
+.to-do-list-container.phased-elevated::before {
+  content: "";
+  position: sticky;
+  display: block;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 28px;
+  margin: -28px -26px 0;
+  background: linear-gradient(transparent, #fff 90%);
+  pointer-events: none;
+  z-index: 1;
+  flex-shrink: 0;
+  .dark-theme & {
+    background: linear-gradient(transparent, #1c1f22 90%);
+  }
+}
+
+@keyframes phasedPanelIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -46%) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .to-do-list-container.phased-elevated {
+    animation: none;
+  }
+}
+</style>
+
+<!-- Non-scoped styles for the backdrop. Teleport moves the backdrop node
+     out of the component's DOM subtree, which strips the scoped
+     data-v-* attribute, so a scoped rule would never match it. -->
+<style lang="scss">
+.phased-overlay-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.48);
+  z-index: 1050;
+  animation: phasedBackdropIn 0.2s ease-out forwards;
+  cursor: pointer;
+}
+
+@keyframes phasedBackdropIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .phased-overlay-backdrop { animation: none; }
+}
+
+/* While the elevated panel is up, keep the sidebar and app chrome from
+   scrolling behind it; the backdrop handles the dim, this just stops
+   the host from reflowing on scroll gestures. */
+body.phased-overlay-open {
+  overflow: hidden;
+}
+
+/* When Bootstrap opens any modal (phaseEditor, addLogEntry, snapshot
+   prompt, etc.) it adds body.modal-open and inserts its own backdrop at
+   z-index 1050 and the modal at 1055. The phased panel sits at 1055 too,
+   so without this rule it would stack on top of the modal and swallow its
+   clicks. Lower the phased panel and its backdrop below Bootstrap's
+   backdrop while any modal is open, so the modal (and its dismiss click)
+   always wins. The elevated panel stays mounted and visible once the
+   modal closes. */
+body.modal-open .to-do-list-container.phased-elevated {
+  z-index: 1040 !important;
+}
+body.modal-open .phased-overlay-backdrop {
+  z-index: 1035 !important;
 }
 </style>

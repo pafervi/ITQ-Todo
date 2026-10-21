@@ -1,4 +1,5 @@
 import configRepository from "../repositories/configRepository";
+import customToDoListIdsRepository from "../repositories/customToDoListIdsRepository";
 import moment from "moment";
 import platformHelper from "../helpers/platformHelper";
 
@@ -17,6 +18,8 @@ export default {
     v2_5_0();
     v2_6_0();
     v2_7_0();
+    v2_8_0();
+    v2_8_1();
   },
 };
 
@@ -153,6 +156,40 @@ function v2_7_0() {
   let config = configRepository.load();
   if (config["moveOldTasks"] !== true) {
     config["moveOldTasks"] = true;
+    configRepository.update(config);
+  }
+}
+
+// Phased projects migration: every existing custom project is a classic
+// checklist, tag them explicitly so new code that branches on
+// cList.type === 'phased' leaves them alone. Idempotent, keyed by a config
+// flag so we do not re-tag anything the user may have changed later.
+function v2_8_0() {
+  let config = configRepository.load();
+  if (!("phasedProjectsIntroduced" in config)) {
+    let cTodoListIds = customToDoListIdsRepository.load();
+    let changed = false;
+    cTodoListIds.forEach(function (cList) {
+      if (!cList.type) {
+        cList.type = "checklist";
+        changed = true;
+      }
+    });
+    if (changed) customToDoListIdsRepository.update(cTodoListIds);
+    config["phasedProjectsIntroduced"] = true;
+    configRepository.update(config);
+  }
+}
+
+// Weekly snapshot config seeds. The two keys hold the ISO date (YYYY-MM-DD)
+// of the last monday/friday the snapshot modal was answered or dismissed,
+// so a running app does not re-trigger the same prompt within the same day.
+function v2_8_1() {
+  let config = configRepository.load();
+  if (!("lastMondaySnapshot" in config)) {
+    config["lastMondaySnapshot"] = "";
+    config["lastFridaySnapshot"] = "";
+    config["phasedSnapshotsEnabled"] = true;
     configRepository.update(config);
   }
 }

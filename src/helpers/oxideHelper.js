@@ -75,6 +75,51 @@ function label(p, txt, size) {
   return '<text x="' + p.x.toFixed(2) + '" y="' + (p.y + 2.5).toFixed(2) + '" text-anchor="middle" font-size="' + (size || 7.5) + '" font-family="sans-serif" font-weight="700" fill="#fff">' + txt + "</text>";
 }
 
+// Draw a coordination polyhedron: a translucent filled polygon over the
+// convex outline of the given vertices in 2D projection, plus the inner
+// edges connecting non-adjacent vertices so the volume reads. Used for
+// BO6 octahedra (perovskite), MO6 octahedra (rutile) and MO4 tetrahedra
+// (fluorite / spinel) so the hero oxide reads as crystal chemistry
+// rather than a dot cluster.
+function polyhedron(verts, opts) {
+  opts = opts || {};
+  let fillOpacity = opts.fillOpacity != null ? opts.fillOpacity : 0.14;
+  let strokeWidth = opts.strokeWidth || 1.1;
+  let strokeOpacity = opts.strokeOpacity != null ? opts.strokeOpacity : 0.6;
+  // 2D convex hull by angular sort around the centroid. Good enough for
+  // the small vertex sets we draw here (4 to 8 points).
+  let cx = verts.reduce((s, v) => s + v.x, 0) / verts.length;
+  let cy = verts.reduce((s, v) => s + v.y, 0) / verts.length;
+  let hull = verts
+    .map((v) => ({ x: v.x, y: v.y, a: Math.atan2(v.y - cy, v.x - cx) }))
+    .sort((a, b) => a.a - b.a);
+  let pts = hull.map((p) => p.x.toFixed(2) + "," + p.y.toFixed(2)).join(" ");
+  let parts = [
+    '<polygon points="' + pts +
+    '" fill="currentColor" fill-opacity="' + fillOpacity +
+    '" stroke="currentColor" stroke-width="' + strokeWidth +
+    '" stroke-opacity="' + strokeOpacity +
+    '" stroke-linejoin="round"/>'
+  ];
+  // Inner cross-edges to hint the back face of the polyhedron. For every
+  // non-adjacent pair in the hull, draw a faint line.
+  if (opts.innerEdges !== false) {
+    for (let i = 0; i < hull.length; i++) {
+      for (let j = i + 2; j < hull.length; j++) {
+        if (i === 0 && j === hull.length - 1) continue;
+        parts.push(
+          '<line x1="' + hull[i].x.toFixed(2) + '" y1="' + hull[i].y.toFixed(2) +
+          '" x2="' + hull[j].x.toFixed(2) + '" y2="' + hull[j].y.toFixed(2) +
+          '" stroke="currentColor" stroke-width="' + (strokeWidth * 0.6) +
+          '" opacity="' + (strokeOpacity * 0.4) +
+          '" stroke-linecap="round"/>'
+        );
+      }
+    }
+  }
+  return parts;
+}
+
 // Isometric cube skeleton: all 12 edges drawn, back edges fainter so the
 // front reads first. This is the common base for every cubic cell.
 function cubeSkeleton(g) {
@@ -141,11 +186,15 @@ function buildSvg(item) {
         { kx: -0.5, ky: -0.5, kz: 0.5 }, { kx: 0.5, ky: -0.5, kz: 0.5 },
         { kx: -0.5, ky: 0.5, kz: 0.5 }, { kx: 0.5, ky: 0.5, kz: 0.5 },
       ];
-      tet.forEach((k) => {
-        let x = g.body.x + k.kx * 11 + k.kz * 5.5;
-        let y = g.body.y + k.ky * 11 + k.kz * -4;
-        parts.push(atom({ x: x, y: y }, 2.1, false, 0.9));
-      });
+      let tetPts = tet.map((k) => ({
+        x: g.body.x + k.kx * 11 + k.kz * 5.5,
+        y: g.body.y + k.ky * 11 + k.kz * -4,
+      }));
+      // MeO8 cube: draw the convex outline of the 8 tetrahedral oxygens
+      // so the fluorite coordination reads as a real cube around the
+      // central cation rather than a cloud of dots.
+      parts.push(...polyhedron(tetPts, { fillOpacity: 0.1, strokeOpacity: 0.42, innerEdges: false }));
+      tetPts.forEach((p) => parts.push(atom(p, 2.1, false, 0.9)));
       // Metal label at the body centre on top of everything
       parts.push(atom(g.body, 7.5, true));
       parts.push(label(g.body, item.metal, 8.5));
@@ -178,17 +227,23 @@ function buildSvg(item) {
     case "rutile": {
       let g = cubeGeometry(22, 9, -7);
       parts.push(...cubeSkeleton(g));
-      // Metal on 8 corners + 1 body centre
+      // Metal on 8 corners (small, structural hint)
       g.corners.forEach((p) => parts.push(atom(p, 3.2, true, 0.75)));
-      // Two axial oxygens above and below the body centre
-      let oxAbove = { x: g.body.x, y: g.body.y - 14 };
-      let oxBelow = { x: g.body.x, y: g.body.y + 14 };
-      // Two equatorial oxygens offset left/right
+      // MO6 octahedron: 4 equatorial + 2 axial oxygens, drawn as a
+      // translucent polyhedron so the Ti/Sn/Mn-O6 coordination reads at a
+      // glance. The axial pair runs along the vertical body axis, the
+      // equatorial pair around the body in the isometric plane.
+      let oxTop = { x: g.body.x, y: g.body.y - 14 };
+      let oxBot = { x: g.body.x, y: g.body.y + 14 };
       let oxLeft = { x: g.body.x - 11, y: g.body.y + 2 };
       let oxRight = { x: g.body.x + 11, y: g.body.y + 2 };
-      // Bonds metal to oxygens
-      [oxAbove, oxBelow, oxLeft, oxRight].forEach((o) => parts.push(line(g.body, o, 0.65, 1.2)));
-      [oxAbove, oxBelow, oxLeft, oxRight].forEach((o) => parts.push(atom(o, 2.8, false, 0.95)));
+      // Additional two oxygens shifted by the isometric depth so the
+      // octahedron does not degenerate into a square in 2D projection.
+      let oxFront = { x: g.body.x - 5, y: g.body.y + 7 };
+      let oxBack = { x: g.body.x + 5, y: g.body.y - 7 };
+      let oVerts = [oxTop, oxBot, oxLeft, oxRight, oxFront, oxBack];
+      parts.push(...polyhedron(oVerts, { fillOpacity: 0.12, strokeOpacity: 0.5 }));
+      oVerts.forEach((o) => parts.push(atom(o, 2.6, false, 0.95)));
       // Metal body centre
       parts.push(atom(g.body, 7.5, true));
       parts.push(label(g.body, item.metal, 8.5));
@@ -198,13 +253,16 @@ function buildSvg(item) {
       let g = cubeGeometry(26, 11, -9);
       parts.push(...cubeSkeleton(g));
       // A cations on 8 corners (large), B cation at body centre (dark), O
-      // on 6 face centres (small hollow)
+      // on 6 face centres (small hollow).
       g.corners.forEach((p) => parts.push(atom(p, 3.8, true, 0.65)));
+      // BO6 octahedron: the 6 face centres as vertices, drawn as a
+      // translucent polyhedron underneath the oxygen dots so the
+      // coordination reads as a real octahedron rather than six loose
+      // atoms with lines to the centre.
+      let oVerts = ["front", "back", "top", "bottom", "left", "right"].map((k) => g.faces[k]);
+      parts.push(...polyhedron(oVerts, { fillOpacity: 0.12, strokeOpacity: 0.5 }));
+      // Oxygen atoms on top of the octahedron outline
       Object.values(g.faces).forEach((p) => parts.push(atom(p, 2.6, false, 0.95)));
-      // Bonds B-O along axes
-      ["front", "back", "top", "bottom", "left", "right"].forEach((k) => {
-        parts.push(line(g.body, g.faces[k], 0.55, 1));
-      });
       // Body centre metal with label
       parts.push(atom(g.body, 7.5, true));
       parts.push(label(g.body, item.metal, 8.5));

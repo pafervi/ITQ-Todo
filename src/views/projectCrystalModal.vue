@@ -2,49 +2,44 @@
   <div class="modal fade crystal-modal" id="projectCrystalModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-xl">
       <div class="modal-content crystal-content" :style="rootStyle">
-        <!-- Hero stage: the project's framework rotating in 3D, with its
-             open tasks orbiting around it. Vacant lattice sites visualise
-             the open-task count: every unchecked task gets a glow at one
-             of the ring's vertices, overdue ones are red. -->
+        <!-- Hero stage: the project's theme-item rendered in triple-stacked
+             3D rings, with open tasks orbiting around it. The polygon ring
+             for zeolites, the organic ring for organic, the unit cell for
+             oxides, or the Jablonski-style diagram for photochem. The item
+             shape is theme-aware via themesHelper; sites[] (orbiting dots)
+             are laid out on a fixed circle so the pattern works regardless
+             of theme geometry. -->
         <div class="crystal-stage">
           <div class="crystal-close" data-bs-dismiss="modal" :title="$t('ui.close') || 'Close'">
             <i class="bi-x"></i>
           </div>
 
           <div class="crystal-header">
-            <div class="crystal-eyebrow">{{ project.framework.code }} · {{ project.framework.ring }}</div>
+            <div class="crystal-eyebrow">{{ project.item.code }}<span v-if="project.item.meta"> · {{ project.item.meta }}</span></div>
             <h1 class="crystal-title">{{ project.name }}</h1>
-            <div class="crystal-subtitle">{{ project.framework.fullName }}</div>
+            <div class="crystal-subtitle">{{ project.item.fullName }}</div>
           </div>
 
           <div class="crystal-sky" aria-hidden="true">
             <div class="crystal-rotor">
               <!-- Three stacked rings at different depths = a cheap but
                    effective 3D unit-cell feeling, built purely from CSS
-                   transforms. -->
-              <svg class="crystal-ring crystal-ring-back"
-                viewBox="-50 -50 100 100">
-                <polygon
-                  :points="project.framework.polygonPoints"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="0.9"
-                  stroke-linejoin="round"
-                />
-              </svg>
-              <svg class="crystal-ring crystal-ring-main"
-                viewBox="-50 -50 100 100">
-                <polygon
-                  :points="project.framework.polygonPoints"
-                  fill="currentColor"
-                  fill-opacity="0.05"
-                  stroke="currentColor"
-                  stroke-width="1.4"
-                  stroke-linejoin="round"
-                />
-                <!-- Vertex dots marking "lattice sites": one per vertex of
-                     the polygon. Site state (occupied / overdue / open)
-                     comes from the sites[] computed. -->
+                   transforms. Each ring renders the current theme's
+                   svgShape via v-html so a theme switch re-skins all three. -->
+              <svg
+                class="crystal-ring crystal-ring-back"
+                :viewBox="project.item.viewBox || '0 0 100 100'"
+                v-html="project.item.svgShape"
+              ></svg>
+              <svg
+                class="crystal-ring crystal-ring-main"
+                :viewBox="project.item.viewBox || '0 0 100 100'"
+              >
+                <g v-html="project.item.svgShape"></g>
+                <!-- Lattice sites: 12 anchor positions on a circle around
+                     the shape, state-driven: overdue (red + pulse),
+                     occupied (open task), or empty. Circle layout works
+                     for every theme regardless of inner geometry. -->
                 <circle
                   v-for="(s, i) in sites"
                   :key="'v-' + i"
@@ -61,17 +56,11 @@
                   />
                 </circle>
               </svg>
-              <svg class="crystal-ring crystal-ring-front"
-                viewBox="-50 -50 100 100">
-                <polygon
-                  :points="project.framework.polygonPoints"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="0.7"
-                  stroke-linejoin="round"
-                />
-                <circle cx="0" cy="0" r="2.4" fill="currentColor" />
-              </svg>
+              <svg
+                class="crystal-ring crystal-ring-front"
+                :viewBox="project.item.viewBox || '0 0 100 100'"
+                v-html="project.item.svgShape"
+              ></svg>
             </div>
           </div>
         </div>
@@ -123,39 +112,42 @@
 
           <div class="crystal-panel panel-framework">
             <div class="panel-head">
-              {{ $t('ui.crystalFramework') || 'Framework' }}
+              {{ themeLabel }}
               <button type="button" class="fw-change-btn"
                 v-if="listId"
                 @click.stop="pickerOpen = !pickerOpen"
-                :title="$t('ui.crystalChange') || 'Change framework'">
+                :title="$t('ui.crystalChange') || 'Change'">
                 <i class="ph ph-swap"></i>
                 {{ $t('ui.crystalChange') || 'change' }}
               </button>
             </div>
             <div class="fw-code-row">
-              <span class="fw-code">{{ project.framework.code }}</span>
-              <span class="fw-ring">{{ project.framework.ring }}</span>
-              <span v-if="project.framework.itq" class="fw-itq-badge" title="Made at the ITQ">ITQ · {{ project.framework.year || '' }}</span>
+              <span class="fw-code">{{ project.item.code }}</span>
+              <span v-if="project.item.meta" class="fw-ring">{{ project.item.meta }}</span>
+              <span v-if="project.item.itq" class="fw-itq-badge" :title="$t('ui.zeoliteFromItq') || 'Made at the ITQ'">ITQ · {{ project.item.year || '' }}</span>
               <span v-if="hasOverride" class="fw-override-badge" :title="$t('ui.crystalResetTitle') || 'Reset to auto'" @click.stop="resetFramework">
                 <i class="ph ph-arrow-counter-clockwise"></i>
               </span>
             </div>
-            <p class="fw-note">{{ project.framework.note }}</p>
+            <p class="fw-note">{{ project.item.note }}</p>
 
-            <!-- Framework picker: scrollable grid of all 25 IZA codes.
-                 Clicking one persists the choice on the project record. -->
+            <!-- Item picker: scrollable grid of all items of the active
+                 theme. Clicking one persists the choice on the project
+                 record (stored on cTodoListIds[i].zeoliteFramework for
+                 historical compat; the field now holds any theme item
+                 code, not just zeolites). -->
             <div v-if="pickerOpen" class="fw-picker">
-              <div class="fw-picker-head">{{ $t('ui.crystalPickOne') || 'Pick a zeolite' }}</div>
+              <div class="fw-picker-head">{{ pickerHeadLabel }}</div>
               <div class="fw-picker-grid">
                 <button type="button"
-                  v-for="fw in allFrameworks"
-                  :key="fw.code"
+                  v-for="it in allItems"
+                  :key="it.code"
                   class="fw-picker-cell"
-                  :class="{ active: fw.code === project.framework.code, itq: fw.itq }"
-                  @click="setFramework(fw.code)"
-                  :title="fw.fullName">
-                  <span class="fw-pick-code">{{ fw.code }}</span>
-                  <span class="fw-pick-ring">{{ fw.ring }}</span>
+                  :class="{ active: it.code === project.item.code, itq: it.itq }"
+                  @click="setFramework(it.code)"
+                  :title="it.fullName">
+                  <span class="fw-pick-code">{{ it.code }}</span>
+                  <span class="fw-pick-ring" v-if="it.meta">{{ it.meta }}</span>
                 </button>
               </div>
             </div>
@@ -169,9 +161,16 @@
 <script>
 import { Modal } from "bootstrap";
 import moment from "moment";
-import zeoliteHelper from "../helpers/zeoliteHelper";
+import themesHelper from "../helpers/themesHelper";
 import projectColorHelper from "../helpers/projectColorHelper";
 import customToDoListIdsRepository from "../repositories/customToDoListIdsRepository";
+
+// Project crystal view. Opened by clicking a project name in the header.
+// Theme-aware since the themes refactor: the hero rings render the active
+// theme's shape (zeolite polygon, organic ring, oxide cell, photochem
+// motif) via v-html on the item.svgShape, and the item picker lists all
+// items of the active theme. The per-project override field is still
+// called zeoliteFramework on the custom list record for backwards compat.
 
 export default {
   name: "projectCrystalModal",
@@ -193,8 +192,6 @@ export default {
     onShow: function () {
       if (this.listId) this.$store.dispatch("loadTodoLists", this.listId);
     },
-    // Opened programmatically from listHeader via a window event, so we can
-    // pass the project id without wiring a Vuex action for this one modal.
     openByEvent: function (e) {
       if (!e || !e.detail || !e.detail.listId) return;
       this.listId = e.detail.listId;
@@ -210,9 +207,6 @@ export default {
       let modal = new Modal(document.getElementById("toDoModal"), { keyboard: false });
       modal.show();
     },
-    // Persist a user-chosen framework for this project. Stored as the IZA
-    // code on the custom list record; a null value falls back to the
-    // deterministic hash (frameworkFor).
     setFramework: function (code) {
       let idx = (this.$store.getters.cTodoListIds || []).findIndex((l) => l.listId === this.listId);
       if (idx === -1) return;
@@ -232,24 +226,56 @@ export default {
     language: function () {
       return this.$store.getters.config.language;
     },
+    cfg: function () {
+      return this.$store.getters.config;
+    },
+    themeActive: function () {
+      return themesHelper.getActive(this.cfg);
+    },
+    themeLabel: function () {
+      // Panel head label is theme-aware: "Framework" for zeolites,
+      // "Molecule" for organic, "Oxide" for oxides, "Concept" for photochem.
+      switch (this.themeActive.id) {
+        case "organic": return this.$t('ui.crystalMolecule') || 'Molecule';
+        case "oxides": return this.$t('ui.crystalOxide') || 'Oxide';
+        case "photochem": return this.$t('ui.crystalConcept') || 'Concept';
+        case "zeolites":
+        default: return this.$t('ui.crystalFramework') || 'Framework';
+      }
+    },
+    pickerHeadLabel: function () {
+      switch (this.themeActive.id) {
+        case "organic": return this.$t('ui.crystalPickMolecule') || 'Pick a molecule';
+        case "oxides": return this.$t('ui.crystalPickOxide') || 'Pick an oxide';
+        case "photochem": return this.$t('ui.crystalPickConcept') || 'Pick a concept';
+        case "zeolites":
+        default: return this.$t('ui.crystalPickOne') || 'Pick a zeolite';
+      }
+    },
     project: function () {
-      let empty = { name: "", color: null, framework: zeoliteHelper.frameworks[0] ? zeoliteHelper.frameworkFor("empty") : null };
+      let empty = {
+        name: "",
+        color: null,
+        item: themesHelper.getItemFor("empty", this.cfg) || { code: "", fullName: "", note: "", svgShape: "", viewBox: "0 0 100 100" },
+      };
       if (!this.listId) return empty;
       let meta = (this.$store.getters.cTodoListIds || []).find((l) => l.listId === this.listId);
       if (!meta) return empty;
-      // Prefer the per-project override (meta.zeoliteFramework = IZA code),
-      // fall back to the deterministic hash.
-      let fw = null;
-      if (meta.zeoliteFramework) fw = zeoliteHelper.frameworkByCode(meta.zeoliteFramework);
-      if (!fw) fw = zeoliteHelper.frameworkFor(this.listId);
+      // Prefer the per-project override; fall back to the deterministic
+      // hash on the project id. Field is still called zeoliteFramework
+      // on the custom list record for historical compat but holds a code
+      // of the active theme.
+      let it = null;
+      if (meta.zeoliteFramework) it = themesHelper.getItemByCode(meta.zeoliteFramework, this.cfg);
+      if (!it) it = themesHelper.getItemFor(this.listId, this.cfg);
       return {
         name: meta.listName || "",
         color: meta.color || projectColorHelper.solidFor(this.listId),
-        framework: fw,
+        item: it || empty.item,
       };
     },
-    allFrameworks: function () {
-      return zeoliteHelper.frameworks;
+    allItems: function () {
+      return themesHelper.getAllItems(this.cfg) || [];
     },
     hasOverride: function () {
       let meta = (this.$store.getters.cTodoListIds || []).find((l) => l.listId === this.listId);
@@ -269,7 +295,6 @@ export default {
           deadlineLabel: t.deadline ? moment(t.deadline, "YYYYMMDD").format("DD/MM") : null,
         }))
         .sort((a, b) => {
-          // Overdue first, then by deadline proximity, then by priority.
           if (a.isOverdue && !b.isOverdue) return -1;
           if (!a.isOverdue && b.isOverdue) return 1;
           if (a.deadline && b.deadline) return a.deadline.localeCompare(b.deadline);
@@ -296,29 +321,28 @@ export default {
         nextDeadlineLabel: next ? moment(next, "YYYYMMDD").locale(this.language).format("ddd D MMM") : null,
       };
     },
-    // Lattice sites: one vertex per polygon side. Each site maps to either
-    // an open task (color), an overdue task (red + pulse), or sits dim.
+    // Sites around the shape. 12 fixed anchors on a circle in the item's
+    // viewBox (centered at 50,50 with radius 44). Theme-agnostic: any
+    // theme's shape sits inside and the orbiting dots feel consistent.
     sites: function () {
-      let fw = this.project.framework;
-      if (!fw) return [];
-      let sides = fw.sides;
+      let SITES = 12;
+      let cx = 50;
+      let cy = 50;
+      let radius = 44;
       let open = this.openTasks;
       let overdueCount = this.stats.overdue;
       let out = [];
-      // Convert normalized polygon points (0..100) to the viewBox (-50..50).
-      let coords = String(fw.polygonPoints || "").split(" ").map((pair) => {
-        let [x, y] = pair.split(",").map(parseFloat);
-        return { x: x - 50, y: y - 50 };
-      });
-      for (let i = 0; i < sides; i++) {
+      for (let i = 0; i < SITES; i++) {
         let state = "empty";
         if (i < overdueCount) state = "overdue";
         else if (i < open.length) state = "occupied";
-        let c = coords[i] || { x: 0, y: 0 };
+        let angle = (Math.PI * 2 * i) / SITES - Math.PI / 2;
+        let x = cx + radius * Math.cos(angle);
+        let y = cy + radius * Math.sin(angle);
         out.push({
-          x: c.x.toFixed(2),
-          y: c.y.toFixed(2),
-          r: state === "empty" ? 0.9 : state === "overdue" ? 2.4 : 2.0,
+          x: x.toFixed(2),
+          y: y.toFixed(2),
+          r: state === "empty" ? 0.9 : state === "overdue" ? 2.2 : 1.8,
           state: state,
         });
       }
@@ -448,7 +472,7 @@ export default {
 
 .crystal-ring-back {
   transform: translateZ(-80px) rotateX(68deg) scale(1.3);
-  opacity: 0.35;
+  opacity: 0.3;
 }
 
 .crystal-ring-main {
@@ -458,7 +482,7 @@ export default {
 
 .crystal-ring-front {
   transform: translateZ(80px) rotateX(-62deg) scale(0.65);
-  opacity: 0.55;
+  opacity: 0.5;
 }
 
 .site-dot {
@@ -514,89 +538,85 @@ export default {
 }
 
 .panel-head-count {
-  font-size: 0.72rem;
-  letter-spacing: 0;
-  opacity: 0.7;
-  font-weight: 500;
+  font-size: 0.8rem;
+  font-weight: 600;
+  opacity: 1;
+  color: var(--project-color, var(--accent-color, #5e6ef2));
 }
 
-.panel-stats .stat-row {
+.stat-row {
   display: flex;
   align-items: baseline;
-  justify-content: space-between;
+  gap: 10px;
   margin-bottom: 6px;
 }
 
 .stat-value {
-  font-family: var(--font-voice, "Fraunces", Georgia, serif);
-  font-size: 1.5rem;
-  font-variation-settings: "opsz" 48, "wght" 480;
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--project-color, var(--accent-color, #5e6ef2));
+  font-variant-numeric: tabular-nums;
 }
 
-.stat-value.stat-overdue { color: #ed544b; }
-.stat-value.stat-deadline {
-  font-size: 1rem;
-  color: var(--project-color, var(--accent-color, #5e6ef2));
-}
+.stat-overdue { color: #ed544b; }
+.stat-deadline { font-size: 1rem; }
 
 .stat-label {
-  font-size: 0.72rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  opacity: 0.6;
+  font-size: 0.78rem;
+  opacity: 0.7;
 }
 
 .stat-progress {
   margin-top: 10px;
+  width: 100%;
   height: 4px;
-  border-radius: 3px;
   background: rgba(0, 0, 0, 0.08);
+  border-radius: 2px;
   overflow: hidden;
 }
 
-.dark-theme .stat-progress { background: rgba(255, 255, 255, 0.08); }
+.dark-theme .stat-progress { background: rgba(255, 255, 255, 0.12); }
 
 .stat-progress-fill {
   height: 100%;
   background: var(--project-color, var(--accent-color, #5e6ef2));
-  border-radius: 3px;
-  transition: width 0.5s ease;
+  transition: width 0.5s cubic-bezier(0.2, 1, 0.1, 1);
 }
 
 .crystal-task-list {
   list-style: none;
   padding: 0;
   margin: 0;
-  max-height: 240px;
-  overflow: auto;
-
-  li {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 6px 4px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 0.88rem;
-
-    &:hover { background: rgba(0, 0, 0, 0.04); }
-    &.overdue { color: #ed544b; }
-  }
+  max-height: 220px;
+  overflow-y: auto;
 }
 
-.dark-theme .crystal-task-list li:hover { background: rgba(94, 110, 242, 0.1); }
+.crystal-task-list li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 2px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.dark-theme .crystal-task-list li { border-bottom-color: rgba(255, 255, 255, 0.06); }
+
+.crystal-task-list li:hover { background: rgba(0, 0, 0, 0.04); border-radius: 4px; }
+.dark-theme .crystal-task-list li:hover { background: rgba(255, 255, 255, 0.04); }
+
+.crystal-task-list li.overdue { color: #ed544b; }
 
 .ct-dot {
   width: 7px;
   height: 7px;
   border-radius: 50%;
   flex-shrink: 0;
-  color: var(--project-color, var(--accent-color, #5e6ef2));
 }
 
 .ct-text {
   flex: 1 1 auto;
-  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -604,115 +624,96 @@ export default {
 
 .ct-deadline {
   font-size: 0.72rem;
-  opacity: 0.65;
-  flex-shrink: 0;
+  opacity: 0.72;
   font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
 }
 
 .ct-empty {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  color: grey;
-  font-size: 0.85rem;
-  padding: 10px 4px;
-  font-style: italic;
+  cursor: default !important;
+  opacity: 0.7;
+  justify-content: center;
+  text-align: center;
 }
+
+.ct-empty:hover { background: transparent !important; }
 
 .panel-framework .fw-code-row {
   display: flex;
-  align-items: center;
-  gap: 8px;
+  gap: 7px;
+  align-items: baseline;
   flex-wrap: wrap;
   margin-bottom: 8px;
 }
 
 .fw-code {
-  font-family: var(--font-voice, "Fraunces", Georgia, serif);
   font-size: 1.3rem;
-  font-variation-settings: "opsz" 48, "wght" 460;
+  font-weight: 700;
+  letter-spacing: 1px;
   color: var(--project-color, var(--accent-color, #5e6ef2));
 }
 
 .fw-ring {
-  font-size: 0.75rem;
+  font-size: 0.78rem;
   padding: 2px 8px;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--project-color, #5e6ef2) 14%, transparent);
+  background: color-mix(in srgb, var(--project-color, #5e6ef2) 10%, transparent);
   color: var(--project-color, var(--accent-color, #5e6ef2));
 }
 
 .fw-itq-badge {
-  font-size: 0.68rem;
-  padding: 2px 8px;
-  border-radius: 999px;
-  background: rgba(249, 115, 22, 0.12);
-  color: #c2410c;
-  letter-spacing: 0.06em;
+  font-size: 0.7rem;
+  padding: 2px 7px;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--project-color, #5e6ef2) 14%, transparent);
+  color: var(--project-color, var(--accent-color, #5e6ef2));
+  font-weight: 600;
 }
 
-.dark-theme .fw-itq-badge { color: #fdba74; }
+.fw-override-badge {
+  font-size: 0.72rem;
+  padding: 2px 6px;
+  border-radius: 4px;
+  cursor: pointer;
+  opacity: 0.5;
+  transition: opacity 0.15s ease;
+}
+
+.fw-override-badge:hover { opacity: 1; }
 
 .fw-note {
   font-size: 0.82rem;
-  line-height: 1.45;
-  opacity: 0.78;
+  line-height: 1.42;
+  opacity: 0.85;
   margin: 0;
 }
 
-/* ---- Framework picker (per-project zeolite assignment) ---- */
 .fw-change-btn {
   background: transparent;
-  border: none;
-  color: inherit;
-  cursor: pointer;
-  font-size: 0.68rem;
+  border: 1px solid transparent;
+  font-size: 0.72rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  opacity: 0.65;
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-  padding: 2px 6px;
+  color: var(--project-color, var(--accent-color, #5e6ef2));
+  padding: 2px 7px;
   border-radius: 5px;
-
-  &:hover {
-    opacity: 1;
-    background: rgba(0, 0, 0, 0.05);
-  }
-
-  i { font-size: 0.78rem; }
-}
-
-.dark-theme .fw-change-btn:hover { background: rgba(255, 255, 255, 0.08); }
-
-.fw-override-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: rgba(0, 0, 0, 0.06);
-  color: inherit;
-  opacity: 0.6;
   cursor: pointer;
-  margin-left: auto;
-
-  &:hover { opacity: 1; }
-
-  i { font-size: 0.7rem; }
+  opacity: 0.72;
+  transition: opacity 0.15s ease, background 0.15s ease;
 }
 
-.dark-theme .fw-override-badge { background: rgba(255, 255, 255, 0.08); }
+.fw-change-btn:hover {
+  opacity: 1;
+  background: color-mix(in srgb, var(--project-color, #5e6ef2) 10%, transparent);
+}
 
 .fw-picker {
   margin-top: 12px;
   padding-top: 10px;
-  border-top: 1px solid rgba(0, 0, 0, 0.07);
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
 }
 
-.dark-theme .fw-picker { border-top-color: rgba(94, 110, 242, 0.14); }
+.dark-theme .fw-picker { border-top-color: rgba(255, 255, 255, 0.1); }
 
 .fw-picker-head {
   font-size: 0.68rem;
@@ -724,57 +725,48 @@ export default {
 
 .fw-picker-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 5px;
-  max-height: 260px;
-  overflow: auto;
+  grid-template-columns: repeat(auto-fit, minmax(76px, 1fr));
+  gap: 6px;
+  max-height: 220px;
+  overflow-y: auto;
 }
 
 .fw-picker-cell {
+  background: rgba(0, 0, 0, 0.03);
+  border: 1px solid transparent;
+  border-radius: 7px;
+  padding: 6px 5px;
   display: flex;
   flex-direction: column;
-  gap: 1px;
-  padding: 6px 8px;
-  border-radius: 7px;
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  background: transparent;
-  color: inherit;
+  align-items: center;
+  gap: 2px;
+  font-size: 0.8rem;
   cursor: pointer;
-  transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.2s ease;
-  text-align: left;
-
-  &:hover {
-    background: rgba(0, 0, 0, 0.04);
-    transform: translateY(-1px);
-  }
-
-  &.active {
-    background: var(--project-color, var(--accent-color, #5e6ef2));
-    color: white;
-    border-color: var(--project-color, var(--accent-color, #5e6ef2));
-  }
-
-  &.itq:not(.active) {
-    border-color: rgba(249, 115, 22, 0.3);
-  }
+  transition: background 0.12s ease, border-color 0.12s ease, transform 0.1s ease;
 }
 
-.dark-theme .fw-picker-cell {
-  border-color: rgba(94, 110, 242, 0.18);
-  &:hover { background: rgba(94, 110, 242, 0.14); }
+.dark-theme .fw-picker-cell { background: rgba(255, 255, 255, 0.04); }
+
+.fw-picker-cell:hover {
+  background: color-mix(in srgb, var(--project-color, #5e6ef2) 10%, transparent);
+  transform: translateY(-1px);
 }
+
+.fw-picker-cell.active {
+  background: color-mix(in srgb, var(--project-color, #5e6ef2) 20%, transparent);
+  border-color: var(--project-color, var(--accent-color, #5e6ef2));
+}
+
+.fw-picker-cell.itq { font-weight: 600; }
 
 .fw-pick-code {
-  font-family: var(--font-voice, "Fraunces", Georgia, serif);
-  font-size: 0.95rem;
-  font-variation-settings: "opsz" 48, "wght" 460;
-  letter-spacing: -0.01em;
+  font-weight: 600;
+  color: var(--project-color, var(--accent-color, #5e6ef2));
+  letter-spacing: 0.6px;
 }
 
 .fw-pick-ring {
-  font-size: 0.62rem;
-  opacity: 0.7;
+  font-size: 0.66rem;
+  opacity: 0.72;
 }
-
-.fw-picker-cell.active .fw-pick-ring { opacity: 0.9; }
 </style>

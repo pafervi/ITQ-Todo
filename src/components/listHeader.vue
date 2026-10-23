@@ -115,6 +115,11 @@
           <i class="bi-clipboard"></i> <span>{{ $t('ui.copyTasks') }}</span>
         </button>
       </li>
+      <li v-show="customTodoList">
+        <button class="dropdown-item" type="button" data-bs-toggle="modal" data-bs-target="#ReorderCustomListsModal">
+          <i class="ph ph-arrows-down-up"></i> <span>{{ $t('ui.reorderCustomLists') || 'Reorder projects' }}</span>
+        </button>
+      </li>
       <li>
         <hr class="dropdown-divider" />
       </li>

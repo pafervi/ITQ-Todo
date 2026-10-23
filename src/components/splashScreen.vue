@@ -21,6 +21,14 @@
           <i :class="themeIcon"></i>
           {{ themeLabel }}: {{ latticeName }}
         </div>
+        <!-- Cross-theme teaser: today's item from a different theme (rotates
+             by day-of-year), rendered small so the user keeps the four
+             themes in their peripheral awareness without the splash
+             becoming busy. -->
+        <div v-if="crossThemeItem" class="splash-cross-theme" :title="crossThemeItemTitle">
+          <i :class="crossThemeIcon"></i>
+          <span>{{ crossThemeLabel }} · {{ crossThemeItem.fullName }}</span>
+        </div>
         <div class="splash-flavor">"{{ flavorQuote }}"</div>
         <div v-if="pendingLine" class="splash-pending" :class="{ 'splash-pending-empty': pendingCount === 0 }">
           <i :class="pendingCount === 0 ? 'bi-check2-circle' : 'bi-calendar-check'"></i>
@@ -119,6 +127,33 @@ export default {
         case "zeolites":
         default: return "ph ph-hexagon";
       }
+    },
+    // Today's item from a different theme than the active one. Rotates
+    // by day-of-year so the user eventually sees every theme in this
+    // slot, even if they stick to one active theme year-round.
+    crossThemeItem: function () {
+      return themesHelper.getCrossThemeItem(this.$store.getters.config);
+    },
+    crossThemeLabel: function () {
+      if (!this.crossThemeItem) return "";
+      return this.$t(this.crossThemeItem.themeTodayLabelKey) || "";
+    },
+    crossThemeIcon: function () {
+      if (!this.crossThemeItem) return "";
+      switch (this.crossThemeItem.themeId) {
+        case "organic": return "ph ph-atom";
+        case "oxides": return "ph ph-cube";
+        case "photochem": return "ph ph-sun";
+        case "zeolites":
+        default: return "ph ph-hexagon";
+      }
+    },
+    crossThemeItemTitle: function () {
+      // Full-text tooltip summarising the cross-theme hint, so users can
+      // tell at a glance what the "also today" is pointing at without
+      // squinting at the small line.
+      if (!this.crossThemeItem) return "";
+      return (this.$t('ui.alsoToday') || 'Also today') + ": " + this.crossThemeItem.fullName;
     },
     language: function () {
       return this.$store.getters.config.language || "en";
@@ -311,6 +346,24 @@ export default {
 
 .dark-theme .splash-lattice-name {
   color: #7d8590;
+}
+
+/* Cross-theme teaser: smaller than the active-theme line, so the eye
+   lands on it only as a secondary cue. Rotates by day of year across
+   the three non-active themes. */
+.splash-cross-theme {
+  font-size: 0.68rem;
+  color: #a5acb6;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: -4px;
+  opacity: 0.85;
+  animation: splashFadeUp 0.7s ease 0.78s both;
+}
+
+.dark-theme .splash-cross-theme {
+  color: #6b7280;
 }
 
 .splash-year-info {

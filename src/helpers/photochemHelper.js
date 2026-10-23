@@ -15,51 +15,72 @@ const CENTER = 50;
 // concept" rather than demanding accuracy.
 
 function shapeJablonski(opts) {
-  // Horizontal state lines + absorption/emission arrows.
-  // opts.absorb: 'up' arrow colour hint
+  // Full Jablonski diagram with labelled transitions. State lines plus
+  // absorption / emission / IC / ISC / rISC arrows, each tagged with the
+  // standard label (hv, F, P, IC, ISC, kF, kP) next to its arrow so the
+  // mechanism is readable at a glance rather than inferred from colour
+  // or dash pattern alone.
   // opts.emit: emission type ('fluor', 'phos', 'ic', 'isc', 'tadf')
+  // opts.showTriplet: whether to draw the triplet manifold
   let parts = [];
   let levels = [
-    { y: 78, label: "S0" },
-    { y: 40, label: "S1" },
-    { y: 24, label: "Sn" },
+    { y: 80, label: "S0" },
+    { y: 42, label: "S1" },
+    { y: 26, label: "Sn" },
   ];
   let tripletLevels = [
-    { y: 56, label: "T1" },
-    { y: 32, label: "Tn" },
+    { y: 58, label: "T1" },
+    { y: 34, label: "Tn" },
   ];
-  // Singlet stack
+  // Vibrational substate lines (shorter, lighter) above each electronic
+  // level — makes the diagram read as a proper Jablonski.
+  let vibsFor = (y) => {
+    let out = [];
+    [y - 2.8, y - 5.4].forEach((yy) => {
+      out.push('<line x1="27" y1="' + yy.toFixed(2) + '" x2="46" y2="' + yy.toFixed(2) + '" stroke="currentColor" stroke-width="0.8" opacity="0.35"/>');
+    });
+    return out;
+  };
+  // Singlet stack with vibrational sublevels
   levels.forEach((l) => {
     parts.push('<line x1="25" y1="' + l.y + '" x2="48" y2="' + l.y + '" stroke="currentColor" stroke-width="2.3"/>');
-    parts.push('<text x="18" y="' + (l.y + 3) + '" text-anchor="end" font-size="7" font-family="sans-serif" fill="currentColor" opacity="0.75">' + l.label + "</text>");
+    parts.push('<text x="18" y="' + (l.y + 3) + '" text-anchor="end" font-size="7" font-family="sans-serif" fill="currentColor" opacity="0.85">' + l.label + "</text>");
+    if (l.label !== "S0") parts.push(...vibsFor(l.y));
   });
-  // Triplet stack (when needed)
+  // Triplet stack (when needed), always labelled, with vibrational hints
   if (opts.showTriplet) {
     tripletLevels.forEach((l) => {
-      parts.push('<line x1="60" y1="' + l.y + '" x2="83" y2="' + l.y + '" stroke="currentColor" stroke-width="2.3" opacity="0.75"/>');
-      parts.push('<text x="88" y="' + (l.y + 3) + '" font-size="7" font-family="sans-serif" fill="currentColor" opacity="0.75">' + l.label + "</text>");
+      parts.push('<line x1="60" y1="' + l.y + '" x2="83" y2="' + l.y + '" stroke="currentColor" stroke-width="2.3" opacity="0.85"/>');
+      parts.push('<text x="88" y="' + (l.y + 3) + '" font-size="7" font-family="sans-serif" fill="currentColor" opacity="0.85">' + l.label + "</text>");
+      [l.y - 2.8, l.y - 5.4].forEach((yy) => {
+        parts.push('<line x1="62" y1="' + yy.toFixed(2) + '" x2="81" y2="' + yy.toFixed(2) + '" stroke="currentColor" stroke-width="0.8" opacity="0.35"/>');
+      });
     });
   }
-  // Absorption arrow (always drawn, straight up)
-  parts.push('<line x1="30" y1="78" x2="30" y2="24" stroke="currentColor" stroke-width="2" marker-end="url(#phArrow)"/>');
-  // Emission arrows differ by kind
+  // Absorption arrow (always drawn, straight up), labelled hv
+  parts.push('<line x1="30" y1="80" x2="30" y2="26" stroke="currentColor" stroke-width="2" marker-end="url(#phArrow)"/>');
+  parts.push('<text x="23" y="54" text-anchor="end" font-size="7" font-family="sans-serif" font-style="italic" fill="currentColor" opacity="0.8">hv</text>');
+  // Emission arrows and their labels differ by mechanism
   if (opts.emit === "fluor") {
-    parts.push('<line x1="40" y1="40" x2="40" y2="78" stroke="currentColor" stroke-width="2" marker-end="url(#phArrow)"/>');
+    parts.push('<line x1="40" y1="42" x2="40" y2="80" stroke="currentColor" stroke-width="2" marker-end="url(#phArrow)"/>');
+    parts.push('<text x="43" y="65" font-size="7" font-family="sans-serif" font-weight="700" fill="currentColor">F</text>');
   } else if (opts.emit === "phos") {
-    // Dashed down from T1
-    parts.push('<line x1="72" y1="56" x2="72" y2="78" stroke="currentColor" stroke-width="2" stroke-dasharray="3 2" marker-end="url(#phArrow)"/>');
-    // Short ISC arrow S1 -> T1
-    parts.push('<path d="M 46 40 Q 56 48 60 56" fill="none" stroke="currentColor" stroke-width="1.6" opacity="0.75" marker-end="url(#phArrow)"/>');
+    parts.push('<path d="M 46 42 Q 56 48 60 58" fill="none" stroke="currentColor" stroke-width="1.6" opacity="0.8" marker-end="url(#phArrow)"/>');
+    parts.push('<text x="52" y="46" font-size="6.5" font-family="sans-serif" fill="currentColor" opacity="0.85">ISC</text>');
+    parts.push('<line x1="72" y1="58" x2="72" y2="80" stroke="currentColor" stroke-width="2" stroke-dasharray="3 2" marker-end="url(#phArrow)"/>');
+    parts.push('<text x="76" y="72" font-size="7" font-family="sans-serif" font-weight="700" fill="currentColor">P</text>');
   } else if (opts.emit === "ic") {
-    // Wavy down between S1 and S0
-    parts.push('<path d="M 44 40 Q 48 50 44 60 Q 40 70 44 78" fill="none" stroke="currentColor" stroke-width="1.8" opacity="0.75" marker-end="url(#phArrow)"/>');
+    parts.push('<path d="M 44 42 Q 48 52 44 62 Q 40 72 44 80" fill="none" stroke="currentColor" stroke-width="1.8" opacity="0.8" marker-end="url(#phArrow)"/>');
+    parts.push('<text x="48" y="64" font-size="7" font-family="sans-serif" fill="currentColor" opacity="0.85">IC</text>');
   } else if (opts.emit === "isc") {
-    // Horizontal between S1 and T1
-    parts.push('<path d="M 48 40 L 60 56" stroke="currentColor" stroke-width="2" stroke-dasharray="3 2" marker-end="url(#phArrow)"/>');
+    parts.push('<path d="M 48 42 L 60 58" stroke="currentColor" stroke-width="2" stroke-dasharray="3 2" marker-end="url(#phArrow)"/>');
+    parts.push('<text x="48" y="55" font-size="7" font-family="sans-serif" fill="currentColor" opacity="0.85">ISC</text>');
   } else if (opts.emit === "tadf") {
-    // Up from T1 to S1 (rISC) then emission down
-    parts.push('<path d="M 60 56 L 48 40" stroke="currentColor" stroke-width="1.6" opacity="0.75" marker-end="url(#phArrow)"/>');
-    parts.push('<line x1="40" y1="40" x2="40" y2="78" stroke="currentColor" stroke-width="2" marker-end="url(#phArrow)"/>');
+    // Up from T1 to S1 (rISC), then emission down
+    parts.push('<path d="M 60 58 L 48 42" stroke="currentColor" stroke-width="1.6" opacity="0.8" marker-end="url(#phArrow)"/>');
+    parts.push('<text x="48" y="55" font-size="6.5" font-family="sans-serif" fill="currentColor" opacity="0.85">rISC</text>');
+    parts.push('<line x1="40" y1="42" x2="40" y2="80" stroke="currentColor" stroke-width="2" marker-end="url(#phArrow)"/>');
+    parts.push('<text x="43" y="65" font-size="7" font-family="sans-serif" font-weight="700" fill="currentColor">F</text>');
   }
   // Shared arrow marker definition
   let defs = '<defs><marker id="phArrow" markerWidth="7" markerHeight="7" refX="4" refY="3.5" orient="auto"><path d="M0,0 L5,3.5 L0,7 z" fill="currentColor"/></marker></defs>';

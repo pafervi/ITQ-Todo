@@ -60,40 +60,98 @@ function buildSvg(item) {
       );
     }
   });
-  // Draw internal double bonds for aromatic rings as short parallel lines
-  // along alternating edges. Keeps the visual mnemonic: a benzene reads as
-  // a hex with three internal dashes.
+  // Real double bonds for aromatic rings: two parallel lines along
+  // alternating edges, the inner line shifted perpendicular toward the ring
+  // centre. Reads as the classic chemical double-bond drawing instead of
+  // the vague interior dash the earlier version used.
   if (item.aromatic) {
     rings.forEach((ring) => {
-      let shrink = 0.72;
       let cx = ring.verts.reduce((s, v) => s + v.x, 0) / ring.verts.length;
       let cy = ring.verts.reduce((s, v) => s + v.y, 0) / ring.verts.length;
+      // Inner-line perpendicular offset as a fraction of the bond length.
+      let offset = 2.3;
+      // Shrink from edge endpoints so the inner line does not touch the
+      // vertex (looks cleaner, matches textbook drawings).
+      let endInset = 0.14;
       for (let i = 0; i < ring.sides; i += 2) {
         let a = ring.verts[i];
         let b = ring.verts[(i + 1) % ring.sides];
-        let ax = cx + (a.x - cx) * shrink;
-        let ay = cy + (a.y - cy) * shrink;
-        let bx = cx + (b.x - cx) * shrink;
-        let by = cy + (b.y - cy) * shrink;
+        // Edge direction and length
+        let dx = b.x - a.x;
+        let dy = b.y - a.y;
+        let len = Math.sqrt(dx * dx + dy * dy) || 1;
+        let ux = dx / len;
+        let uy = dy / len;
+        // Inward perpendicular (points to ring centre). Rotate the edge
+        // unit vector by 90 degrees, then flip whichever direction points
+        // away from the centre.
+        let nx = -uy;
+        let ny = ux;
+        let midx = (a.x + b.x) / 2;
+        let midy = (a.y + b.y) / 2;
+        if ((midx + nx) * (midx - cx) + (midy + ny) * (midy - cy) > 0) {
+          nx = -nx;
+          ny = -ny;
+        }
+        // Inset the inner line's endpoints along the bond direction so it
+        // sits visibly inside the ring edge rather than running vertex to
+        // vertex.
+        let ax = a.x + ux * len * endInset + nx * offset;
+        let ay = a.y + uy * len * endInset + ny * offset;
+        let bx = b.x - ux * len * endInset + nx * offset;
+        let by = b.y - uy * len * endInset + ny * offset;
         parts.push(
-          '<line x1="' + ax.toFixed(2) + '" y1="' + ay.toFixed(2) + '" x2="' + bx.toFixed(2) + '" y2="' + by.toFixed(2) + '" stroke="currentColor" stroke-width="1.6" opacity="0.6"/>'
+          '<line x1="' + ax.toFixed(2) + '" y1="' + ay.toFixed(2) +
+          '" x2="' + bx.toFixed(2) + '" y2="' + by.toFixed(2) +
+          '" stroke="currentColor" stroke-width="1.6" opacity="0.72"/>'
         );
       }
     });
   }
   // Heteroatom labels. Each is a filled circle backing with the letter on
-  // top, placed at a vertex coordinate (indexed into the first ring unless
-  // the item says otherwise).
+  // top, placed at a vertex coordinate. An `h: true` on the heteroatom
+  // marks that it carries an implicit hydrogen (NH of pyrrole, OH, etc.);
+  // we render a small "H" subscript to the lower-right of the atom. In
+  // CPK-light mode (item.cpk === true at render time via config), the
+  // atom's background colour is set per element: N blue, O red, S gold.
   (item.heteros || []).forEach((h) => {
     let ring = rings[h.ring || 0];
     if (!ring) return;
     let v = ring.verts[h.vertex % ring.verts.length];
+    // Background color follows CPK light-convention for heteroatoms by
+    // default (N blue, O red, S gold, P orange). Carbons remain
+    // currentColor so the project/accent tint stays dominant. An opt-out
+    // flag item.cpk === false disables it on an individual item.
+    let bg = "currentColor";
+    if (item.cpk !== false) {
+      switch (h.label) {
+        case "N": bg = "#4a7fdb"; break;
+        case "O": bg = "#d64545"; break;
+        case "S": bg = "#d6a141"; break;
+        case "P": bg = "#d67a30"; break;
+      }
+    }
     parts.push(
-      '<circle cx="' + v.x + '" cy="' + v.y + '" r="6" fill="currentColor" opacity="0.95"/>'
+      '<circle cx="' + v.x + '" cy="' + v.y + '" r="6" fill="' + bg + '" opacity="0.95"/>'
     );
     parts.push(
       '<text x="' + v.x + '" y="' + (v.y + 2.5) + '" text-anchor="middle" font-size="8" font-family="sans-serif" font-weight="700" fill="#fff">' + h.label + '</text>'
     );
+    if (h.h) {
+      // Direction away from the ring centre so the H label sits "outside".
+      let ring = rings[h.ring || 0];
+      let cx = ring.verts.reduce((s, w) => s + w.x, 0) / ring.verts.length;
+      let cy = ring.verts.reduce((s, w) => s + w.y, 0) / ring.verts.length;
+      let dx = v.x - cx;
+      let dy = v.y - cy;
+      let len = Math.sqrt(dx * dx + dy * dy) || 1;
+      let hx = v.x + (dx / len) * 7;
+      let hy = v.y + (dy / len) * 7;
+      parts.push(
+        '<text x="' + hx.toFixed(2) + '" y="' + (hy + 2).toFixed(2) +
+        '" text-anchor="middle" font-size="5.5" font-family="sans-serif" font-weight="600" fill="currentColor" opacity="0.72">H</text>'
+      );
+    }
   });
   return parts.join("");
 }
@@ -135,21 +193,21 @@ const ITEMS = [
     note: "Five-membered aromatic with NH. Building block of porphyrins and chlorophyll.",
     aromatic: true,
     rings: [{ cx: CENTER, cy: CENTER, r: RING_R, sides: 5 }],
-    heteros: [{ label: "N", ring: 0, vertex: 0 }],
+    heteros: [{ label: "N", ring: 0, vertex: 0, h: true }],
   },
   {
     code: "C3H4N2", fullName: "Imidazole", formula: "C3H4N2", year: 1858,
     note: "Two nitrogens, one donor and one acceptor. Side chain of histidine, workhorse of enzymology.",
     aromatic: true,
     rings: [{ cx: CENTER, cy: CENTER, r: RING_R, sides: 5 }],
-    heteros: [{ label: "N", ring: 0, vertex: 0 }, { label: "N", ring: 0, vertex: 2 }],
+    heteros: [{ label: "N", ring: 0, vertex: 0, h: true }, { label: "N", ring: 0, vertex: 2 }],
   },
   {
     code: "C3H4N2p", fullName: "Pyrazole", formula: "C3H4N2", year: 1883,
     note: "N-N adjacent. Scaffold of celecoxib and many drug cores.",
     aromatic: true,
     rings: [{ cx: CENTER, cy: CENTER, r: RING_R, sides: 5 }],
-    heteros: [{ label: "N", ring: 0, vertex: 0 }, { label: "N", ring: 0, vertex: 1 }],
+    heteros: [{ label: "N", ring: 0, vertex: 0, h: true }, { label: "N", ring: 0, vertex: 1 }],
   },
   {
     code: "C4H4N2", fullName: "Pyrimidine", formula: "C4H4N2", year: 1884,
@@ -209,7 +267,7 @@ const ITEMS = [
       { cx: CENTER - FUSED_R * 0.8, cy: CENTER, r: FUSED_R, sides: 5 },
       { cx: CENTER + FUSED_R * 0.9, cy: CENTER, r: FUSED_R, sides: 6 },
     ],
-    heteros: [{ label: "N", ring: 0, vertex: 0 }],
+    heteros: [{ label: "N", ring: 0, vertex: 0, h: true }],
   },
   {
     code: "C9H7N", fullName: "Quinoline", formula: "C9H7N", year: 1834,
@@ -270,7 +328,7 @@ const ITEMS = [
       { cx: CENTER - FUSED_R * 0.8, cy: CENTER, r: FUSED_R, sides: 5 },
       { cx: CENTER + FUSED_R * 0.9, cy: CENTER, r: FUSED_R, sides: 6 },
     ],
-    heteros: [{ label: "N", ring: 0, vertex: 0 }, { label: "N", ring: 0, vertex: 2 }],
+    heteros: [{ label: "N", ring: 0, vertex: 0, h: true }, { label: "N", ring: 0, vertex: 2 }],
   },
   {
     code: "C9H7NO", fullName: "Benzofuran", formula: "C8H6O", year: 1870,
@@ -291,7 +349,7 @@ const ITEMS = [
       { cx: CENTER, cy: CENTER, r: TRIPLE_R * 0.9, sides: 5 },
       { cx: CENTER + TRIPLE_R * 1.4, cy: CENTER, r: TRIPLE_R, sides: 6 },
     ],
-    heteros: [{ label: "N", ring: 1, vertex: 0 }],
+    heteros: [{ label: "N", ring: 1, vertex: 0, h: true }],
   },
   {
     code: "C5H10O", fullName: "Tetrahydropyran", formula: "C5H10O", year: 1890,

@@ -138,6 +138,31 @@
                     <option value="oxides">{{ $t("themes.oxidesName") || "Metal oxides" }}</option>
                     <option value="photochem">{{ $t("themes.photochemName") || "Photochemistry" }}</option>
                   </select>
+                  <!-- Preview strip for the current theme choice. Three
+                       characteristic items rendered small so the user can
+                       see what each theme looks like without committing. -->
+                  <div class="theme-preview-row" v-if="themePreviewItems.length">
+                    <svg v-for="(it, i) in themePreviewItems" :key="i"
+                      class="theme-preview-tile"
+                      :viewBox="it.viewBox || '0 0 100 100'"
+                      :aria-label="it.fullName"
+                      v-html="it.svgShape"></svg>
+                  </div>
+                  <!-- Suggested accent button, visible when the theme has a
+                       default accent that is NOT the current one. Clicking
+                       applies it to config.accentColor so the whole app
+                       re-skins without the user having to pick the colour
+                       themselves. -->
+                  <div v-if="suggestedAccentForTheme && suggestedAccentForTheme.toLowerCase() !== (configData.accentColor || '').toLowerCase()"
+                       class="theme-accent-suggest">
+                    <span class="theme-accent-swatch" :style="{ background: suggestedAccentForTheme }"></span>
+                    <span class="theme-accent-text">
+                      {{ $t('settings.themeAccentSuggest') || 'Suggested accent for this theme' }}
+                    </span>
+                    <button type="button" class="theme-accent-apply" @click="applySuggestedAccent">
+                      {{ $t('settings.themeAccentApply') || 'Apply' }}
+                    </button>
+                  </div>
                   <!-- Inline margin override: .setting-hint has margin-top: -6px
                        which looks fine right after an unlabelled toggle but
                        pulls the hint up into the select here. Push it back
@@ -468,6 +493,7 @@ import mockDataSeeder from "../helpers/mockDataSeeder";
 import linkList from "../components/linkList";
 import configList from "./configList";
 import notifications from "../helpers/notifications";
+import themesHelper from "../helpers/themesHelper";
 import { Modal, Toast } from "bootstrap";
 
 export default {
@@ -601,10 +627,31 @@ export default {
         this.$store.getters.config.notificationSound
       );
     },
+    // Switch the app's accent colour to the one the active theme suggests.
+    // Pushes through changeConfig so configRepository persists and every
+    // reactive consumer (splash, project covers, UI chrome) re-skins.
+    applySuggestedAccent: function () {
+      let accent = this.suggestedAccentForTheme;
+      if (!accent) return;
+      this.configData.accentColor = accent;
+      this.changeConfig("accentColor", accent);
+    },
   },
   computed: {
     configLinks: function () {
       return configList.configList(this);
+    },
+    // Three characteristic items of the currently-selected theme, used
+    // for the preview strip under the theme <select>. Rendered via
+    // v-html on inline SVGs that tint via currentColor.
+    themePreviewItems: function () {
+      return themesHelper.getPreviewItems(this.configData.activeTheme) || [];
+    },
+    // Default accent each theme ships. If the current accent differs,
+    // the "Apply" button appears next to the theme <select> so the user
+    // can adopt the theme-matched accent in one click.
+    suggestedAccentForTheme: function () {
+      return themesHelper.getSuggestedAccent(this.configData.activeTheme);
     },
     watch: {
       configProp: function (newVal) {
@@ -629,6 +676,87 @@ export default {
 .dark-theme & {
   border-right: 1px solid rgba(255, 255, 255, 0.06);
 }
+}
+
+/* Theme preview tiles under the theme <select>. Three small SVGs that
+   render the first few items of the chosen theme, tinted with the
+   accent via currentColor. */
+.theme-preview-row {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+  justify-content: flex-start;
+}
+
+.theme-preview-tile {
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  padding: 4px;
+  background: color-mix(in srgb, var(--accent-color, #5e6ef2) 6%, transparent);
+  color: var(--accent-color, #5e6ef2);
+  border: 1px solid color-mix(in srgb, var(--accent-color, #5e6ef2) 18%, transparent);
+  transition: transform 0.12s ease, background 0.12s ease;
+}
+
+.theme-preview-tile:hover {
+  transform: translateY(-1px);
+  background: color-mix(in srgb, var(--accent-color, #5e6ef2) 12%, transparent);
+}
+
+.dark-theme .theme-preview-tile {
+  background: color-mix(in srgb, var(--accent-color, #5e6ef2) 12%, transparent);
+  border-color: color-mix(in srgb, var(--accent-color, #5e6ef2) 32%, transparent);
+}
+
+/* Row with the suggested accent swatch + Apply button. Compact so it
+   doesn't dominate the Settings panel; only visible when the current
+   accent differs from the theme's default. */
+.theme-accent-suggest {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.03);
+  font-size: 0.78rem;
+}
+
+.dark-theme .theme-accent-suggest {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.theme-accent-swatch {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1) inset;
+}
+
+.theme-accent-text {
+  flex: 1 1 auto;
+  color: #6b7280;
+}
+
+.dark-theme .theme-accent-text {
+  color: #c9d1d9;
+}
+
+.theme-accent-apply {
+  background: transparent;
+  border: 1px solid currentColor;
+  border-radius: 6px;
+  padding: 2px 10px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  color: var(--accent-color, #5e6ef2);
+  transition: background 0.15s ease;
+}
+
+.theme-accent-apply:hover {
+  background: color-mix(in srgb, var(--accent-color, #5e6ef2) 14%, transparent);
 }
 
 

@@ -1105,12 +1105,26 @@ export default {
 }
 
 .to-do-list-container:hover .project-cover {
-  opacity: 0.42;
-  transform: rotate(6deg) scale(1.06);
+  opacity: 0.5;
+  animation: projectCoverSpin 30s linear infinite;
+  /* subtle scale on top of the spin animation */
+  transform: scale(1.08);
 }
 
 .dark-theme .to-do-list-container:hover .project-cover {
-  opacity: 0.6;
+  opacity: 0.7;
+}
+
+@keyframes projectCoverSpin {
+  from { transform: scale(1.08) rotate(0deg); }
+  to   { transform: scale(1.08) rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .to-do-list-container:hover .project-cover {
+    animation: none;
+    transform: rotate(6deg) scale(1.06);
+  }
 }
 
 /* On meeting / activelearning variants the slot is already taken by the

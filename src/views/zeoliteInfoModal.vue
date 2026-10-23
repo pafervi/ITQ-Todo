@@ -46,6 +46,14 @@
 
           <p class="zi-note">{{ z.note }}</p>
 
+          <div class="zi-actions">
+            <button type="button" class="zi-action-btn" @click="downloadSvg"
+              :title="$t('ui.downloadSvgTitle') || 'Download the shape as an SVG file'">
+              <i class="ph ph-download-simple"></i>
+              {{ $t('ui.downloadSvg') || 'Download SVG' }}
+            </button>
+          </div>
+
           <p class="zi-foot">{{ $t("ui.zeoliteInfoFoot") }}</p>
         </div>
       </div>
@@ -58,6 +66,41 @@ import themesHelper from "../helpers/themesHelper";
 
 export default {
   name: "zeoliteInfoModal",
+  methods: {
+    // Export the current theme item's SVG shape as a standalone .svg file.
+    // Rebuilds a complete <svg> element around the raw svgShape fragment so
+    // the download is a valid, viewable file (not a bare content snippet).
+    // Colour is baked as the current accent so the saved file renders the
+    // same way outside the app, where currentColor would otherwise fall
+    // back to black.
+    downloadSvg: function () {
+      let item = this.z;
+      if (!item || !item.svgShape) return;
+      let accent = this.$store.getters.config.accentColor || "#5e6ef2";
+      let viewBox = item.viewBox || "0 0 100 100";
+      // Wrap into a full standalone SVG, pin currentColor to the accent via
+      // a wrapping <g color=...> so inner elements that use currentColor
+      // render in that colour.
+      let svg =
+        '<?xml version="1.0" encoding="UTF-8"?>' +
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="' + viewBox + '" width="400" height="400">' +
+        '<g color="' + accent + '">' + item.svgShape + '</g>' +
+        '</svg>';
+      let blob = new Blob([svg], { type: "image/svg+xml;charset=utf-8" });
+      let url = URL.createObjectURL(blob);
+      let a = document.createElement("a");
+      a.href = url;
+      // Filename: themeItem code sluggified, fall back to "theme-item".
+      let slug = (item.code || "theme-item").toString().replace(/[^a-zA-Z0-9_-]+/g, "-").toLowerCase();
+      a.download = slug + ".svg";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      // Release the blob url on next tick so the download has a chance to
+      // start before the handle is revoked.
+      setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+    },
+  },
   computed: {
     z: function () {
       return themesHelper.getTodayItem(this.$store.getters.config);
@@ -226,6 +269,38 @@ export default {
 
   .dark-theme & {
     color: #b0b3b8;
+  }
+}
+
+.zi-actions {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin: 10px 0 14px;
+}
+
+.zi-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background-color: color-mix(in srgb, var(--accent-color, #5e6ef2) 10%, transparent);
+  color: var(--accent-color, #5e6ef2);
+  border: 1px solid color-mix(in srgb, var(--accent-color, #5e6ef2) 25%, transparent);
+  cursor: pointer;
+  transition: background-color 0.15s ease, transform 0.1s ease;
+
+  &:hover {
+    background-color: color-mix(in srgb, var(--accent-color, #5e6ef2) 18%, transparent);
+    transform: translateY(-1px);
+  }
+
+  .dark-theme & {
+    background-color: color-mix(in srgb, var(--accent-color, #5e6ef2) 18%, transparent);
+    color: #c7d0ff;
+    border-color: color-mix(in srgb, var(--accent-color, #5e6ef2) 40%, transparent);
   }
 }
 

@@ -126,6 +126,11 @@
               <i class="ph ph-download-simple"></i> <span>{{ $t("ui.exportAllProjects") }}</span>
             </button>
           </li>
+          <li v-show="showCustomList">
+            <button class="dropdown-item" type="button" data-bs-toggle="modal" data-bs-target="#ReorderCustomListsModal">
+              <i class="ph ph-arrows-down-up"></i> <span>{{ $t("ui.reorderCustomLists") || "Reorder projects" }}</span>
+            </button>
+          </li>
           <li>
             <hr class="dropdown-divider" />
           </li>

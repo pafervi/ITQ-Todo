@@ -7,30 +7,25 @@
       v-if="meshBackgroundEnabled"
       class="mesh-bg"
       :class="'time-' + timeTint"
-      :style="{ '--lattice-mask': todayLattice.mask, '--lattice-size': todayLattice.size }"
+      :style="{ '--lattice-mask': todayThemeItem.mask, '--lattice-size': todayThemeItem.maskSize }"
       aria-hidden="true"
     >
       <span class="mesh-blob blob-1"></span>
       <span class="mesh-blob blob-2"></span>
       <span class="mesh-blob blob-3"></span>
 
-      <!-- Ambient lattice overlay: the day's framework as a single
-           hero-sized ring, drawn as a visible SVG stroke and rotating very
-           slowly so the room feels alive rather than animated. Separate
-           from the ::before mask layer, which stays as the tiled
-           watermark. -->
+      <!-- Ambient hero overlay: the day's theme item (zeolite pore, organic
+           ring, oxide unit cell, photochem motif) rendered large and
+           rotating slowly. Themed via themesHelper so switching theme
+           in Settings re-skins this too, not just the tiled watermark.
+           v-html injects the theme's own svgShape, which uses
+           currentColor for stroke/fill, so the accent tint carries. -->
       <svg
         class="lattice-field"
-        viewBox="-120 -120 240 240"
+        :viewBox="todayThemeItem.viewBox || '0 0 100 100'"
         preserveAspectRatio="xMidYMid slice"
       >
-        <g class="lattice-rotor">
-          <polygon
-            class="lattice-ring"
-            :points="todayLattice.polygonPoints"
-          />
-          <circle class="lattice-nucleus" cx="0" cy="0" r="3" />
-        </g>
+        <g class="lattice-rotor" v-html="todayThemeItem.svgShape"></g>
       </svg>
     </div>
     <div class="hidden-mobile app-body" :style="{ zoom: `${zoom}%` }">
@@ -271,7 +266,7 @@ import peopleModal from "./views/peopleModal.vue";
 import projectCrystalModal from "./views/projectCrystalModal.vue";
 import fridayRitualModal from "./views/fridayRitualModal.vue";
 import appToolbar from "./components/layout/appToolbar.vue";
-import zeoliteHelper from "./helpers/zeoliteHelper";
+import themesHelper from "./helpers/themesHelper";
 
 export default {
   name: "App",
@@ -320,7 +315,6 @@ export default {
   data() {
     return {
       selected_date: null,
-      cTodoList: this.$store.getters.cTodoListIds,
       calendarHeight: "calc(50% - 50px)",
       ipcRenderer: null,
       initialLoadCompleted: false,
@@ -952,6 +946,15 @@ export default {
       if (this.todayOnlyMode) return this.selected_date ? [this.selected_date] : [];
       return this.dates_array;
     },
+    // Reactive mirror of the store's custom-project list. Must be a computed
+    // (not data()) so when the reorder mutation replaces the array with a
+    // fresh slice, every consumer below (visibleCTodoList, archivedCount)
+    // re-renders in place without needing a reload. Previously held in
+    // data(), which captured the original reference at mount and silently
+    // ignored later whole-array replacements, breaking drag reorder UX.
+    cTodoList: function () {
+      return this.$store.getters.cTodoListIds || [];
+    },
     visibleCTodoList: function () {
       return this.cTodoList
         .map((list, index) => ({ list: list, index: index }))
@@ -987,8 +990,16 @@ export default {
     performanceMode: function () {
       return this.$store.getters.config.performanceMode === true;
     },
-    todayLattice: function () {
-      return zeoliteHelper.getTodayLattice();
+    // Day's theme item, used by the ambient background (mask tile) and the
+    // hero overlay SVG. Reads through themesHelper so changing the active
+    // theme in Settings re-skins the whole board (not just the splash).
+    // Reads config.activeTheme explicitly so Vue tracks it as a dependency
+    // and the mesh background re-renders on theme switch.
+    todayThemeItem: function () {
+      let cfg = this.$store.getters.config;
+      // Touch activeTheme so the dependency tracker picks it up.
+      let _theme = cfg && cfg.activeTheme; // eslint-disable-line no-unused-vars
+      return themesHelper.getTodayItem(cfg);
     },
     timeTint: function () {
       let h = this.nowHour;
@@ -1229,26 +1240,20 @@ body {
   mix-blend-mode: screen;
 }
 
+/* Rotate the whole theme shape around its own centre. transform-box fill-box
+   + 50% 50% keeps the content in place regardless of its viewBox. Themes
+   whose svgShape uses currentColor inherit the accent tint via .lattice-field. */
 .lattice-rotor {
-  transform-origin: 0 0;
+  transform-origin: 50% 50%;
   transform-box: fill-box;
   animation: latticeDrift 180s linear infinite;
 }
 
-.lattice-ring {
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 0.9;
+/* Default stroke/fill tuning for v-html'd theme shapes that leave either
+   unset. Theme SVGs supply their own fill/stroke using currentColor, so
+   these rules are intentionally light and only apply if nothing else wins. */
+.lattice-rotor > * {
   stroke-linejoin: round;
-  transform: scale(1.2);
-  transform-origin: center;
-  transform-box: fill-box;
-  opacity: 1;
-}
-
-.lattice-nucleus {
-  fill: currentColor;
-  opacity: 0.6;
 }
 
 @keyframes latticeDrift {

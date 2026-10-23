@@ -1,11 +1,12 @@
 # ITQ-Todo cleanup: move detected orphan files and the duplicated nested repo
 # into _to_delete\ preserving relative paths, so Pau can review and delete.
 # Run from the repo root:
-#   cd C:\Users\pafervi2\Documents\GitHub\ITQ-Todo
-#   powershell -ExecutionPolicy Bypass -File .\cleanup.ps1
+#   cd <repo root>
+#   powershell -ExecutionPolicy Bypass -File .\scripts\windows\cleanup.ps1
 
 $ErrorActionPreference = "Stop"
-$repoRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
+# Script lives in scripts\windows\, repo root is two levels up.
+$repoRoot = Resolve-Path (Join-Path (Split-Path -Parent $MyInvocation.MyCommand.Path) "..\..")
 Set-Location $repoRoot
 
 $trash = Join-Path $repoRoot "_to_delete"

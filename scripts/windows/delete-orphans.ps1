@@ -1,6 +1,11 @@
 # Delete files that are no longer referenced anywhere (calc status, paste queue, old paper tracker).
-# Run from repo root: powershell -ExecutionPolicy Bypass -File .\delete-orphans.ps1
+# Run from repo root: powershell -ExecutionPolicy Bypass -File .\scripts\windows\delete-orphans.ps1
 $ErrorActionPreference = "SilentlyContinue"
+
+# Script lives in scripts\windows\, repo root is two levels up.
+$repoRoot = Resolve-Path (Join-Path (Split-Path -Parent $MyInvocation.MyCommand.Path) "..\..")
+Set-Location $repoRoot
+
 $files = @(
     "src\helpers\calcStatusHelper.js",
     "src\helpers\slurmParser.js",

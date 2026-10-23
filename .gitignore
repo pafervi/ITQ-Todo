@@ -1,8 +1,15 @@
 .DS_Store
-node_modules
+Thumbs.db
+
+# Dependencies
+node_modules/
+
+# Build output
 /dist
+/dist_electron
 
 # local env files
+.env
 .env.local
 .env.*.local
 
@@ -11,12 +18,22 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
+*.log
 
 # Editor directories and files
-.idea
-.vscode
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
 
-#Electron-builder output
-/dist_electron
+# OS cruft
+.Trash-*
+desktop.ini
 
-.env
+# Local staging folder created by scripts/windows/cleanup.ps1
+_to_delete/
+
+# yarn.lock removed; the project pins through package-lock.json. If a
+# contributor accidentally runs `yarn`, do not commit the regenerated file.
+yarn.lock

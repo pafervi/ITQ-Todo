@@ -342,11 +342,11 @@ export default {
       // Chromium in Electron) strip non-standard custom types during
       // dragover readback. The drop handler reads either.
       let payload = String(this.cTodoListIndex);
-      try { event.dataTransfer.setData("list-reorder-index", payload); } catch (e) {}
-      try { event.dataTransfer.setData("application/x-itq-list-reorder", payload); } catch (e) {}
+      try { event.dataTransfer.setData("list-reorder-index", payload); } catch (e) { /* unsupported MIME, fall through to next format */ }
+      try { event.dataTransfer.setData("application/x-itq-list-reorder", payload); } catch (e) { /* unsupported MIME, fall through to text/plain */ }
       // Also tag a text/plain fallback so the browser does not pick up any
       // selection it might think is being dragged.
-      try { event.dataTransfer.setData("text/plain", "itq-list-reorder:" + payload); } catch (e) {}
+      try { event.dataTransfer.setData("text/plain", "itq-list-reorder:" + payload); } catch (e) { /* text/plain refused, nothing more we can do */ }
       event.dataTransfer.effectAllowed = "move";
     },
     onHeaderDragOver: function (event) {

@@ -1,9 +1,12 @@
 @echo off
 setlocal enabledelayedexpansion
 
-rem === Configuration: portable Node.js folder and project folder ===
+rem === Configuration: portable Node.js folder ===
+rem Edit NODE_DIR if your Node install lives elsewhere.
 set "NODE_DIR=C:\Users\pafervi2\Downloads\node-v24.21.0-win-x64"
-set "PROJECT_DIR=%~dp0"
+
+rem Project root is one level up from this script.
+set "PROJECT_DIR=%~dp0.."
 
 echo Looking for a complete Node.js (node.exe + bundled npm) inside %NODE_DIR% ...
 rem There can be more than one node.exe under NODE_DIR (e.g. a leftover

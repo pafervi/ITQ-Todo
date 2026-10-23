@@ -5,12 +5,12 @@ on this repo. Treat the rules below as hard requirements, not suggestions.
 
 ## 1. Never commit code that will not install
 
-Pau builds the app with `build-app.bat` (Windows) or `build-app.sh`
-(Linux). Both run Vue CLI + webpack with ESLint strict. Pau has to look
-at a crashed terminal every time a commit fails the build, which is
-expensive and avoidable. Before sending any change back to the user's
-folder with `device_commit_files`, run the following checks for every
-file you touched this round:
+Pau builds the app with `scripts/build-app.bat` (Windows) or
+`scripts/build-app.sh` (Linux). Both run Vue CLI + webpack with ESLint
+strict. Pau has to look at a crashed terminal every time a commit fails
+the build, which is expensive and avoidable. Before sending any change
+back to the user's folder with `device_commit_files`, run the following
+checks for every file you touched this round:
 
 ### Hard checks (block the commit if any fails)
 
@@ -27,6 +27,9 @@ file you touched this round:
 - **Sparse arrays** (`[, "x"]`, `["x", ,]`): regex
   `grep -nE '\[[[:space:]]*,|,[[:space:]]*(\]|,)'`. ESLint
   `no-sparse-arrays` crashes the build. Always use `["", "x"]`.
+- **Empty `catch` blocks**: ESLint `no-empty` fires on `catch (e) {}`.
+  Add at least a comment inside the braces, e.g.
+  `catch (e) { /* ignored: fall through */ }`.
 - **JSON validity** for `src/assets/languages/*.json`: `python3 -c
   "import json; json.load(open('<path>'))"`.
 - **No reference to removed symbols**: if you removed an import, grep
@@ -49,9 +52,9 @@ every hard check passes. Say in the reply what you checked.
 
 When editing a Vue component, re-grep for the symptoms you fixed in
 earlier rounds (duplicate `computed` blocks, sparse arrays in the
-dataset lists, orphan imports) so a merge-style edit does not reopen
-them. The history of this file is littered with the same classes of
-regression.
+dataset lists, orphan imports, empty catch blocks) so a merge-style
+edit does not reopen them. The history of this file is littered with
+the same classes of regression.
 
 ## 3. Preferences
 
@@ -64,18 +67,42 @@ regression.
 
 ## 4. Repo layout quick reference
 
-- Phased projects feature lives in `src/components/phased/`,
+```
+ITQ-Todo/
+├── src/                    Vue app source
+│   ├── components/
+│   │   ├── phased/         Phased-project panel (timeline, feed)
+│   │   └── layout/
+│   ├── views/              Modals and full-screen views
+│   ├── store/modules/      Vuex modules
+│   ├── repositories/       IndexedDB adapters
+│   ├── helpers/            Pure helpers (themes, dates, parsers)
+│   ├── migrations/         Versioned data-model migrations
+│   └── assets/languages/   i18n JSON (en, es)
+├── scripts/                Build + maintenance scripts
+│   ├── build-app.sh
+│   ├── build-app.bat
+│   └── windows/            PowerShell helpers (cleanup, restore)
+├── docs/                   Internal docs
+│   ├── architecture.md
+│   ├── fases-implementacion.md
+│   └── sessions/           Development session notes
+├── build/                  electron-builder icons
+├── public/
+└── dist_electron/          Build output (gitignored)
+```
+
+- Phased projects feature: `src/components/phased/`,
   `src/views/phaseEditorModal.vue`, `addLogEntryModal.vue`,
   `snapshotPromptModal.vue`, `src/store/modules/phase.store.js`,
   `src/store/modules/logEntry.store.js`,
   `src/repositories/phaseRepository.js`,
   `src/repositories/logEntryRepository.js`,
   `src/helpers/phasedProjectHelper.js`.
-- Science themes live in `src/helpers/themesHelper.js` +
-  `zeoliteHelper.js` / `organicHelper.js` / `oxideHelper.js` /
-  `photochemHelper.js`, consumed by `src/components/splashScreen.vue`,
-  `src/components/toDoList.vue` (project cover), and
-  `src/views/zeoliteInfoModal.vue` (today's item info card).
+- Science themes: `src/helpers/themesHelper.js` plus `zeoliteHelper.js`,
+  `organicHelper.js`, `oxideHelper.js`, `photochemHelper.js`, consumed
+  by `src/components/splashScreen.vue`, `src/components/toDoList.vue`
+  (project cover), and `src/views/zeoliteInfoModal.vue`.
 - Migrations are additive in `src/migrations/migrations.js`; always add
   a new `v2_x_y` function and call it from `migrate()` rather than
   rewriting an older one.
@@ -98,10 +125,13 @@ regression.
 
 ## 6. What NOT to do
 
-- Do not run `cleanup.ps1` from Pau's PowerShell helpers.
+- Do not run `scripts/windows/cleanup.ps1` from Pau's PowerShell
+  helpers without being asked.
 - Do not force-push, do not amend commits made in earlier sessions
   without reading them first.
 - Do not change the `name` field of `package.json` (the data folder
   path depends on it).
 - Do not touch workflow files under `.github/workflows/` without Pau
   asking: the push PAT has no `workflow` scope and GitHub rejects.
+- Do not re-commit `yarn.lock`. The project pins through
+  `package-lock.json` only; `yarn.lock` is listed in `.gitignore`.

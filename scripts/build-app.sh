@@ -1,8 +1,11 @@
 #!/usr/bin/env bash
 # Builds ITQ Todo for Linux: AppImage (portable) + .deb (installable).
-# Run it from the project folder on a Linux machine:  ./build-app.sh
+# Run from the project root or from inside scripts/:
+#   ./scripts/build-app.sh
 set -euo pipefail
-cd "$(dirname "$0")"
+
+# Move to the project root (one level up from scripts/).
+cd "$(dirname "$0")/.."
 
 if ! command -v node >/dev/null 2>&1; then
   echo "ERROR: Node.js not found. Install Node 20 LTS (nvm recommended) and retry." >&2

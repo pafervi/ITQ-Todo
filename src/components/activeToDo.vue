@@ -23,7 +23,7 @@
       <i class="bi-pencil todo-item-edit" :title="$t('ui.renameTask')" @click.stop="editTask"></i>
       <span class="todo-item-menu-wrap" @click.stop>
         <i class="bi-three-dots todo-item-menu" type="button" @click="toggleActionsMenu"></i>
-        <div v-if="actionsMenuOpen" class="actions-menu" @click.stop>
+        <div v-if="actionsMenuOpen" class="actions-menu" ref="actionsMenuEl" @click.stop>
 <button type="button" @click="snoozeTo('tomorrow')">
             <i class="bi-arrow-right"></i> {{ $t('todoDetails.snoozeTomorrow') || 'Tomorrow' }}
           </button>
@@ -42,6 +42,18 @@
             <i class="bi-x-lg"></i> {{ $t('todoDetails.snoozeClear') || 'Clear schedule' }}
           </button>
           <div class="actions-sep"></div>
+          <!-- Move to another custom project. Native <select> so we get a
+               proper OS dropdown without a second popover. Day lists
+               (YYYYMMDD listIds) and archived projects are filtered out,
+               and the host project itself is excluded. -->
+          <label v-if="moveTargets.length" class="actions-pick-project">
+            <i class="bi-folder-symlink"></i>
+            <span>{{ $t('todoDetails.moveToProject') || 'Move to project' }}</span>
+            <select :value="moveSelectValue" @change="onMoveToProject">
+              <option value="" disabled>…</option>
+              <option v-for="p in moveTargets" :key="p.listId" :value="p.listId">{{ projectDisplayName(p) }}</option>
+            </select>
+          </label>
           <button type="button" @click="openDetails">
             <i class="bi-pencil-square"></i> {{ $t('todoDetails.openDetails') || 'Open details' }}
           </button>
@@ -91,6 +103,9 @@ export default {
       scrollingTimeOut: null,
       actionsMenuOpen: false,
       actionsClickAwayHandler: null,
+      // Local value for the "move to project" select so Vue can reset the
+      // field back to the placeholder after each successful move.
+      moveSelectValue: "",
     };
   },
   methods: {
@@ -142,20 +157,33 @@ export default {
       this.showToDoDetails();
     },
     // --- Actions menu (three-dots) ---
+    // Robust click-away: previous version used once:true, which closed the
+    // menu on the first interaction even if that click fell inside the
+    // menu (the native <select> and <input type=date> break stopPropagation
+    // in subtle ways). Now we keep a persistent listener and only close
+    // when the click really happened outside both the menu and its
+    // trigger icon.
     toggleActionsMenu: function (event) {
       if (event) event.stopPropagation();
       this.actionsMenuOpen = !this.actionsMenuOpen;
       if (this.actionsMenuOpen) {
         this.$nextTick(() => {
-          this.actionsClickAwayHandler = () => this.closeActionsMenu();
-          document.addEventListener("click", this.actionsClickAwayHandler, { once: true });
+          this.actionsClickAwayHandler = (e) => {
+            let menu = this.$refs.actionsMenuEl;
+            if (menu && menu.contains(e.target)) return;
+            // Clicks on the trigger icon toggle the menu through
+            // toggleActionsMenu; the away handler must not fight that.
+            if (e.target && e.target.classList && e.target.classList.contains("todo-item-menu")) return;
+            this.closeActionsMenu();
+          };
+          document.addEventListener("mousedown", this.actionsClickAwayHandler);
         });
       }
     },
     closeActionsMenu: function () {
       this.actionsMenuOpen = false;
       if (this.actionsClickAwayHandler) {
-        document.removeEventListener("click", this.actionsClickAwayHandler);
+        document.removeEventListener("mousedown", this.actionsClickAwayHandler);
         this.actionsClickAwayHandler = null;
       }
     },
@@ -184,6 +212,46 @@ export default {
       toDoListRepository.update(hostListId, host);
       this.closeActionsMenu();
       this.hideToDoItem();
+    },
+    projectDisplayName: function (p) {
+      return (p && p.listName) || this.$t("ui.untitledProject") || "Untitled project";
+    },
+    // Move the active task from its current host list into a different
+    // custom project. Clears repeatingEvent and dueDate on the way, since
+    // both are host-list dependent and would misbehave in the new project.
+    onMoveToProject: function (event) {
+      let targetListId = event && event.target && event.target.value;
+      if (!targetListId) return;
+      let hostListId = this.activeTodo.toDoListId;
+      let host = this.$store.getters.todoLists[hostListId];
+      if (!host || !host[this.activeTodo.index]) {
+        this.moveSelectValue = "";
+        this.closeActionsMenu();
+        return;
+      }
+      // Deep clone so the dropped-from and added-to arrays never share the
+      // same object reference, which would make Vuex react strangely.
+      let task = JSON.parse(JSON.stringify(host[this.activeTodo.index]));
+      task.listId = targetListId;
+      task.repeatingEvent = null;
+      task.dueDate = null;
+      this.$store.commit("removeTodo", {
+        toDoListId: hostListId,
+        index: this.activeTodo.index,
+      });
+      toDoListRepository.updateAsync(hostListId, this.$store.getters.todoLists[hostListId]).then(() => {
+        // Make sure the target list is loaded before we push the task,
+        // otherwise the Vuex addTodo mutation lands in an empty array that
+        // the repository later overwrites with the stored value.
+        this.$store.dispatch("loadTodoLists", targetListId).then(() => {
+          this.$store.commit("addTodo", task);
+          toDoListRepository.update(targetListId, this.$store.getters.todoLists[targetListId]);
+          notifications.refreshDayNotifications(this, hostListId);
+          this.moveSelectValue = "";
+          this.closeActionsMenu();
+          this.hideToDoItem();
+        });
+      });
     },
     onPickDate: function (event) {
       // The native date input gives us YYYY-MM-DD; the app's listIds are
@@ -304,6 +372,15 @@ export default {
     },
     hasSnooze: function () {
       return !!this.activeTodo.toDo.dueDate;
+    },
+    // Custom projects the user can move this task into: every non-archived
+    // custom project except the one the task currently lives in. Day lists
+    // never show up because they are not in cTodoListIds in the first
+    // place.
+    moveTargets: function () {
+      let hostListId = this.activeTodo.toDoListId;
+      let lists = this.$store.getters.cTodoListIds || [];
+      return lists.filter((p) => p && p.listId !== hostListId && !p.archived);
     },
   }
 };
@@ -537,7 +614,7 @@ export default {
   flex-direction: column;
   min-width: 190px;
 
-  button, label.actions-pick-day {
+  button, label.actions-pick-day, label.actions-pick-project {
     display: inline-flex;
     align-items: center;
     gap: 8px;
@@ -567,8 +644,28 @@ export default {
   background-color: #1a1f26;
   box-shadow: 0 10px 28px rgba(0, 0, 0, 0.6);
 
-  button:hover, label.actions-pick-day:hover {
+  button:hover, label.actions-pick-day:hover, label.actions-pick-project:hover {
     background-color: rgba(255, 255, 255, 0.07);
+  }
+}
+
+/* "Move to project" row: a native select covers the whole row so clicking
+   anywhere on it opens the OS dropdown. The visible label and icon stay
+   above the invisible select via z-index so the row text is readable. */
+.actions-pick-project {
+  position: relative;
+
+  select {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+    font: inherit;
+  }
+
+  i, span {
+    position: relative;
+    z-index: 1;
   }
 }
 

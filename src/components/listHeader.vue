@@ -1,10 +1,18 @@
 <template>
-  <div class="weekly-to-do-header d-flex" :class="{ 'header-drag-hover': headerDragHover }">
+  <!-- Drag/drop handlers live on the OUTER .weekly-to-do-header so a drop
+       is accepted anywhere on the header strip, even over the chevron, the
+       three-dots icon or the inner badges. If we only attach dragover /
+       drop to the inner title div, the browser cancels the drop as soon as
+       the pointer passes over any child that is not preventDefault'd.
+       The inner title div still carries draggable + dragstart because
+       that is where the user grabs the project to initiate the drag. -->
+  <div class="weekly-to-do-header d-flex" :class="{ 'header-drag-hover': headerDragHover }"
+    @dragover="onHeaderDragOver" @drop="onHeaderDrop"
+    @dragenter.prevent="onHeaderDragEnter" @dragleave="onHeaderDragLeave" @dragend="onHeaderDragLeave">
     <i v-show="!editing" class="bi-info header-menu-icons align-self-center dropdown-toggle-split "
       style="visibility: hidden"></i>
     <div style="flex-grow: 1" class="noselect" :draggable="customTodoList && !editing"
-      @dragstart="onHeaderDragStart" @dragover.prevent @dragenter.self.prevent="onHeaderDragEnter"
-      @dragleave.self="onHeaderDragLeave" @drop="onHeaderDrop">
+      @dragstart="onHeaderDragStart">
       <div v-if="!customTodoList">
         <h4 :class="{ 'today-date': is_today }">
           {{ moments(id).locale(language).format("dddd") }}
@@ -327,26 +335,69 @@ export default {
     },
     onHeaderDragStart: function (event) {
       if (!this.customTodoList) return;
-      event.dataTransfer.setData("list-reorder-index", this.cTodoListIndex);
+      // dataTransfer accepts strings only; coerce explicitly so Vue's
+      // reactivity-wrapped number does not surprise us. Also write the
+      // index under two keys: the custom "list-reorder-index" plus a
+      // vendor-prefixed MIME string, because some browsers (notably older
+      // Chromium in Electron) strip non-standard custom types during
+      // dragover readback. The drop handler reads either.
+      let payload = String(this.cTodoListIndex);
+      try { event.dataTransfer.setData("list-reorder-index", payload); } catch (e) {}
+      try { event.dataTransfer.setData("application/x-itq-list-reorder", payload); } catch (e) {}
+      // Also tag a text/plain fallback so the browser does not pick up any
+      // selection it might think is being dragged.
+      try { event.dataTransfer.setData("text/plain", "itq-list-reorder:" + payload); } catch (e) {}
       event.dataTransfer.effectAllowed = "move";
     },
-    onHeaderDragEnter: function () {
-      if (this.customTodoList) this.headerDragHover = true;
+    onHeaderDragOver: function (event) {
+      // Must preventDefault during dragover for the drop to be allowed. We
+      // allow unconditionally and verify in onHeaderDrop that the payload
+      // is a reorder, because browsers restrict reading dataTransfer during
+      // dragover.
+      event.preventDefault();
+      if (event.dataTransfer) event.dataTransfer.dropEffect = "move";
     },
-    onHeaderDragLeave: function () {
-      this.headerDragHover = false;
+    onHeaderDragEnter: function (event) {
+      if (!this.customTodoList) return;
+      event.preventDefault();
+      this.headerDragHover = true;
+    },
+    onHeaderDragLeave: function (event) {
+      // Only clear hover when the pointer actually leaves the header
+      // rectangle, otherwise moving over an inner child fires dragleave on
+      // the parent and flickers the highlight.
+      if (!event || !event.currentTarget) {
+        this.headerDragHover = false;
+        return;
+      }
+      let r = event.currentTarget.getBoundingClientRect();
+      if (event.clientX < r.left || event.clientX >= r.right ||
+          event.clientY < r.top || event.clientY >= r.bottom) {
+        this.headerDragHover = false;
+      }
     },
     onHeaderDrop: function (event) {
       this.headerDragHover = false;
-      let fromIndexRaw = event.dataTransfer.getData("list-reorder-index");
-      if (fromIndexRaw === "") return;
-      let fromIndex = parseInt(fromIndexRaw);
+      if (!event.dataTransfer) return;
+      let fromIndexRaw =
+        event.dataTransfer.getData("list-reorder-index") ||
+        event.dataTransfer.getData("application/x-itq-list-reorder");
+      if (!fromIndexRaw) {
+        // Fallback: text/plain tagged with our marker
+        let txt = event.dataTransfer.getData("text/plain") || "";
+        let m = txt.match(/^itq-list-reorder:(\d+)$/);
+        if (m) fromIndexRaw = m[1];
+      }
+      if (!fromIndexRaw) return;
+      event.preventDefault();
+      let fromIndex = parseInt(fromIndexRaw, 10);
       let toIndex = this.cTodoListIndex;
       if (isNaN(fromIndex) || fromIndex === toIndex) return;
-      let customLists = this.$store.getters.cTodoListIds;
-      let list = customLists.splice(fromIndex, 1)[0];
-      customLists.splice(toIndex, 0, list);
-      customToDoListIdsRepository.update(customLists);
+      // Go through a mutation so Vuex sees the reorder and every component
+      // that reads cTodoListIds (sidebar, project grid, deadline radar...)
+      // re-renders.
+      this.$store.commit("reorderCustomTodoLists", { from: fromIndex, to: toIndex });
+      customToDoListIdsRepository.update(this.$store.getters.cTodoListIds);
     },
     setColor: function (color) {
       this.$store.commit("updateCustomListField", {

@@ -29,7 +29,10 @@
     'kind-meeting': listKind === 'meeting',
     'kind-activelearning': listKind === 'activelearning',
     'phased-elevated': isElevated,
-  }" :style="containerStyle">
+    'project-reorder-hover': projectReorderHover,
+  }" :style="containerStyle"
+    @dragover="onProjectDragOver" @drop="onProjectDrop"
+    @dragenter="onProjectDragEnter" @dragleave="onProjectDragLeave">
   <!-- Close button lives on top of the elevated panel. Hidden when the
        panel is in its collapsed-card state. -->
   <button
@@ -53,22 +56,10 @@
     <svg
       v-if="showProjectCover"
       class="project-cover"
-      viewBox="0 0 100 100"
-      :aria-label="projectFramework.fullName"
-    >
-      <polygon
-        :points="projectFramework.polygonPoints"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="3"
-        stroke-linejoin="round"
-      />
-      <polygon
-        :points="projectFramework.polygonPoints"
-        fill="currentColor"
-        fill-opacity="0.1"
-      />
-    </svg>
+      :viewBox="projectThemeItem.viewBox || '0 0 100 100'"
+      :aria-label="projectThemeItem.fullName"
+      v-html="projectThemeItem.svgShape"
+    ></svg>
     <div v-if="loading" class="loading-spinner">
       <svg class="orbital-spinner" viewBox="0 0 40 40" width="30" height="30" role="status" aria-hidden="true">
         <circle class="orbital-nucleus" cx="20" cy="20" r="3"></circle>
@@ -166,10 +157,12 @@ import tasksHelper from "../helpers/tasksHelper";
 import collapsedListsRepository from "../repositories/collapsedListsRepository";
 import projectColorHelper from "../helpers/projectColorHelper";
 import autoTagHelper from "../helpers/autoTagHelper";
-import zeoliteHelper from "../helpers/zeoliteHelper";
+// zeoliteHelper no longer imported directly: themesHelper routes to the
+// active theme (zeolites by default).
 import phaseTimeline from "./phased/phaseTimeline.vue";
 import phaseFeed from "./phased/phaseFeed.vue";
 import phasedProjectHelper from "../helpers/phasedProjectHelper";
+import themesHelper from "../helpers/themesHelper";
 import { Modal } from "bootstrap";
 
 export default {
@@ -206,6 +199,9 @@ export default {
       // the ESC key.
       phasedPanelOpen: false,
       backdropArmed: false,
+      // Visual feedback while another project header is being dragged over
+      // THIS card as a reorder target.
+      projectReorderHover: false,
     };
   },
   mounted() {
@@ -374,6 +370,76 @@ export default {
     clearRemovedRepeatingEvents: function () {
       if (this.customTodoList) return;
       repeatingEventHelper.removeGeneratedRepeatingEvents(this.id, this);
+    },
+    // Project reorder drop target. The project card acts as a whole drop
+    // zone for reorder drags so the user can land anywhere on another
+    // project (not only on its tiny header strip) and have it swap. Task
+    // drags carry a different payload ("item") and bubble to the inner
+    // drop-zone handlers unchanged.
+    onProjectDragOver: function (event) {
+      if (!this.customTodoList) return;
+      if (!event.dataTransfer) return;
+      let types = event.dataTransfer.types || [];
+      let isReorder = false;
+      // DataTransferItemList in the spec is iterable; convert for includes
+      // because some browsers expose it as a bare object.
+      for (let i = 0; i < types.length; i++) {
+        let t = types[i];
+        if (t === "list-reorder-index" || t === "application/x-itq-list-reorder") {
+          isReorder = true;
+          break;
+        }
+      }
+      if (!isReorder) return;
+      event.preventDefault();
+      event.dataTransfer.dropEffect = "move";
+    },
+    onProjectDragEnter: function (event) {
+      if (!this.customTodoList || !event.dataTransfer) return;
+      let types = event.dataTransfer.types || [];
+      for (let i = 0; i < types.length; i++) {
+        if (types[i] === "list-reorder-index" || types[i] === "application/x-itq-list-reorder") {
+          event.preventDefault();
+          this.projectReorderHover = true;
+          return;
+        }
+      }
+    },
+    onProjectDragLeave: function (event) {
+      if (!this.projectReorderHover) return;
+      // Only clear when the pointer actually leaves the card rectangle,
+      // not when it just crosses onto an inner child.
+      if (!event || !event.currentTarget) {
+        this.projectReorderHover = false;
+        return;
+      }
+      let r = event.currentTarget.getBoundingClientRect();
+      if (event.clientX < r.left || event.clientX >= r.right ||
+          event.clientY < r.top || event.clientY >= r.bottom) {
+        this.projectReorderHover = false;
+      }
+    },
+    onProjectDrop: function (event) {
+      this.projectReorderHover = false;
+      if (!this.customTodoList) return;
+      if (!event.dataTransfer) return;
+      let fromIndexRaw =
+        event.dataTransfer.getData("list-reorder-index") ||
+        event.dataTransfer.getData("application/x-itq-list-reorder");
+      if (!fromIndexRaw) {
+        let txt = event.dataTransfer.getData("text/plain") || "";
+        let m = txt.match(/^itq-list-reorder:(\d+)$/);
+        if (m) fromIndexRaw = m[1];
+      }
+      if (!fromIndexRaw) return;
+      event.preventDefault();
+      let fromIndex = parseInt(fromIndexRaw, 10);
+      let toIndex = this.cTodoListIndex;
+      if (isNaN(fromIndex) || fromIndex === toIndex) return;
+      this.$store.commit("reorderCustomTodoLists", { from: fromIndex, to: toIndex });
+      let customToDoListIdsRepository =
+        require("../repositories/customToDoListIdsRepository").default;
+      customToDoListIdsRepository.update(this.$store.getters.cTodoListIds);
     },
     // Phased project view switching, driven from listHeader.
     setPhasedView: function (view) {
@@ -600,16 +666,28 @@ export default {
       return true;
     },
     projectFramework: function () {
-      // Explicit per-project framework override wins. The pick is stored on
-      // the custom list record as `zeoliteFramework` (IZA code string).
+      // Back-compat alias so code that still reads projectFramework keeps
+      // working. The real source of truth is projectThemeItem below, which
+      // routes through themesHelper for whatever theme the user picked.
+      return this.projectThemeItem;
+    },
+    projectThemeItem: function () {
+      // The silhouette on the project cover is picked from the active
+      // theme (zeolites, organic, oxides, photochem). An explicit per-
+      // project override wins when the user set it: the code is stored
+      // on the cTodoListIds record as `zeoliteFramework` (kept its old
+      // name for back-compat even though it now holds the active theme's
+      // item code). Falls back to a deterministic hash of the project id
+      // so the same project always maps to the same silhouette.
+      let cfg = this.$store.getters.config;
       if (this.customTodoList && this.cTodoListIndex != null) {
         let list = this.$store.getters.cTodoListIds[this.cTodoListIndex];
         if (list && list.zeoliteFramework) {
-          let fw = zeoliteHelper.frameworkByCode(list.zeoliteFramework);
-          if (fw) return fw;
+          let it = themesHelper.getItemByCode(list.zeoliteFramework, cfg);
+          if (it) return it;
         }
       }
-      return zeoliteHelper.frameworkFor(this.id);
+      return themesHelper.getItemFor(this.id, cfg);
     },
     // ---- Nucleation particles (feature 6) ----
     //
@@ -713,6 +791,17 @@ export default {
     var(--project-tint-strong, transparent) 0%,
     transparent 62%
   );
+}
+
+/* Project reorder drop target highlight. Painted while another project
+   header is being dragged over THIS card. Dashed outline + soft tint so
+   it reads clearly as a drop target without competing with the project's
+   own identity colour. */
+.to-do-list-container.project-reorder-hover {
+  outline: 2px dashed var(--accent-color, #5e6ef2);
+  outline-offset: -4px;
+  background: color-mix(in srgb, var(--accent-color, #5e6ef2) 6%, transparent) !important;
+  transition: background 0.1s ease, outline-color 0.1s ease;
 }
 
 /* ---- Meeting / active-learning list identity ---- */

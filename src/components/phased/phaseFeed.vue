@@ -165,14 +165,13 @@ export default {
 
 <style scoped lang="scss">
 .phase-feed {
-  padding: 20px 14px 16px;
+  /* Padding, font-size and family match .phase-timeline exactly so the two
+     views feel like different pages of the same section. */
+  padding: 24px 24px 20px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
   font-size: 13px;
-  /* Inherit the app's chosen UI font so the Feed entry text reads with
-     the same voice as the task text. Monospace stays on dates and pills
-     below so they still read as metadata. */
   font-family: var(--app-font-family, inherit);
 }
 
@@ -199,11 +198,12 @@ export default {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 14px 4px 6px;
-  font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
+  padding: 16px 4px 8px;
+  font-family: var(--app-font-family, inherit);
   font-size: 10.5px;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
+  font-weight: 600;
   color: #8a8d90;
   &:first-child { padding-top: 4px; }
 }
@@ -220,20 +220,25 @@ export default {
 }
 
 .pf-entry {
+  /* Row shape mirrors the Timeline row density: generous padding, grid
+     with a fixed left meta column and a flexible body, hover tint for
+     interaction. */
   display: grid;
   grid-template-columns: 92px 1fr auto;
   column-gap: 14px;
-  padding: 12px 14px;
+  padding: 14px 14px 14px 14px;
   border-bottom: 1px solid rgba(140, 140, 140, 0.15);
   border-left: 3px solid rgba(140, 140, 140, 0.2);
   margin-left: 2px;
-  padding-left: 11px;
+  padding-left: 14px;
   align-items: start;
   min-width: 0;
-  transition: background 0.12s;
+  border-radius: 0;
+  transition: background 0.15s ease;
   &:hover {
-    background-color: rgba(140, 140, 140, 0.05);
+    background-color: rgba(140, 140, 140, 0.07);
     .pf-actions { opacity: 1; }
+    .dark-theme & { background-color: rgba(255, 255, 255, 0.045); }
   }
   &:last-child { border-bottom: 0; }
 }
@@ -246,8 +251,10 @@ export default {
   padding-top: 3px;
 }
 .pf-date {
-  font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
+  font-family: var(--app-font-family, inherit);
+  font-variant-numeric: tabular-nums;
   font-size: 11px;
+  font-weight: 500;
   color: #8a8d90;
   letter-spacing: 0.01em;
   white-space: nowrap;
@@ -286,7 +293,7 @@ export default {
 /* Pills: saturated solid colour + light text so the kind pops at a
    glance, matching the status pills in the Timeline. */
 .pf-kind-pill {
-  font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
+  font-family: var(--app-font-family, inherit);
   font-size: 9.5px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -305,7 +312,7 @@ export default {
   display: inline-flex;
   align-items: center;
   gap: 3px;
-  font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
+  font-family: var(--app-font-family, inherit);
   font-size: 9.5px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -320,16 +327,18 @@ export default {
 }
 .pf-phase-tag {
   color: #8a8d90;
-  font-size: 10.5px;
-  font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
-  padding: 2px 6px;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-family: var(--app-font-family, inherit);
+  padding: 2px 7px;
   border-radius: 3px;
-  background: rgba(140, 140, 140, 0.08);
-  font-weight: 500;
-  &::before { content: "· "; margin-right: 1px; opacity: 0.6; }
+  background: rgba(140, 140, 140, 0.1);
+  font-weight: 600;
+  &::before { content: ""; margin-right: 0; }
 }
 .pf-text {
-  font-size: 13.5px;
+  font-size: 13px;
   word-break: normal;
   overflow-wrap: break-word;
   hyphens: none;
@@ -338,7 +347,7 @@ export default {
 }
 .pf-block-info {
   margin-top: 4px;
-  font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
+  font-family: var(--app-font-family, inherit);
   font-size: 11px;
   color: #c84b3b;
   display: inline-flex;
@@ -397,11 +406,12 @@ export default {
   display: flex;
   gap: 12px;
   flex-wrap: wrap;
-  font-size: 10px;
-  letter-spacing: 0.05em;
+  font-size: 10.5px;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
+  font-weight: 600;
   color: #8a8d90;
-  font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
+  font-family: var(--app-font-family, inherit);
 }
 .pf-legend-item {
   display: inline-flex;

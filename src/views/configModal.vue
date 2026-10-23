@@ -129,6 +129,22 @@
                   </select>
                 </div>
 
+                <div class="d-flex flex-column px-1 mb-4">
+                  <label for="activeThemeSetting" class="form-check-label mb-1">{{ $t("settings.theme") || "Science theme" }}</label>
+                  <select id="activeThemeSetting" class="form-select" v-model="configData.activeTheme"
+                    @change="changeConfig('activeTheme', configData.activeTheme)">
+                    <option value="zeolites">{{ $t("themes.zeolitesName") || "Zeolite frameworks" }}</option>
+                    <option value="organic">{{ $t("themes.organicName") || "Organic chemistry" }}</option>
+                    <option value="oxides">{{ $t("themes.oxidesName") || "Metal oxides" }}</option>
+                    <option value="photochem">{{ $t("themes.photochemName") || "Photochemistry" }}</option>
+                  </select>
+                  <!-- Inline margin override: .setting-hint has margin-top: -6px
+                       which looks fine right after an unlabelled toggle but
+                       pulls the hint up into the select here. Push it back
+                       below the select so it reads as its description. -->
+                  <p class="setting-hint" style="margin-top: 6px; margin-bottom: 0;">{{ $t("settings.themeHint") || "Decides the daily motif on the splash and the shape on each project cover." }}</p>
+                </div>
+
                 <div class="form-check form-switch d-flex px-1 mb-3 justify-content-between">
                   <label class="form-check-label flex-fill" for="meshBackgroundSetting">{{ $t("settings.meshBackground")
                   }}</label>

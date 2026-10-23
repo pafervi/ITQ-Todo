@@ -18,8 +18,8 @@
           <span class="splash-streak-label">{{ $t('ui.streakSplashLabel') || 'day streak' }}</span>
         </div>
         <div class="splash-lattice-name">
-          <i class="ph ph-hexagon"></i>
-          {{ $t("about.zeoliteToday", [latticeName]) }}
+          <i :class="themeIcon"></i>
+          {{ themeLabel }}: {{ latticeName }}
         </div>
         <div class="splash-flavor">"{{ flavorQuote }}"</div>
         <div v-if="pendingLine" class="splash-pending" :class="{ 'splash-pending-empty': pendingCount === 0 }">
@@ -33,7 +33,7 @@
 
 <script>
 import moment from "moment";
-import zeoliteHelper from "../helpers/zeoliteHelper";
+import themesHelper from "../helpers/themesHelper";
 import todayHelper from "../helpers/todayHelper";
 import streakHelper from "../helpers/streakHelper";
 
@@ -69,7 +69,6 @@ export default {
     return {
       show: true,
       darkTheme: this.$store.getters.config.darkTheme,
-      lattice: zeoliteHelper.getTodayLattice(),
       streakCount: 0,
       // Open tasks scheduled for today. null until the data is really loaded,
       // so the splash never claims "nothing scheduled" while lists are still
@@ -95,8 +94,31 @@ export default {
     clearTimeout(this.pendingFallbackTimer);
   },
   computed: {
+    // themeItem and themeActive are computed, not data, so that changing
+    // config.activeTheme from Settings re-renders the splash on the fly
+    // (the previous data() version resolved once at mount and ignored
+    // later changes). getTodayItem is cheap: it hits an in-memory list
+    // and does one hash-mod lookup.
+    themeItem: function () {
+      return themesHelper.getTodayItem(this.$store.getters.config);
+    },
+    themeActive: function () {
+      return themesHelper.getActive(this.$store.getters.config);
+    },
     latticeName: function () {
-      return this.lattice.fullName;
+      return this.themeItem.fullName;
+    },
+    themeLabel: function () {
+      return this.$t(this.themeActive.todayLabelKey) || this.themeActive.id;
+    },
+    themeIcon: function () {
+      switch (this.themeActive.id) {
+        case "organic": return "ph ph-atom";
+        case "oxides": return "ph ph-cube";
+        case "photochem": return "ph ph-sun";
+        case "zeolites":
+        default: return "ph ph-hexagon";
+      }
     },
     language: function () {
       return this.$store.getters.config.language || "en";
@@ -133,13 +155,19 @@ export default {
       if (this.pendingCount === 0) return this.$t("notifications.noPendingTasksToday");
       return this.$t("notifications.pendingTasksToday", [this.pendingCount]);
     },
-    // Same per-day pore silhouette the app background uses, so the splash
-    // flows into the app instead of cutting from a flat colour.
+    // Repeating-tile mask behind the splash. Every theme now ships one so
+    // the splash background always reads as the active theme at a glance:
+    // zeolite pore polygons, organic rings, oxide lattice dots or
+    // photochem sine waves. Themes without a mask (none right now, but
+    // kept defensive) fall back to the soft radial gradient alone.
     latticeStyle: function () {
-      return {
-        "--splash-lattice-mask": this.lattice.mask,
-        "--splash-lattice-size": this.lattice.size,
-      };
+      if (this.themeItem && this.themeItem.mask) {
+        return {
+          "--splash-lattice-mask": this.themeItem.mask,
+          "--splash-lattice-size": this.themeItem.maskSize,
+        };
+      }
+      return {};
     },
   },
   methods: {

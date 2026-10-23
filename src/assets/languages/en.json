@@ -58,6 +58,8 @@
         "fontFamily": "Font",
         "fontDefault": "Default",
         "uiDensity": "Density",
+        "theme": "Science theme",
+        "themeHint": "Decides the daily motif on the splash and the shape on each project cover.",
         "uiDensityComfortable": "Comfortable",
         "uiDensityCompact": "Dense",
         "meshBackground": "Animated background",
@@ -447,6 +449,7 @@
         "snoozeNextMonday": "Next Monday",
         "snoozeNextWeek": "Next week",
         "snoozeClear": "Clear schedule",
+        "moveToProject": "Move to project",
         "snoozePickDay": "Pick a day",
         "openDetails": "Open details",
         "scheduledFrom": "From {0}",
@@ -663,5 +666,19 @@
         "closePanel": "Close",
         "entrySingular": "entry",
         "entryPlural": "entries"
+    },
+    "themes": {
+        "zeolitesName": "Zeolite frameworks",
+        "zeolitesToday": "Zeolite of the day",
+        "zeolitesItemLabel": "framework",
+        "organicName": "Organic chemistry",
+        "organicToday": "Molecule of the day",
+        "organicItemLabel": "molecule",
+        "oxidesName": "Metal oxides",
+        "oxidesToday": "Oxide of the day",
+        "oxidesItemLabel": "oxide",
+        "photochemName": "Photochemistry",
+        "photochemToday": "Photochemistry concept of the day",
+        "photochemItemLabel": "concept"
     }
 }

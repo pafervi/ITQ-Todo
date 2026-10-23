@@ -96,6 +96,23 @@ const mutations = {
   updateCustomListField(state, obj) {
     state.cTodoListIds[obj.index][obj.field] = obj.value;
   },
+  // Drag-based reorder of custom projects. Takes { from, to } indices into
+  // state.cTodoListIds, pulls the item out and reinserts at the target. The
+  // sidebar, the project grid and any computed that reads cTodoListIds
+  // react immediately because the array is replaced with a fresh one (Vue
+  // picks up the whole-array assignment reliably).
+  reorderCustomTodoLists(state, obj) {
+    let list = state.cTodoListIds || [];
+    let from = obj && typeof obj.from === "number" ? obj.from : -1;
+    let to = obj && typeof obj.to === "number" ? obj.to : -1;
+    if (from < 0 || to < 0) return;
+    if (from >= list.length || to >= list.length) return;
+    if (from === to) return;
+    let next = list.slice();
+    let moved = next.splice(from, 1)[0];
+    next.splice(to, 0, moved);
+    state.cTodoListIds = next;
+  },
   updateSelectedDates(state, selectedDates) {
     state.selectedDates = selectedDates;
   },

@@ -20,8 +20,20 @@ export default {
     v2_7_0();
     v2_8_0();
     v2_8_1();
+    v2_9_0();
   },
 };
+
+// Science theme selector: default every existing install to the original
+// zeolites motif so nothing visible changes until the user opts into
+// organic / oxides / photochem from Settings.
+function v2_9_0() {
+  let config = configRepository.load();
+  if (!("activeTheme" in config)) {
+    config["activeTheme"] = "zeolites";
+    configRepository.update(config);
+  }
+}
 
 function configCalendarZoomColumnsCalendarHeight() {
   let config = configRepository.load();

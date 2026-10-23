@@ -165,8 +165,15 @@ export default {
   color: #f97316;
 }
 
+/* Bootstrap 5's table reset applies --bs-table-color to every cell, which
+   on a dark background renders dark text that only becomes legible on
+   hover (when --bs-table-hover-color kicks in). Force the per-cell colour
+   to white in dark mode so the task names stay readable at rest, and
+   match the hover colour so there is no "pop" when the mouse enters. */
 .table {
   --bs-table-hover-bg: #f4f4f4;
+  --bs-table-color: #212529;
+  --bs-table-color-state: #212529;
   color: #212529;
   margin-bottom: 0px;
 }
@@ -175,6 +182,8 @@ export default {
   --bs-table-bg: #21262d;
   --bs-table-hover-bg: #323539;
   --bs-table-hover-color: #fff;
+  --bs-table-color: #fff;
+  --bs-table-color-state: #fff;
   color: #fff;
   border-color: #373b3e;
 }
@@ -183,8 +192,22 @@ export default {
   cursor: pointer;
 }
 
+.table td {
+  color: #212529;
+}
+
+.dark-theme .table td {
+  color: #fff;
+}
+
 .deadline-task-text {
   width: 55%;
+  font-weight: 500;
+  color: #212529;
+
+  .dark-theme & {
+    color: #fff;
+  }
 }
 
 .deadline-list-label {
@@ -192,7 +215,7 @@ export default {
   font-size: 0.85rem;
 
   .dark-theme & {
-    color: #babbbe;
+    color: #cdd3d8;
   }
 }
 

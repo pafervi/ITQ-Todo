@@ -53,11 +53,9 @@
           <i class="ph ph-list-plus sb-icon"></i>
           <span class="sb-label">{{ $t('ui.newCustomList') }}</span>
         </div>
-        <div v-if="showCustomList" class="sb-item" data-bs-target="#ReorderCustomListsModal"
-          data-bs-toggle="modal" :title="$t('ui.reorderCustomLists')">
-          <i class="ph ph-arrows-left-right sb-icon"></i>
-          <span class="sb-label">{{ $t('ui.reorderCustomLists') }}</span>
-        </div>
+        <!-- Reorder Custom lists was a modal entry; dragging the project
+             header now reorders projects directly, so the sidebar slot is
+             freed. -->
         <div class="sb-item" data-bs-toggle="modal"
           data-bs-target="#missionControlModal" :title="$t('ui.missionControl')">
           <i class="ph ph-gauge sb-icon"></i>

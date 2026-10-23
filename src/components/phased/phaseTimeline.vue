@@ -1,82 +1,87 @@
 <template>
   <div class="phase-timeline">
-    <!-- Header lives in the same grid as every row below, so the today
-         chip and the month labels line up pixel-for-pixel with the today
-         line that each phase bar paints. -->
-    <div class="pt-header">
-      <div class="pt-header-spacer"></div>
-      <div class="pt-header-track">
-        <div
-          v-if="todayPct !== null"
-          class="pt-today-chip"
-          :style="{ left: todayPct + '%' }"
-        >
-          <i class="bi-geo-alt-fill"></i>{{ $t('phased.today') || 'Today' }}
-        </div>
-        <div class="pt-months">
-          <div
-            v-for="m in visibleMonthLabels"
-            :key="m.pct"
-            class="pt-month-label"
-            :style="{ left: m.pct + '%' }"
-          >{{ m.label }}</div>
-          <div v-if="todayPct !== null" class="pt-today-marker" :style="{ left: todayPct + '%' }"></div>
-        </div>
-      </div>
-    </div>
-
-    <div v-if="!phases.length" class="pt-empty">
-      <i class="bi-bar-chart-steps"></i>
-      <span>{{ $t('phased.noPhasesYet') || 'No phases yet' }}</span>
-      <button class="pt-primary-btn" @click="$emit('addPhase')">
-        <i class="bi-plus-lg"></i>
-        {{ $t('phased.addFirstPhase') || 'Add the first phase' }}
-      </button>
-    </div>
-
-    <div v-else class="pt-rows">
-      <div
-        v-for="(phase, i) in orderedPhases"
-        :key="phase.id"
-        class="pt-row"
-        :class="{ 'pt-row-active': phase.status === 'active', 'pt-row-blocked': phase.status === 'blocked' }"
-      >
-        <div class="pt-row-label" :title="phase.name" @click="$emit('editPhase', phase)">
-          <span class="pt-row-num">{{ String(i + 1).padStart(2, '0') }}</span>
-          <span class="pt-row-name">{{ phase.name }}</span>
-          <span class="pt-row-status" :class="'status-' + phase.status">{{ statusLabel(phase.status) }}</span>
-        </div>
-        <div class="pt-track">
-          <div v-if="todayPct !== null" class="pt-today-line" :style="{ left: todayPct + '%' }"></div>
-          <div
-            class="pt-bar"
-            :class="['pt-state-' + phase.status]"
-            :style="barStyle(phase, i)"
-            @click="$emit('editPhase', phase)"
-            :title="phase.name + ' · ' + phase.startDate + ' → ' + phase.endDate"
-          >
-            <span class="pt-bar-text">{{ shortRange(phase) }}</span>
+    <!-- Horizontal scroll wrapper. The inner block carries a min-width
+         derived from the number of visible months so a long project (many
+         months) keeps the month labels and bars spaced out and the user
+         can scroll sideways to see the full span. A short project fits in
+         the panel and no scrollbar appears. -->
+    <div class="pt-scroll-wrap">
+      <div class="pt-scroll-inner" :style="{ minWidth: minScrollWidth + 'px' }">
+        <!-- Header lives in the same grid as every row below, so the today
+             chip and the month labels line up pixel-for-pixel with the today
+             line that each phase bar paints. -->
+        <div class="pt-header">
+          <div class="pt-header-spacer"></div>
+          <div class="pt-header-track">
+            <div
+              v-if="todayPct !== null"
+              class="pt-today-chip"
+              :style="{ left: todayPct + '%' }"
+            >
+              <i class="bi-geo-alt-fill"></i>{{ $t('phased.today') || 'Today' }}
+            </div>
+            <div class="pt-months">
+              <div
+                v-for="m in monthLabels"
+                :key="m.pct"
+                class="pt-month-label"
+                :style="{ left: m.pct + '%' }"
+              >{{ m.label }}</div>
+              <div v-if="todayPct !== null" class="pt-today-marker" :style="{ left: todayPct + '%' }"></div>
+            </div>
           </div>
+        </div>
+
+        <div v-if="!phases.length" class="pt-empty">
+          <i class="bi-bar-chart-steps"></i>
+          <span>{{ $t('phased.noPhasesYet') || 'No phases yet' }}</span>
+          <button class="pt-primary-btn" @click="$emit('addPhase')">
+            <i class="bi-plus-lg"></i>
+            {{ $t('phased.addFirstPhase') || 'Add the first phase' }}
+          </button>
+        </div>
+
+        <div v-else class="pt-rows">
           <div
-            v-for="blk in blocksFor(phase.id)"
-            :key="'blk-' + blk.id"
-            class="pt-block-strip"
-            :style="blockStyle(blk)"
-            :title="blk.text"
-          ></div>
-          <!-- Markers are now 15x15 with a glyph inside so the kind reads
-               at a glance without needing the tooltip. The shape stays
-               distinctive (circle vs diamond vs hatched strip for blocks)
-               to keep the visual grammar from the mockup. -->
-          <div
-            v-for="mk in markersFor(phase.id)"
-            :key="'mk-' + mk.id"
-            class="pt-marker"
-            :class="'kind-' + mk.kind"
-            :style="{ left: markerPct(mk) + '%' }"
-            :title="mk.text + ' (' + mk.date + ')'"
+            v-for="(phase, i) in orderedPhases"
+            :key="phase.id"
+            class="pt-row"
+            :class="{ 'pt-row-active': phase.status === 'active', 'pt-row-blocked': phase.status === 'blocked' }"
           >
-            <i :class="markerIcon(mk.kind)"></i>
+            <div class="pt-row-label" :title="phase.name" @click="$emit('editPhase', phase)">
+              <span class="pt-row-num">{{ String(i + 1).padStart(2, '0') }}</span>
+              <span class="pt-row-name">{{ phase.name }}</span>
+              <span class="pt-row-status" :class="'status-' + phase.status">{{ statusLabel(phase.status) }}</span>
+            </div>
+            <div class="pt-track">
+              <div v-if="todayPct !== null" class="pt-today-line" :style="{ left: todayPct + '%' }"></div>
+              <div
+                class="pt-bar"
+                :class="['pt-state-' + phase.status]"
+                :style="barStyle(phase, i)"
+                @click="$emit('editPhase', phase)"
+                :title="phase.name + ' · ' + phase.startDate + ' → ' + phase.endDate"
+              >
+                <span class="pt-bar-text">{{ shortRange(phase) }}</span>
+              </div>
+              <div
+                v-for="blk in blocksFor(phase.id)"
+                :key="'blk-' + blk.id"
+                class="pt-block-strip"
+                :style="blockStyle(blk)"
+                :title="blk.text"
+              ></div>
+              <div
+                v-for="mk in markersFor(phase.id)"
+                :key="'mk-' + mk.id"
+                class="pt-marker"
+                :class="'kind-' + mk.kind"
+                :style="{ left: markerPct(mk) + '%' }"
+                :title="mk.text + ' (' + mk.date + ')'"
+              >
+                <i :class="markerIcon(mk.kind)"></i>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -108,6 +113,15 @@
 import moment from "moment";
 import phasedProjectHelper from "../../helpers/phasedProjectHelper";
 
+// Minimum pixels a single month should take in the Gantt track. Below this,
+// month labels start to collide. The track grows to monthCount * this value
+// (or the available panel width, whichever is larger) and overflows to a
+// horizontal scrollbar when it does not fit.
+const MONTH_WIDTH_PX = 90;
+const MIN_TRACK_WIDTH_PX = 380;
+const LABEL_COL_PX = 170;
+const COL_GAP_PX = 14;
+
 export default {
   name: "phaseTimeline",
   props: {
@@ -117,24 +131,14 @@ export default {
     logEntries: { required: true, type: Array },
   },
   emits: ["addPhase", "editPhase"],
-  data() {
-    return {
-      labelWidthPx: 170,
-      gutterPx: 14,
-    };
-  },
   computed: {
     range() {
       return phasedProjectHelper.projectRange(this.cList, this.phases);
     },
     monthLabels() {
+      // Every month, no thinning. If labels would collide the scroll wrap
+      // kicks in instead, which gives the user room to read each one.
       return phasedProjectHelper.monthLabels(this.range.start, this.range.end);
-    },
-    visibleMonthLabels() {
-      let all = this.monthLabels;
-      if (all.length <= 6) return all;
-      if (all.length <= 12) return all.filter((_, i) => i % 2 === 0);
-      return all.filter((_, i) => i % 3 === 0);
     },
     todayPct() {
       let p = phasedProjectHelper.rawPct(moment(), this.range.start, this.range.end);
@@ -143,6 +147,16 @@ export default {
     },
     orderedPhases() {
       return this.phases.slice().sort((a, b) => (a.order || 0) - (b.order || 0));
+    },
+    // Pixel floor for the track column so months do not pile up on long
+    // projects. The scroll wrapper picks up the overflow when the panel is
+    // narrower than this.
+    minTrackWidth() {
+      let count = Math.max(1, this.monthLabels.length);
+      return Math.max(MIN_TRACK_WIDTH_PX, count * MONTH_WIDTH_PX);
+    },
+    minScrollWidth() {
+      return LABEL_COL_PX + COL_GAP_PX + this.minTrackWidth;
     },
   },
   methods: {
@@ -207,14 +221,40 @@ export default {
   flex-direction: column;
   gap: 12px;
   font-size: 13px;
-  /* Inherit the app's chosen UI font so the Timeline reads with the same
-     voice as the project titles and task text. The monospace family stays
-     scoped to true metadata (dates, pills, numbers) below. */
+  /* Inherit the app's chosen UI font family across the whole Timeline so
+     it reads with the same voice as the project titles and task text in
+     the rest of the app. */
   font-family: var(--app-font-family, inherit);
 }
 
-/* Header grid matches .pt-row exactly so the today chip aligns pixel-
-   perfect with the today line in every bar. */
+/* Horizontal scroll wrapper: when the project spans more months than the
+   panel can comfortably show, the inner block grows to its min-width and
+   the user scrolls sideways. The scrollbar sits at the bottom of this
+   wrapper so the header, every row and the today line stay in sync. */
+.pt-scroll-wrap {
+  overflow-x: auto;
+  overflow-y: visible;
+  margin: 0 -8px;
+  padding: 0 8px 4px;
+}
+.pt-scroll-wrap::-webkit-scrollbar {
+  height: 8px;
+}
+.pt-scroll-wrap::-webkit-scrollbar-track {
+  background: rgba(140, 140, 140, 0.08);
+  border-radius: 4px;
+}
+.pt-scroll-wrap::-webkit-scrollbar-thumb {
+  background: rgba(140, 140, 140, 0.35);
+  border-radius: 4px;
+  &:hover { background: rgba(140, 140, 140, 0.55); }
+}
+.pt-scroll-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
 .pt-header {
   display: grid;
   grid-template-columns: 170px 1fr;
@@ -230,9 +270,10 @@ export default {
   position: absolute;
   top: 0;
   transform: translateX(-50%);
-  font-size: 9.5px;
+  font-size: 10px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+  font-weight: 600;
   color: #fff;
   background: #c84b3b;
   padding: 2px 8px 2px 6px;
@@ -245,10 +286,7 @@ export default {
   z-index: 2;
   animation: pt-today-pulse 2.6s ease-in-out infinite;
   i { font-size: 10px; }
-  .dark-theme & {
-    background: #e07866;
-    color: #fff;
-  }
+  .dark-theme & { background: #e07866; color: #fff; }
 }
 @keyframes pt-today-pulse {
   0%, 100% { box-shadow: 0 2px 4px rgba(200, 75, 59, 0.3); }
@@ -259,9 +297,10 @@ export default {
   position: relative;
   height: 22px;
   border-bottom: 1px dashed rgba(140, 140, 140, 0.35);
-  font-size: 10px;
-  letter-spacing: 0.08em;
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
+  font-weight: 600;
   color: #8a8d90;
 }
 .pt-month-label {
@@ -269,9 +308,9 @@ export default {
   top: 5px;
   transform: translateX(-50%);
   white-space: nowrap;
-  font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
-  padding: 0 4px;
+  padding: 0 5px;
   background: #fff;
+  font-variant-numeric: tabular-nums;
   .dark-theme & { background: #1c1f22; }
 }
 .pt-today-marker {
@@ -304,9 +343,6 @@ export default {
   flex-direction: column;
   gap: 10px;
 }
-/* Full-row hover tint. Padding + negative margin lets the hover highlight
-   bleed into the gutter without affecting the computed column widths, so
-   the today line stays aligned on hover too. */
 .pt-row {
   display: grid;
   grid-template-columns: 170px 1fr;
@@ -352,11 +388,12 @@ export default {
   &:hover .pt-row-name { color: var(--accent-color, #5e6ef2); }
 }
 .pt-row-num {
-  font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
-  font-size: 10px;
+  font-size: 11px;
   color: #8a8d90;
-  width: 16px;
+  width: 18px;
   flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
 }
 .pt-row-name {
   flex: 1;
@@ -365,20 +402,16 @@ export default {
   overflow: hidden;
   text-overflow: ellipsis;
   color: #212529;
-  font-family: var(--app-font-family, inherit);
   font-weight: 500;
   .dark-theme & { color: #e8e8e8; }
 }
-/* Saturated status pills: solid colour + white text so PENDING / ACTIVE /
-   DONE / BLOCKED read at a glance from across the panel. */
 .pt-row-status {
-  font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
-  font-size: 8.5px;
-  letter-spacing: 0.08em;
+  font-size: 9.5px;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   padding: 3px 7px;
   border-radius: 3px;
-  font-weight: 600;
+  font-weight: 700;
   flex-shrink: 0;
   background: rgba(140, 140, 140, 0.22);
   color: #4a4d50;
@@ -418,12 +451,13 @@ export default {
   display: flex;
   align-items: center;
   padding: 0 8px;
-  font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
-  font-size: 10px;
+  font-size: 10.5px;
+  font-weight: 500;
   color: rgba(255, 255, 255, 0.95);
   cursor: pointer;
   overflow: hidden;
   transition: filter 0.12s;
+  font-variant-numeric: tabular-nums;
   &.pt-state-pending { opacity: 0.45; }
   &.pt-state-active { outline: 1.5px solid #212529; outline-offset: 2px;
     .dark-theme & { outline-color: #f0f0f0; }
@@ -447,8 +481,6 @@ export default {
   z-index: 3;
   border-radius: 1px;
 }
-/* Markers: 15x15 square frame holding a 10px glyph. The frame picks the
-   kind colour and the glyph tells you what the event was at a glance. */
 .pt-marker {
   position: absolute;
   top: -7px;
@@ -490,8 +522,6 @@ export default {
   margin-top: 8px;
   border-top: 1px dashed rgba(140, 140, 140, 0.3);
 }
-/* Primary-filled CTA, same accent colour the app uses for action
-   affordances. Replaces the older outline pt-add-btn and pt-empty-btn. */
 .pt-primary-btn {
   background: var(--accent-color, #5e6ef2);
   color: #fff;
@@ -514,11 +544,11 @@ export default {
   display: flex;
   gap: 12px;
   flex-wrap: wrap;
-  font-size: 10px;
-  letter-spacing: 0.05em;
+  font-size: 10.5px;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
+  font-weight: 600;
   color: #8a8d90;
-  font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
   align-items: center;
 }
 .pt-legend-group {

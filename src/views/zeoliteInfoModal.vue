@@ -3,21 +3,44 @@
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title"><i class="ph ph-hexagon"></i> {{ $t("ui.zeoliteInfoTitle") }}</h5>
+          <h5 class="modal-title">
+            <i :class="themeIcon"></i>
+            {{ themeLabel }}
+          </h5>
           <i class="bi-x close-modal" data-bs-dismiss="modal"></i>
         </div>
         <div class="modal-body">
           <div class="zi-hero">
-            <div class="zi-lattice" :style="latticeStyle"></div>
+            <!-- Zeolites keep the historical repeating-mask background; every
+                 other theme renders the item's inline SVG shape instead,
+                 scaled up to fill the hero so the molecule or unit cell is
+                 the actual visual of the card. -->
+            <div v-if="useMask" class="zi-lattice" :style="latticeStyle"></div>
+            <svg
+              v-else
+              class="zi-svg"
+              :viewBox="z.viewBox || '0 0 100 100'"
+              v-html="z.svgShape"
+            ></svg>
             <div class="zi-code">{{ z.code }}</div>
           </div>
 
           <div class="zi-name">{{ z.fullName }}</div>
 
           <div class="zi-facts">
-            <span class="zi-chip"><i class="ph ph-hexagon"></i> {{ z.ring }}</span>
+            <!-- First chip: theme-specific metadata (pore ring for zeolites,
+                 formula for organic/oxide, archetype for photochem). -->
+            <span v-if="metaChip" class="zi-chip">
+              <i :class="themeIcon"></i>
+              {{ metaChip }}
+            </span>
+            <!-- ITQ provenance badge only for zeolites that came from the ITQ. -->
             <span class="zi-chip zi-chip-itq" v-if="z.itq">
               {{ $t("ui.zeoliteFromItq") }}<template v-if="z.year"> ({{ z.year }})</template>
+            </span>
+            <!-- Year chip for themes where year is interesting (organic). -->
+            <span class="zi-chip" v-else-if="z.year">
+              <i class="ph ph-calendar"></i>{{ z.year }}
             </span>
           </div>
 
@@ -31,22 +54,54 @@
 </template>
 
 <script>
-import zeoliteHelper from "../helpers/zeoliteHelper";
+import themesHelper from "../helpers/themesHelper";
 
 export default {
   name: "zeoliteInfoModal",
   computed: {
     z: function () {
-      return zeoliteHelper.getTodayLattice();
+      return themesHelper.getTodayItem(this.$store.getters.config);
+    },
+    themeActive: function () {
+      return themesHelper.getActive(this.$store.getters.config);
+    },
+    useMask: function () {
+      // Only zeolites ship a CSS mask; other themes render their SVG inline.
+      return this.themeActive.id === "zeolites" && !!this.z.mask;
+    },
+    themeIcon: function () {
+      switch (this.themeActive.id) {
+        case "organic": return "ph ph-atom";
+        case "oxides": return "ph ph-cube";
+        case "photochem": return "ph ph-sun";
+        case "zeolites":
+        default: return "ph ph-hexagon";
+      }
+    },
+    themeLabel: function () {
+      return this.$t(this.themeActive.todayLabelKey) || this.$t("ui.zeoliteInfoTitle");
+    },
+    metaChip: function () {
+      // Which secondary piece of info to pin as the first chip. Organic
+      // leans on its formula; oxides on cell family; photochem on its
+      // mechanism family; zeolites on the pore ring size.
+      switch (this.themeActive.id) {
+        case "organic": return this.z.formula || "";
+        case "oxides": return this.z.formula || this.z.meta || "";
+        case "photochem": return this.z.meta || "";
+        case "zeolites":
+        default: return this.z.meta || "";
+      }
     },
     latticeStyle: function () {
-      // Reuse the same mask that paints the app background, tinted with the
-      // accent, so the card shows exactly today's pore silhouette.
+      // Only used when useMask is true (zeolites). Keeps the historic
+      // repeating-mask tint so the splash and the info modal stay visually
+      // paired for Pau's default theme.
       return {
         "-webkit-mask-image": this.z.mask,
         "mask-image": this.z.mask,
-        "-webkit-mask-size": this.z.size,
-        "mask-size": this.z.size,
+        "-webkit-mask-size": this.z.maskSize || this.z.size,
+        "mask-size": this.z.maskSize || this.z.size,
         "-webkit-mask-repeat": "repeat",
         "mask-repeat": "repeat",
       };
@@ -81,7 +136,7 @@ export default {
 
 .zi-hero {
   position: relative;
-  height: 120px;
+  height: 140px;
   border-radius: 12px;
   overflow: hidden;
   display: flex;
@@ -98,12 +153,31 @@ export default {
   background-color: var(--accent-color, #5e6ef2);
 }
 
+/* Inline SVG for the non-zeolite themes: the shape owns the hero, tinted
+   with the accent via currentColor. */
+.zi-svg {
+  position: absolute;
+  inset: 10px;
+  width: calc(100% - 20px);
+  height: calc(100% - 20px);
+  color: var(--accent-color, #5e6ef2);
+  opacity: 0.85;
+}
+
 .zi-code {
   position: relative;
   font-size: 2rem;
   font-weight: 700;
-  letter-spacing: 3px;
+  letter-spacing: 2px;
   color: var(--accent-color, #5e6ef2);
+  background: rgba(255, 255, 255, 0.75);
+  padding: 2px 10px;
+  border-radius: 8px;
+  backdrop-filter: blur(2px);
+
+  .dark-theme & {
+    background: rgba(28, 31, 34, 0.75);
+  }
 }
 
 .zi-name {

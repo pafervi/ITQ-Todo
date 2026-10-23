@@ -18,9 +18,9 @@
           <template v-else>
             <svg class="dr-radar" viewBox="0 0 200 200" role="img" :aria-label="$t('ui.deadlineRadar')">
               <circle class="dr-ring" cx="100" cy="100" r="94" />
-              <circle class="dr-ring" cx="100" cy="100" r="76" />
-              <circle class="dr-ring" cx="100" cy="100" r="52" />
-              <circle class="dr-ring dr-ring-core" cx="100" cy="100" r="28" />
+              <circle class="dr-ring" cx="100" cy="100" r="68" />
+              <circle class="dr-ring" cx="100" cy="100" r="44" />
+              <circle class="dr-ring dr-ring-core" cx="100" cy="100" r="22" />
               <circle class="dr-center" cx="100" cy="100" r="3" />
               <g v-for="(it, i) in points" :key="i">
                 <circle
@@ -81,13 +81,12 @@
 import moment from "moment";
 import deadlinesHelper from "../helpers/deadlinesHelper";
 
-// Four concentric rings by urgency; closer to the centre = sooner.
-const RINGS = [
-  { max: 0, r: 28 }, // overdue or today
-  { max: 7, r: 52 }, // this week
-  { max: 31, r: 76 }, // this month
-  { max: Infinity, r: 94 }, // later
-];
+// The four reference circles that still draw on the radar (visually mark
+// today, this-week, this-month, later), kept as a plain list of radii. The
+// actual radial position of every dot is a continuous function of days
+// (dayToRadius below), not a bucket, so a deadline four days out sits
+// visibly between a two-day one and a next-week one.
+const REFERENCE_RINGS = [22, 44, 68, 94];
 
 export default {
   name: "deadlineRadarModal",
@@ -186,17 +185,59 @@ export default {
         this.loading = false;
       });
     },
+    // Smooth days -> radius mapping. Overdue items sit very close to the
+    // centre, today near the first inner reference ring, and the remaining
+    // deadlines fan outward on a sqrt curve so the first weeks keep plenty
+    // of angular space and the "later" region fades gradually to the edge.
+    dayToRadius: function (days) {
+      if (days < 0) {
+        // Clamp overdue inside a tight centre band so very overdue tasks
+        // cluster near the nucleus without hiding behind each other.
+        let depth = Math.min(Math.abs(days), 14);
+        return Math.max(10, 20 - depth * 0.6);
+      }
+      if (days === 0) return 22;
+      let maxDays = 180;
+      let t = Math.sqrt(Math.min(days, maxDays) / maxDays);
+      return 22 + t * 72;
+    },
     layout: function (items) {
-      // Group by ring, then spread each ring's items evenly around it.
-      let byRing = RINGS.map(() => []);
-      items.forEach((it) => {
-        let ringIdx = RINGS.findIndex((ring) => it.days <= ring.max);
-        if (ringIdx < 0) ringIdx = RINGS.length - 1;
-        byRing[ringIdx].push(it);
+      // Give every item its own radius, then bucket by a coarse 6px grid of
+      // radius so items that would overlap at a similar urgency share a
+      // ring and get spread angularly around it. Items at distinct radii
+      // keep their own slot. Angle offset by radius so adjacent rings do
+      // not line up their dots along the same ray.
+      let withR = items.map((it) => ({ it: it, r: this.dayToRadius(it.days) }));
+      let buckets = {};
+      withR.forEach((o) => {
+        let key = Math.round(o.r / 6) * 6;
+        if (!buckets[key]) buckets[key] = [];
+        buckets[key].push(o);
       });
       let out = [];
+      Object.keys(buckets).forEach((k) => {
+        let group = buckets[k];
+        let baseAngle = parseFloat(k) * 0.11;
+        group.forEach((o, i) => {
+          let angle = (Math.PI * 2 * i) / Math.max(group.length, 1) - Math.PI / 2 + baseAngle;
+          out.push(Object.assign({}, o.it, {
+            x: (100 + o.r * Math.cos(angle)).toFixed(1),
+            y: (100 + o.r * Math.sin(angle)).toFixed(1),
+            r: o.r,
+          }));
+        });
+      });
+      return out;
+    },
+    // Kept only to preserve the module structure the old `layout` had,
+    // nothing calls this and REFERENCE_RINGS now only drives the reference
+    // circles in the SVG template.
+    _unusedLegacy: function (items) {
+      let byRing = REFERENCE_RINGS.map(() => []);
+      items.forEach((it) => byRing[0].push(it));
+      let out = [];
       byRing.forEach((group, ringIdx) => {
-        let r = RINGS[ringIdx].r;
+        let r = REFERENCE_RINGS[ringIdx];
         group.forEach((it, i) => {
           let angle = (Math.PI * 2 * i) / group.length - Math.PI / 2 + ringIdx * 0.4;
           out.push(Object.assign({}, it, { x: (100 + r * Math.cos(angle)).toFixed(1), y: (100 + r * Math.sin(angle)).toFixed(1) }));

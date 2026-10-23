@@ -131,17 +131,25 @@ export default {
       projectType: "checklist",
       phasedDraft: this.blankPhasedDraft(),
       phasedError: "",
+      // Mix of Phosphor (ph-*) icons already in phosphorIcons.scss and
+      // bootstrap-icons (bi-*) which ships complete. New picks here are safe
+      // without having to touch the Phosphor subset file.
       phasedIcons: [
-        "ph ph-atom",
-        "ph ph-cpu",
-        "ph ph-hexagon",
-        "ph ph-target",
-        "ph ph-stack",
-        "ph ph-chart-bar",
-        "ph ph-microphone-stage",
-        "ph ph-article",
+        "ph ph-atom", "ph ph-cpu", "ph ph-hexagon", "ph ph-target",
+        "ph ph-stack", "ph ph-chart-bar", "ph ph-microphone-stage", "ph ph-article",
+        "bi-droplet-half", "bi-lightning-charge", "bi-globe-americas", "bi-rocket-takeoff",
+        "bi-palette", "bi-music-note-beamed", "bi-mortarboard", "bi-briefcase",
+        "bi-tree", "bi-camera", "bi-code-slash", "bi-gear-wide-connected",
+        "bi-shield-check", "bi-journal-text", "bi-building", "bi-bank",
+        "bi-geo-alt-fill", "bi-magnet", "bi-thermometer-half", "bi-trophy",
+        "bi-eyedropper", "bi-bezier2", "bi-stars", "bi-fire",
       ],
-      phasedColors: ["#3f6d9a", "#4b8a7f", "#b8893a", "#a3573b", "#7a5a98", "#5e6ef2", "#10b981", "#f97316"],
+      phasedColors: [
+        "#3f6d9a", "#4b8a7f", "#b8893a", "#a3573b", "#7a5a98", "#5e6ef2",
+        "#10b981", "#f97316", "#ed544b", "#06b6d4", "#8b5cf6", "#ed56a1",
+        "#f9d54a", "#77e785", "#ba7956", "#374151", "#1e40af", "#dc2626",
+        "#0ea5e9", "#84cc16", "#eab308", "#c026d3",
+      ],
     };
   },
   computed: {

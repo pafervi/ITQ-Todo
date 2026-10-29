@@ -12,8 +12,8 @@ if ! command -v node >/dev/null 2>&1; then
   exit 1
 fi
 
-# Webpack 4 needs OpenSSL legacy (Node 17+); electron-builder, vite tooling, vue-i18n
-# all require Node >= 18. We target Node 20 LTS; abort on anything older.
+# Vite 5 and vite-plugin-electron need Node >= 18. We target Node 20 LTS;
+# abort on anything older.
 NODE_MAJOR="$(node -p 'process.versions.node.split(".")[0]')"
 if [ "$NODE_MAJOR" -lt 18 ]; then
   echo "ERROR: Node $NODE_MAJOR detected, need Node 18+ (20 LTS recommended)." >&2
@@ -22,14 +22,31 @@ if [ "$NODE_MAJOR" -lt 18 ]; then
   exit 1
 fi
 
+# Install deps if node_modules is missing OR package.json is newer than the
+# installed tree. The second check catches dependency bumps, so you don't end
+# up running an old node_modules against a new package.json.
+need_install=0
 if [ ! -d node_modules ]; then
-  echo "Installing dependencies (first time only)..."
+  need_install=1
+elif [ -f node_modules/.package-lock.json ] && [ package.json -nt node_modules/.package-lock.json ]; then
+  need_install=1
+fi
+
+if [ "$need_install" -eq 1 ]; then
+  # A stale node_modules + package-lock.json can block npm from resolving
+  # a new dependency tree (ERESOLVE on peer deps). Wipe both when
+  # package.json has changed so npm rebuilds from scratch.
+  if [ -d node_modules ]; then
+    echo "package.json changed; removing stale node_modules..."
+    rm -rf node_modules
+  fi
+  [ -f package-lock.json ] && rm -f package-lock.json
+  echo "Installing dependencies..."
   npm install --ignore-scripts
 fi
 
-# Webpack 4 breaks under OpenSSL 3 (Node 17+) without the legacy provider.
-export NODE_OPTIONS="--openssl-legacy-provider"
-# Never try to publish anything.
+# Vite + rollup do not need --openssl-legacy-provider. The flag was a
+# workaround for webpack 4, which this project no longer uses.
 export EP_PRE_RELEASE=false
 
 echo "Building ITQ Todo (AppImage + deb)..."

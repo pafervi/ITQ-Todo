@@ -1,24 +1,29 @@
 "use strict";
 
-import { app, protocol, BrowserWindow, Menu, Tray, ipcMain, nativeImage } from "electron";
-import { createProtocol } from "vue-cli-plugin-electron-builder/lib";
+import { app, BrowserWindow, Menu, Tray, ipcMain, nativeImage } from "electron";
 import installExtension, { VUEJS_DEVTOOLS } from "electron-devtools-installer";
+import path from "node:path";
+import { createRequire } from "node:module";
+
+// Rollup bundles unqualified require() calls at build time instead of
+// leaving them for Node to resolve at runtime, which drags node_modules
+// into the main process bundle. Using createRequire makes the lookup a
+// runtime call, so each module stays external and resolves from the
+// packaged node_modules on install.
+const require = createRequire(import.meta.url);
 
 const Config = require("electron-config");
 const config = new Config();
 
 const isDevelopment = process.env.NODE_ENV !== "production";
 const gotTheLock = app.requestSingleInstanceLock();
-const isServeMode = () => {
-  return process.env.WEBPACK_DEV_SERVER_URL;
-};
+const isServeMode = () => !!process.env.VITE_DEV_SERVER_URL;
 
 let mainWindow = null;
 var tray = null;
 var trayContextMenu = null;
 var trayMenuTemplate = null;
 var SplashScreenIsHidden = true;
-const path = require("path");
 
 // Linux: an AppImage cannot use the setuid chrome-sandbox helper, and recent
 // Ubuntu releases block unprivileged user namespaces, so Electron aborts at
@@ -31,21 +36,19 @@ if (process.platform === "linux") {
   app.commandLine.appendSwitch("ozone-platform-hint", "auto");
 }
 
-protocol.registerSchemesAsPrivileged([{ scheme: "app", privileges: { secure: true, standard: true, stream: true } }]);
-
 async function createWindow() {
   let opts = {
     minWidth: 1000,
     minHeight: 600,
     show: !config.get("runInBackground"),
-    icon: path.join(__dirname, 'icon.png'),
+    icon: path.join(__dirname, "../public/icon.png"),
     // Frameless on Linux and Windows so the in-app toolbar acts as the title
     // bar (drag region + custom min/max/close buttons). macOS keeps native
     // traffic lights floating over a hidden title bar.
     frame: process.platform === "darwin",
     titleBarStyle: process.platform === "darwin" ? "hiddenInset" : undefined,
     webPreferences: {
-      nodeIntegration: process.env.ELECTRON_NODE_INTEGRATION,
+      nodeIntegration: true,
       contextIsolation: false,
     },
   };
@@ -55,10 +58,10 @@ async function createWindow() {
   mainWindow = new BrowserWindow(opts);
   mainWindow.removeMenu();
 
-   mainWindow.webContents.setWindowOpenHandler((details) => {
+  mainWindow.webContents.setWindowOpenHandler((details) => {
     require("electron").shell.openExternal(details.url);
-    return { action: 'deny' }
-  })
+    return { action: "deny" };
+  });
 
   ipcMain.on("show-current-window", showCurrentWindow);
   ipcMain.on("is-windows-visible", isWindowsVisible);
@@ -113,13 +116,14 @@ async function createWindow() {
     setTimeout(hideSplashScreen, 4500);
   });
 
-  if (process.env.WEBPACK_DEV_SERVER_URL) {
-    // Load the url of the dev server if in development mode
-    await mainWindow.loadURL(process.env.WEBPACK_DEV_SERVER_URL);
+  if (isServeMode()) {
+    // Dev: Vite dev server serves the renderer at VITE_DEV_SERVER_URL.
+    await mainWindow.loadURL(process.env.VITE_DEV_SERVER_URL);
     if (!process.env.IS_TEST) mainWindow.webContents.openDevTools();
   } else {
-    createProtocol("app");
-    mainWindow.loadURL("app://./index.html");
+    // Prod: load the built HTML from dist/index.html. The main bundle lives
+    // in dist-electron/main.js, so dist/ sits one level up.
+    await mainWindow.loadFile(path.join(__dirname, "..", "dist", "index.html"));
   }
 }
 
@@ -295,7 +299,7 @@ function removeLegacyAutoLaunch() {
     .then((isEnabled) => {
       if (isEnabled) getAutoLauncher(LEGACY_AUTOLAUNCH_NAME).disable();
     })
-    .catch(() => {});
+    .catch(() => { /* ignored: legacy entry may not exist */ });
 }
 
 function setOpenOnStartup(event, openOnStartup) {
@@ -415,19 +419,26 @@ function createTray() {
 }
 
 function creatTrayIconPath() {
-  const path = require("path");
+  const nodePathMod = require("path");
   const darkPrefix = config.get("darkTrayIcon") ? "Dark" : "";
+
+  // Tray icons live in public/ at source time. In dev Vite serves them at
+  // the dev server root, but Electron needs an on-disk path for Tray().
+  // We resolve them from the repo's public/ in dev and from the packaged
+  // dist/ (which is where electron-builder copies public/ at pack time)
+  // in production.
+  const publicBase = isServeMode()
+    ? nodePathMod.join(__dirname, "..", "public")
+    : nodePathMod.join(__dirname, "..", "dist");
 
   var iconPath;
   if (process.platform === "win32") {
     app.setAppUserModelId("ITQTodo");
-    iconPath = path.join(__dirname, `/trayIcon${darkPrefix}.ico`);
+    iconPath = nodePathMod.join(publicBase, `trayIcon${darkPrefix}.ico`);
   } else if (process.platform === "darwin") {
-    iconPath = nativeImage.createFromPath(path.join(__dirname, `/trayIcon${darkPrefix}.png`));
+    iconPath = nativeImage.createFromPath(nodePathMod.join(publicBase, `trayIcon${darkPrefix}.png`));
   } else {
-    iconPath = isServeMode()
-      ? path.join(__dirname, `/bundled/trayIcon${darkPrefix}@3x.png`)
-      : path.join(__dirname, `/trayIcon${darkPrefix}@3x.png`);
+    iconPath = nodePathMod.join(publicBase, `trayIcon${darkPrefix}@3x.png`);
   }
   return iconPath;
 }

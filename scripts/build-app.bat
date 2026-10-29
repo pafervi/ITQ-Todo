@@ -2,7 +2,9 @@
 setlocal enabledelayedexpansion
 
 rem === Configuration: portable Node.js folder ===
-rem Edit NODE_DIR if your Node install lives elsewhere.
+rem Edit NODE_DIR if your Node install lives elsewhere. Vite 5 and
+rem vite-plugin-electron work on any Node >= 18; your current Node 24
+rem portable is fine.
 set "NODE_DIR=C:\Users\pafervi2\Downloads\node-v24.21.0-win-x64"
 
 rem Project root is one level up from this script.
@@ -35,11 +37,10 @@ for %%d in ("%NODE_EXE%") do set "NODE_EXE_DIR=%%~dpd"
 echo Found Node.js at: %NODE_EXE%
 set "PATH=%NODE_EXE_DIR%;%PATH%"
 
-rem Call npm/npx through their JS entry points directly via node.exe.
-rem This avoids relying on npm.cmd / npx.cmd, which some locked-down
-rem Windows setups block by stripping .CMD from PATHEXT.
+rem Call npm through its JS entry point directly via node.exe.
+rem This avoids relying on npm.cmd, which some locked-down Windows
+rem setups block by stripping .CMD from PATHEXT.
 set "NPM_CLI=%NODE_EXE_DIR%node_modules\npm\bin\npm-cli.js"
-set "NPX_CLI=%NODE_EXE_DIR%node_modules\npm\bin\npx-cli.js"
 
 if not exist "%NPM_CLI%" (
     echo.
@@ -52,7 +53,29 @@ if not exist "%NPM_CLI%" (
 
 cd /d "%PROJECT_DIR%"
 
-if not exist "node_modules" (
+rem Install dependencies if node_modules is missing OR package.json is
+rem newer than the installed tree. The second check catches the Vite
+rem migration (and any future dependency bump) so you don't end up
+rem running an old node_modules against a new package.json.
+set "DO_INSTALL="
+if not exist "node_modules" set "DO_INSTALL=1"
+if exist "node_modules\.package-lock.json" (
+    for %%a in ("package.json") do set "PKG_MTIME=%%~ta"
+    for %%b in ("node_modules\.package-lock.json") do set "LOCK_MTIME=%%~tb"
+    if "!PKG_MTIME!" GTR "!LOCK_MTIME!" set "DO_INSTALL=1"
+)
+
+if defined DO_INSTALL (
+    rem A stale node_modules + package-lock.json can block npm from
+    rem resolving a new dependency tree (ERESOLVE on peer deps). When
+    rem package.json has changed we wipe both and let npm rebuild from
+    rem scratch, which is slower but always correct.
+    if exist "node_modules" (
+        echo.
+        echo package.json changed; removing stale node_modules...
+        rmdir /s /q "node_modules"
+    )
+    if exist "package-lock.json" del /q "package-lock.json"
     echo.
     echo Installing dependencies, this can take a few minutes the first time...
     echo.
@@ -82,11 +105,8 @@ if not exist "node_modules\electron\dist\electron.exe" (
     )
 )
 
-rem Webpack 4 (used by this project) calls Node's crypto module in a way
-rem that breaks under OpenSSL 3 (Node 17+), the classic
-rem "error:0308010C:digital envelope routines::unsupported" crash.
-rem This flag switches Node back to the legacy provider for this process only.
-set "NODE_OPTIONS=--openssl-legacy-provider"
+rem Vite + rollup do not need --openssl-legacy-provider. The flag was a
+rem workaround for webpack 4, which this project no longer uses.
 
 echo.
 echo Building ITQ Todo (installer + portable .exe), this can take a few minutes...
@@ -101,7 +121,7 @@ if errorlevel 1 (
 
 echo.
 echo Done. Look inside the "dist_electron" folder for:
-echo   - "ITQ Todo Setup <version>.exe"  (the normal installer)
-echo   - "ITQ Todo <version>.exe"        (the portable version, no install needed)
+echo   - "ITQ Todo Setup ^<version^>.exe"  (the normal installer)
+echo   - "ITQ Todo ^<version^>.exe"        (the portable version, no install needed)
 echo.
 pause

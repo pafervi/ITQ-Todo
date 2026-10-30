@@ -1,6 +1,6 @@
 {
   "name": "WeekToDo",
-  "version": "2.2.1",
+  "version": "2.2.2",
   "private": true,
   "description": "Personal planner and lab notebook for computational catalysis research at ITQ (UPV-CSIC).",
   "author": "Pau Ferri-Vicedo <pauferrivi@gmail.com>",
@@ -74,7 +74,7 @@
       "dist-electron/**/*"
     ],
     "directories": {
-      "output": "dist_electron"
+      "output": "release"
     },
     "linux": {
       "category": "Office;ProjectManagement",

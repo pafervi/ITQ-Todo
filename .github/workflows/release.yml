@@ -1,0 +1,90 @@
+name: Release installers
+
+# Builds ITQ Todo installers for Linux, Windows and macOS and attaches
+# them to a GitHub Release.
+#
+# Triggers:
+#   - push of a tag matching v* (e.g. v2.3.0): builds and publishes the
+#     Release with the three installers attached.
+#   - manual run from the Actions tab (workflow_dispatch): builds and
+#     uploads to the run's artifacts, no Release is created.
+#
+# Share with colleagues: send them the link to
+#   https://github.com/pafervi/ITQ-Todo/releases
+# They download the .exe / .AppImage / .deb / .dmg and double-click to
+# install. No Node, no git, no command line.
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build on ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            artifact_glob: |
+              release/*.AppImage
+              release/*.deb
+          - os: windows-latest
+            artifact_glob: |
+              release/*.exe
+          - os: macos-latest
+            artifact_glob: |
+              release/*.dmg
+              release/*.pkg
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Rebuild native modules for Electron
+        run: npx electron-builder install-app-deps
+
+      - name: Build installers (${{ matrix.os }})
+        run: npm run electron:build
+        env:
+          # Never try to publish from the build itself; the release
+          # step below does that in one shot per matrix leg.
+          EP_PRE_RELEASE: "false"
+          # The GH action-gh-release step picks up this token for the
+          # upload below; electron-builder does not need it.
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload build artifacts
+        # Always, so a workflow_dispatch run also leaves downloads behind.
+        uses: actions/upload-artifact@v4
+        with:
+          name: itq-todo-${{ matrix.os }}
+          path: ${{ matrix.artifact_glob }}
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Attach installers to the Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ matrix.artifact_glob }}
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+          fail_on_unmatched_files: true

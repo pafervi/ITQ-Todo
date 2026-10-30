@@ -1,6 +1,6 @@
 {
   "name": "WeekToDo",
-  "version": "2.2.0",
+  "version": "2.2.1",
   "private": true,
   "description": "Personal planner and lab notebook for computational catalysis research at ITQ (UPV-CSIC).",
   "author": "Pau Ferri-Vicedo <pauferrivi@gmail.com>",

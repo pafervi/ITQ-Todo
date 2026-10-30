@@ -1,7 +1,6 @@
 "use strict";
 
 import { app, BrowserWindow, Menu, Tray, ipcMain, nativeImage } from "electron";
-import installExtension, { VUEJS_DEVTOOLS } from "electron-devtools-installer";
 import path from "node:path";
 import { createRequire } from "node:module";
 
@@ -15,7 +14,12 @@ const require = createRequire(import.meta.url);
 const Config = require("electron-config");
 const config = new Config();
 
-const isDevelopment = process.env.NODE_ENV !== "production";
+// `app.isPackaged` is Electron's own authoritative signal for "running from an
+// installed build". We relied on NODE_ENV before, but that is never set in a
+// packaged .deb/.AppImage/.exe, so the app treated production launches as dev
+// and tried to load `electron-devtools-installer` (a devDependency not shipped
+// in the ASAR), crashing with "Cannot find module".
+const isDevelopment = !app.isPackaged;
 const gotTheLock = app.requestSingleInstanceLock();
 const isServeMode = () => !!process.env.VITE_DEV_SERVER_URL;
 
@@ -172,10 +176,15 @@ if (!gotTheLock) {
     }
 
     if (isDevelopment && !process.env.IS_TEST) {
+      // Dynamic require so `electron-devtools-installer` is never referenced
+      // in packaged builds (it's a devDependency and not shipped in the ASAR).
       try {
+        const devtoolsInstaller = require("electron-devtools-installer");
+        const installExtension = devtoolsInstaller.default || devtoolsInstaller;
+        const { VUEJS_DEVTOOLS } = devtoolsInstaller;
         await installExtension(VUEJS_DEVTOOLS);
       } catch (e) {
-        console.error("Vue Devtools failed to install:", e.toString());
+        console.error("Vue Devtools failed to install:", e && e.toString ? e.toString() : e);
       }
     }
   });

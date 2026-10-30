@@ -1,7 +1,10 @@
 import platformHelper from "../helpers/platformHelper";
 import storageRepository from "./storageRepository";
-import version_json from "../../public/version.json";
 import moment from "moment";
+
+/* global __APP_VERSION__ */
+// __APP_VERSION__ is replaced at build time by Vite from package.json.
+// See vite.config.mjs → define.
 
 export default {
   load() {
@@ -15,7 +18,7 @@ export default {
         calendar: true,
         firstTimeOpen: true,
         language: "en",
-        version: version_json.version,
+        version: __APP_VERSION__,
         columns: 5,
         customColumns: 5,
         zoom: 100,

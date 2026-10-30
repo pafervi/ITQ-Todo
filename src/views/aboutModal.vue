@@ -39,14 +39,16 @@
 </template>
 
 <script>
-import version_json from "../../public/version.json";
+/* global __APP_VERSION__ */
+// __APP_VERSION__ is replaced at build time by Vite from package.json.
+// See vite.config.mjs → define.
 import zeoliteHelper from "../helpers/zeoliteHelper";
 
 export default {
   name: "aboutModal",
   data() {
     return {
-      version: version_json.version,
+      version: __APP_VERSION__,
     };
   },
   computed: {

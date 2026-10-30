@@ -2,10 +2,11 @@
 setlocal enabledelayedexpansion
 
 rem === Configuration: portable Node.js folder ===
-rem Edit NODE_DIR if your Node install lives elsewhere. Vite 5 and
-rem vite-plugin-electron work on any Node >= 18; your current Node 24
-rem portable is fine.
-set "NODE_DIR=C:\Users\pafervi2\Downloads\node-v24.21.0-win-x64"
+rem Edit NODE_DIR to the folder containing your portable Node.js (the one
+rem that holds node.exe and the npm bundled next to it). Vite 5 and
+rem vite-plugin-electron work on any Node >= 18; a Node 20 LTS or Node 24
+rem portable from nodejs.org is fine.
+set "NODE_DIR=%USERPROFILE%\node-portable"
 
 rem Project root is one level up from this script.
 set "PROJECT_DIR=%~dp0.."
@@ -59,6 +60,9 @@ rem migration (and any future dependency bump) so you don't end up
 rem running an old node_modules against a new package.json.
 set "DO_INSTALL="
 if not exist "node_modules" set "DO_INSTALL=1"
+rem Catch a broken node_modules missing its .bin shims (makes `npm run`
+rem fail with "vite: not found").
+if not exist "node_modules\.bin\vite.cmd" if not exist "node_modules\.bin\vite" set "DO_INSTALL=1"
 if exist "node_modules\.package-lock.json" (
     for %%a in ("package.json") do set "PKG_MTIME=%%~ta"
     for %%b in ("node_modules\.package-lock.json") do set "LOCK_MTIME=%%~tb"
@@ -120,7 +124,7 @@ if errorlevel 1 (
 )
 
 echo.
-echo Done. Look inside the "dist_electron" folder for:
+echo Done. Look inside the "release" folder for:
 echo   - "ITQ Todo Setup ^<version^>.exe"  (the normal installer)
 echo   - "ITQ Todo ^<version^>.exe"        (the portable version, no install needed)
 echo.

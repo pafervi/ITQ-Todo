@@ -4,7 +4,9 @@ setlocal enabledelayedexpansion
 rem Launches Vite + Electron in dev mode (hot reload) using the same
 rem portable Node.js that build-app.bat uses. No global Node needed.
 
-set "NODE_DIR=C:\Users\pafervi2\Downloads\node-v24.21.0-win-x64"
+rem Edit NODE_DIR to the folder containing your portable Node.js
+rem (the one that holds node.exe and the npm bundled next to it).
+set "NODE_DIR=%USERPROFILE%\node-portable"
 set "PROJECT_DIR=%~dp0.."
 
 set "NODE_EXE="

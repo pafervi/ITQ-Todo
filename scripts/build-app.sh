@@ -22,11 +22,16 @@ if [ "$NODE_MAJOR" -lt 18 ]; then
   exit 1
 fi
 
-# Install deps if node_modules is missing OR package.json is newer than the
-# installed tree. The second check catches dependency bumps, so you don't end
-# up running an old node_modules against a new package.json.
+# Install deps if node_modules is missing, incomplete, OR package.json is
+# newer than the installed tree. The three checks catch (a) a fresh clone,
+# (b) a broken node_modules missing its .bin shims (which makes `npm run`
+# fail with "vite: not found"), and (c) a dependency bump since the last
+# install.
 need_install=0
 if [ ! -d node_modules ]; then
+  need_install=1
+elif [ ! -x node_modules/.bin/vite ]; then
+  echo "node_modules/.bin/vite missing; node_modules is incomplete."
   need_install=1
 elif [ -f node_modules/.package-lock.json ] && [ package.json -nt node_modules/.package-lock.json ]; then
   need_install=1
@@ -53,8 +58,8 @@ echo "Building ITQ Todo (AppImage + deb)..."
 npm run electron:build -- --linux AppImage deb --publish never
 
 echo
-echo "Done. Look inside dist_electron/ for:"
-ls -1 dist_electron/*.AppImage dist_electron/*.deb 2>/dev/null || true
+echo "Done. Look inside release/ for:"
+ls -1 release/*.AppImage release/*.deb 2>/dev/null || true
 echo
-echo "Install the .deb with:   sudo apt install ./dist_electron/itq-todo_*_amd64.deb"
-echo "or run the AppImage:     chmod +x dist_electron/*.AppImage && ./dist_electron/*.AppImage"
+echo "Install the .deb with:   sudo apt install ./release/itq-todo_*_amd64.deb"
+echo "or run the AppImage:     chmod +x release/*.AppImage && ./release/*.AppImage"

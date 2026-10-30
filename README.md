@@ -1,147 +1,79 @@
 # ITQ Todo
 
-A personal planner and lab notebook for computational catalysis research at
-the [Instituto de Tecnología Química](https://itq.upv-csic.es/) (ITQ, UPV-CSIC).
-Built on top of [WeekToDo](https://github.com/manuelernestog/weektodo) by Manuel
-Ernesto Garcia and extensively adapted for day-to-day research workflow.
+Planificador personal y cuaderno de laboratorio para investigación en química
+computacional, pensado para el día a día en el ITQ (UPV-CSIC). Toda la
+información se queda en tu ordenador, no sale a ningún servidor.
 
-## Features
+## Instalación
 
-- Classic weekly planner view with repeating events, due dates, and reminders.
-- Phased project panel for long-running research threads: timeline, feed,
-  snapshots, and per-phase log entries.
-- Science themes (zeolites, organic chemistry, metal oxides, photochemistry)
-  that re-skin the splash screen and project covers with chemistry-aware
-  visuals.
-- Deadline radar with continuous urgency mapping.
-- Drag-and-drop reorder of projects and move-task-between-projects.
-- Full offline operation, data stored locally via IndexedDB.
-- Multilingual UI (English, Spanish).
-- Cross-platform desktop builds (Linux `.AppImage` + `.deb`, Windows installer
-  + portable, macOS `.dmg` + `.pkg`).
+Descarga el instalador para tu sistema desde la página de releases:
 
-## Requirements
+**[Descargar la última versión →](https://github.com/pafervi/ITQ-Todo/releases/latest)**
 
-- **Node.js 20 LTS** (18+ works, 20 recommended).
-- **npm** (bundled with Node; the project uses `package-lock.json`).
-- Linux: `dpkg`-based distro for `.deb` builds, nothing extra for AppImage.
-- Windows: no extra tooling.
-- macOS: Xcode command line tools for `.dmg`/`.pkg`.
-
-## Quick start
-
-```bash
-git clone https://github.com/pafervi/ITQ-Todo.git
-cd ITQ-Todo
-npm install --ignore-scripts
-npm run electron:serve        # dev mode with hot reload
-```
-
-The `--ignore-scripts` on install skips the Electron native rebuild step; it
-runs automatically on first `electron:serve` / `electron:build`.
-
-## Building a release
-
-Pre-made scripts handle the full pipeline (Node version check, legacy OpenSSL
-provider for webpack 4, electron-builder invocation).
-
-### Linux
-
-```bash
-./scripts/build-app.sh
-```
-
-Produces `dist_electron/ITQ-Todo-<version>.AppImage` and
-`dist_electron/itq-todo_<version>_amd64.deb`.
-
-Install the deb:
-```bash
-sudo apt install ./dist_electron/itq-todo_*_amd64.deb
-```
-
-Or run the AppImage:
-```bash
-chmod +x dist_electron/*.AppImage && ./dist_electron/*.AppImage
-```
+En esa página verás varios ficheros. Elige el que corresponda a tu sistema:
 
 ### Windows
 
-Double-click `scripts\build-app.bat`, or from the project root:
+Baja `ITQ Todo Setup <versión>.exe` y haz doble click.
 
-```cmd
-scripts\build-app.bat
+> La primera vez Windows mostrará "Windows protegió el equipo". Pulsa
+> **Más información → Ejecutar de todas formas**. Es porque la app no está
+> firmada con un certificado corporativo, no porque haya nada raro.
+
+Si prefieres la versión portable (no instala nada, se abre desde el fichero),
+baja `ITQ Todo <versión>.exe` en lugar del Setup.
+
+### Linux (Ubuntu / Debian / derivados)
+
+Baja `itq-todo_<versión>_amd64.deb` y abre un terminal donde esté el fichero:
+
+```bash
+sudo apt install ./itq-todo_<versión>_amd64.deb
 ```
 
-Edit `NODE_DIR` at the top of the file if your Node installation lives
-elsewhere. Produces an NSIS installer and a portable `.exe` under
-`dist_electron\`.
+Aparecerá en el menú de aplicaciones como "ITQ Todo".
+
+### Linux (otras distros, portable)
+
+Baja `ITQ-Todo-<versión>.AppImage`, dale permiso de ejecución y lánzala:
+
+```bash
+chmod +x ITQ-Todo-*.AppImage
+./ITQ-Todo-*.AppImage
+```
 
 ### macOS
 
-```bash
-export NODE_OPTIONS=--openssl-legacy-provider
-npm run electron:build -- --mac
-```
+Baja `ITQ Todo-<versión>.dmg`, ábrelo y arrastra la app a la carpeta
+Aplicaciones.
 
-Produces `.dmg` and `.pkg` under `dist_electron/`.
+> La primera vez macOS dirá "no se puede abrir porque el desarrollador no
+> está identificado". Haz click derecho sobre la app en Aplicaciones y
+> elige **Abrir → Abrir**. Solo pasa la primera vez.
 
-## Project layout
+## Primeros pasos
 
-```
-ITQ-Todo/
-├── src/                       Vue 3 app source
-│   ├── App.vue                Root component (currently monolithic)
-│   ├── main.js                Vue bootstrap
-│   ├── background.js          Electron main process
-│   ├── components/            Reusable components
-│   │   ├── phased/            Phased-project panel (timeline, feed)
-│   │   └── layout/            Sidebar, header, chrome
-│   ├── views/                 Modals and full-screen views
-│   ├── store/                 Vuex store and modules
-│   ├── repositories/          IndexedDB adapters
-│   ├── helpers/               Pure helpers (themes, dates, parsers)
-│   ├── migrations/            Versioned data-model migrations
-│   └── assets/                i18n strings, images, SCSS
-├── public/                    Static assets served as-is
-├── build/                     electron-builder assets (icons)
-├── scripts/                   Build and maintenance scripts
-│   └── windows/               PowerShell helpers (local cleanup)
-├── docs/                      Internal documentation
-│   └── sessions/              Development session notes
-└── dist_electron/             Build output (gitignored)
-```
+Al abrir por primera vez, la app crea una base de datos vacía en tu
+ordenador. Los datos nunca salen de aquí; si cambias de equipo tienes que
+**exportar y re-importar** desde el menú de configuración.
 
-See [`docs/architecture.md`](docs/architecture.md) for a deeper tour of the
-code and the data model.
+En el menú de configuración encontrarás también:
 
-## Running tests
+- **Idioma**: inglés, castellano o catalán.
+- **Tema**: claro u oscuro.
+- **Copia de seguridad diaria**: elige una carpeta sincronizada con la nube
+  (OneDrive, Google Drive, Dropbox) y la app guardará una copia cada día.
+- **Cargar datos de ejemplo**: carga unos proyectos de muestra para
+  explorar las funciones sin empezar de cero.
 
-```bash
-npm run test:unit         # one-shot
-npm run test:unit:watch   # watch mode
-```
+Dentro de la app, pulsa **?** en cualquier momento para ver los atajos de
+teclado y la guía de funciones.
 
-Vitest is wired up but coverage is thin; most changes are validated by
-running the Electron build (`npm run build` or the build scripts above).
+## Problemas y sugerencias
 
-## Linting
+Abre un issue en el repositorio o escríbeme directamente.
 
-ESLint runs as part of the webpack build and will fail the build on errors
-(not just warnings). To run it standalone:
+## Licencia
 
-```bash
-npm run lint
-```
-
-## Contributing
-
-See [`CONTRIBUTING.md`](CONTRIBUTING.md).
-
-## Credits
-
-Fork of [WeekToDo](https://github.com/manuelernestog/weektodo) by
-Manuel Ernesto Garcia, GPL-3.0.
-
-## License
-
-GPL-3.0, see [`LICENSE`](LICENSE).
+GPL-3.0. Basado en [WeekToDo](https://github.com/manuelernestog/weektodo)
+de Manuel Ernesto García.

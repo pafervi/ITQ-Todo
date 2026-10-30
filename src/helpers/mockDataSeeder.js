@@ -44,14 +44,14 @@ export default {
         listName: "MFI Defect Engineering",
         archived: false,
         color: "#5e6ef2",
-        folderPath: "C:\\Users\\pafervi2\\calculos\\MFI_defects",
+        folderPath: "./calculations/MFI_defects",
         tasks: [
-          { text: "Generar defectos con MACE-MP en la celda 3x3x3", priority: 3, tags: ["MACE", "DFT"], deadline: d(-2) },
-          { text: "Lanzar barrido de vacantes de Al en VASP", priority: 2, tags: ["VASP"], deadline: d(0), time: "10:00" },
-          { text: "Revisar convergencia de las TS con PoTS", priority: 2, tags: ["PoTS"], deadline: d(1) },
-          { text: "Comparar energias DFT vs MLIP", priority: 1, tags: ["MACE", "DFT"], deadline: d(5) },
-          { text: "Actualizar notebook de analisis", priority: 0, tags: ["writing"], checked: true },
-          { text: "Reunion semanal con Mercedes", priority: 1, tags: ["meeting"], deadline: d(2), time: "09:30" },
+          { text: "Generate defects with MACE-MP on a 3x3x3 cell", priority: 3, tags: ["MACE", "DFT"], deadline: d(-2) },
+          { text: "Launch Al vacancy sweep in VASP", priority: 2, tags: ["VASP"], deadline: d(0), time: "10:00" },
+          { text: "Review TS convergence with PoTS", priority: 2, tags: ["PoTS"], deadline: d(1) },
+          { text: "Compare DFT vs MLIP energies", priority: 1, tags: ["MACE", "DFT"], deadline: d(5) },
+          { text: "Update analysis notebook", priority: 0, tags: ["writing"], checked: true },
+          { text: "Weekly meeting with the group", priority: 1, tags: ["meeting"], deadline: d(2), time: "09:30" },
         ],
       },
       {
@@ -60,83 +60,83 @@ export default {
         color: "#06b6d4",
         kind: "activelearning",
         tasks: [
-          { text: "Reentrenar potencial con nuevos frames", priority: 3, tags: ["MACE", "training"], deadline: d(-1) },
-          { text: "Validar fuerzas contra test set", priority: 2, tags: ["MACE"], deadline: d(3) },
-          { text: "Documentar hiperparametros usados", priority: 0, tags: ["writing"], checked: true },
-          { text: "Subir checkpoint a djangochem", priority: 1, tags: ["djangochem"] },
+          { text: "Retrain potential with new frames", priority: 3, tags: ["MACE", "training"], deadline: d(-1) },
+          { text: "Validate forces against test set", priority: 2, tags: ["MACE"], deadline: d(3) },
+          { text: "Document hyperparameters used", priority: 0, tags: ["writing"], checked: true },
+          { text: "Upload checkpoint to internal DB", priority: 1, tags: ["db"] },
         ],
       },
       {
         listName: "PoTS Automation",
         archived: false,
         tasks: [
-          { text: "Arreglar bug en la busqueda de TS automatica", priority: 3, tags: ["PoTS", "bug"], deadline: d(0) },
-          { text: "Anadir soporte para geometrias MFI custom", priority: 2, tags: ["PoTS"], deadline: d(7) },
-          { text: "Escribir tests unitarios", priority: 1, tags: ["testing"] },
-          { text: "Code review con Rafael", priority: 1, tags: ["meeting"], deadline: d(4), time: "16:00" },
+          { text: "Fix bug in automated TS search", priority: 3, tags: ["PoTS", "bug"], deadline: d(0) },
+          { text: "Add support for custom MFI geometries", priority: 2, tags: ["PoTS"], deadline: d(7) },
+          { text: "Write unit tests", priority: 1, tags: ["testing"] },
+          { text: "Code review with teammate", priority: 1, tags: ["meeting"], deadline: d(4), time: "16:00" },
         ],
       },
       {
         listName: "CeO2 Polaron Study",
         archived: false,
         color: "#f97316",
-        folderPath: "C:\\Users\\pafervi2\\calculos\\CeO2_polarones",
+        folderPath: "./calculations/CeO2_polarons",
         tasks: [
-          { text: "Calcular energias de formacion de vacantes O", priority: 2, tags: ["VASP", "DFT"], deadline: d(-5) },
-          { text: "Mapear localizacion de polarones Ce3+", priority: 2, tags: ["DFT"], deadline: d(10) },
-          { text: "Comparar con literatura de Van Speybroeck", priority: 0, tags: ["reading"], checked: true },
+          { text: "Compute O vacancy formation energies", priority: 2, tags: ["VASP", "DFT"], deadline: d(-5) },
+          { text: "Map Ce3+ polaron localization sites", priority: 2, tags: ["DFT"], deadline: d(10) },
+          { text: "Compare with recent literature", priority: 0, tags: ["reading"], checked: true },
         ],
       },
       {
-        listName: "Becaria: Laura",
+        listName: "Student onboarding",
         archived: false,
         color: "#10b981",
         tasks: [
-          { text: "Onboarding y accesos al cluster", priority: 1, tags: ["onboarding"], checked: true },
-          { text: "Introduccion al proyecto MFI", priority: 1, tags: ["onboarding"], checked: true },
-          { text: "Primeras tareas: correr ejemplos VASP", priority: 2, tags: ["VASP"], deadline: d(1) },
-          { text: "Reunion de seguimiento semanal", priority: 1, tags: ["meeting"], deadline: d(3), time: "12:00" },
+          { text: "Cluster access and onboarding", priority: 1, tags: ["onboarding"], checked: true },
+          { text: "Project introduction session", priority: 1, tags: ["onboarding"], checked: true },
+          { text: "First tasks: run VASP examples", priority: 2, tags: ["VASP"], deadline: d(1) },
+          { text: "Weekly follow-up meeting", priority: 1, tags: ["meeting"], deadline: d(3), time: "12:00" },
         ],
       },
       {
-        listName: "Reunion de grupo - viernes",
+        listName: "Group meeting - Friday",
         archived: false,
         kind: "meeting",
         color: "#ed56a1",
         tasks: [
-          { text: "Ronda de estado por persona", priority: 1, tags: ["meeting"] },
-          { text: "Revisar tiempo de cluster disponible", priority: 1, tags: ["meeting"] },
-          { text: "Fecha del proximo seminario interno", priority: 0, tags: ["meeting"], checked: true },
+          { text: "Round of status updates", priority: 1, tags: ["meeting"] },
+          { text: "Review available cluster time", priority: 1, tags: ["meeting"] },
+          { text: "Pick date for next internal seminar", priority: 0, tags: ["meeting"], checked: true },
         ],
       },
       {
         listName: "Ideas / Backlog",
         archived: false,
         tasks: [
-          { text: "Explorar transfer learning entre zeolitas", priority: 0, tags: ["idea"] },
-          { text: "Probar active learning en el pipeline de PoTS", priority: 0, tags: ["idea", "PoTS"] },
-          { text: "Leer paper nuevo de MACE off-equilibrium", priority: 0, tags: ["reading"] },
+          { text: "Explore transfer learning between zeolite frameworks", priority: 0, tags: ["idea"] },
+          { text: "Try active learning in the PoTS pipeline", priority: 0, tags: ["idea", "PoTS"] },
+          { text: "Read new MACE off-equilibrium paper", priority: 0, tags: ["reading"] },
         ],
       },
       {
-        listName: "Viaje: ACS Fall Meeting",
+        listName: "Trip: conference",
         archived: true,
         tasks: [
-          { text: "Reservar vuelos", priority: 1, tags: ["travel"], checked: true },
-          { text: "Reservar alojamiento", priority: 1, tags: ["travel"], checked: true },
-          { text: "Preparar poster", priority: 2, tags: ["writing", "travel"], checked: true },
-          { text: "Gestionar dietas", priority: 0, tags: ["travel"], checked: true },
+          { text: "Book flights", priority: 1, tags: ["travel"], checked: true },
+          { text: "Book accommodation", priority: 1, tags: ["travel"], checked: true },
+          { text: "Prepare poster", priority: 2, tags: ["writing", "travel"], checked: true },
+          { text: "Expense report", priority: 0, tags: ["travel"], checked: true },
         ],
       },
       {
-        // One task left on purpose: check it off to see the "Convergido,
-        // todo hecho" banner and the confetti burst fire immediately.
-        listName: "Demo: completa la ultima tarea",
+        // One task left on purpose: check it off to see the "Converged, all
+        // done" banner and the confetti burst fire immediately.
+        listName: "Demo: tick the last task",
         archived: false,
         color: "#2dbd6e",
         tasks: [
-          { text: "Esta ya esta hecha", priority: 0, tags: [], checked: true },
-          { text: "Marca esta y mira que pasa", priority: 0, tags: [] },
+          { text: "This one is already done", priority: 0, tags: [], checked: true },
+          { text: "Tick this one and watch what happens", priority: 0, tags: [] },
         ],
       },
     ];
@@ -161,10 +161,10 @@ export default {
 
     const todayId = moment().format("YYYYMMDD");
     const todayTasks = [
-      { text: "Responder emails pendientes", priority: 0, tags: [] },
-      { text: "Revisar calculo lanzado anoche", priority: 2, tags: ["VASP"], time: "09:00" },
-      { text: "Comer con el grupo", priority: 0, tags: [], time: "14:00" },
-      { text: "Preparar slides para la reunion de manana", priority: 1, tags: ["writing"], deadline: todayId },
+      { text: "Answer pending emails", priority: 0, tags: [] },
+      { text: "Review last night's calculation", priority: 2, tags: ["VASP"], time: "09:00" },
+      { text: "Lunch with the group", priority: 0, tags: [], time: "14:00" },
+      { text: "Prepare slides for tomorrow's meeting", priority: 1, tags: ["writing"], deadline: todayId },
     ];
     if (store.getters.todoLists[todayId]) {
       todayTasks.forEach((t) => {
@@ -178,8 +178,8 @@ export default {
     for (let i = 1; i <= 4; i++) {
       const pastId = moment().subtract(i, "d").format("YYYYMMDD");
       const pastTasks = [
-        taskFactory(pastId, { text: "Tarea completada", checked: true }),
-        taskFactory(pastId, { text: "Otra tarea completada", checked: true }),
+        taskFactory(pastId, { text: "Completed task", checked: true }),
+        taskFactory(pastId, { text: "Another completed task", checked: true }),
       ];
       toDoListRepository.update(pastId, pastTasks);
     }

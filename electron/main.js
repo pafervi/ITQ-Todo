@@ -265,7 +265,7 @@ async function writeGpuLog() {
     let dir = app.getPath("userData");
     let file = nodePath.join(dir, "gpu-status.log");
     fs.writeFileSync(file, lines.join("\n"), "utf8");
-    console.log("[ITQ Todo] GPU diagnostic written to: " + file);
+    console.info("[ITQ Todo] GPU diagnostic written to: " + file);
   } catch (e) {
     console.error("[ITQ Todo] writeGpuLog failed: " + (e && e.message));
   }

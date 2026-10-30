@@ -7,7 +7,7 @@ node_modules/
 # Build output
 /dist
 /dist-electron
-/dist_electron
+/release
 
 # local env files
 .env

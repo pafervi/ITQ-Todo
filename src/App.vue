@@ -223,7 +223,9 @@ import toDoModal from "./views/toDoModal/toDoModal";
 import tipsModal from "./views/tipsModal";
 import { Modal, Toast } from "bootstrap";
 import migrations from "./migrations/migrations";
-import version_json from "../public/version.json";
+/* global __APP_VERSION__ */
+// __APP_VERSION__ is replaced at build time by Vite from package.json.
+// See vite.config.mjs → define.
 import isElectron from "is-electron";
 import notifications from "./helpers/notifications";
 import clearDataModal from "./components/comfirmModals/clearDataModal.vue";
@@ -339,7 +341,7 @@ export default {
   },
   beforeCreate() {
     let config = configRepository.load();
-    if (version_json.version != config.version) {
+    if (__APP_VERSION__ != config.version) {
       migrations.migrate();
     }
 
@@ -883,8 +885,8 @@ export default {
       });
     },
     checkVersion: function () {
-      if (version_json.version != this.$store.getters.config.version) {
-        this.$store.commit("updateConfig", { val: version_json.version, key: "version" });
+      if (__APP_VERSION__ != this.$store.getters.config.version) {
+        this.$store.commit("updateConfig", { val: __APP_VERSION__, key: "version" });
         configRepository.update(this.$store.getters.config);
       }
     },

@@ -34,6 +34,13 @@ export default defineConfig({
   root: fileURLToPath(new URL(".", import.meta.url)),
   base: "./",
   publicDir: "public",
+  // Expose package.json's version as __APP_VERSION__ in the renderer source
+  // so src/App.vue can trigger data-model migrations when the installed
+  // build moves to a new version. Avoids a separate public/version.json
+  // that drifts out of sync.
+  define: {
+    __APP_VERSION__: JSON.stringify(pkg.version),
+  },
   resolve: {
     // Vue CLI / webpack 4 added ".vue" to the default extension list, so
     // imports like `import toDoList from "./components/toDoList"` worked

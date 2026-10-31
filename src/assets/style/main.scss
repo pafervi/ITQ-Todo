@@ -210,6 +210,25 @@ i {
 .dark-theme .modal-content {
   background-color: #121a33;
   border: 1px solid rgba(94, 110, 242, 0.18);
+  color: #e6edf3;
+}
+
+.dark-theme .modal-content .form-check-label,
+.dark-theme .modal-content label {
+  color: #e6edf3;
+}
+
+.dark-theme .modal-content .modal-title {
+  color: #f0f3f6;
+}
+
+.dark-theme .modal-content .form-check-input:not(:checked) {
+  background-color: #21262d;
+  border-color: #30363d;
+}
+
+.dark-theme .modal-content .form-range {
+  accent-color: var(--accent-color, #5e6ef2);
 }
 
 .close-modal {

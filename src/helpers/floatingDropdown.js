@@ -10,8 +10,8 @@
 // installFloatingDropdowns() once at startup.
 
 const PORTAL_ID = "floating-dropdown-portal";
-const origins = new WeakMap(); // menu -> { parent, next }
-const menus = new WeakMap(); // toggle -> menu
+const origins = new WeakMap(); // menu -> { parent, next, toggle }
+const activeMenus = new Set(); // all menus currently in the portal
 
 function getPortal() {
   let portal = document.getElementById(PORTAL_ID);
@@ -40,7 +40,7 @@ function findMenu(toggle) {
 
 function positionMenu(toggle, menu) {
   let rect = toggle.getBoundingClientRect();
-  // Temporarily show the menu off-screen to measure its height.
+  // Temporarily make the menu measurable.
   menu.style.position = "fixed";
   menu.style.visibility = "hidden";
   menu.style.display = "block";
@@ -60,32 +60,62 @@ function positionMenu(toggle, menu) {
   menu.style.left = rect.left + "px";
 }
 
+function returnMenuToOrigin(menu) {
+  let origin = origins.get(menu);
+  if (!origin) return;
+  menu.style.position = "";
+  menu.style.top = "";
+  menu.style.left = "";
+  menu.classList.remove("show");
+  if (origin.parent) {
+    if (origin.next && origin.next.parentNode === origin.parent) origin.parent.insertBefore(menu, origin.next);
+    else origin.parent.appendChild(menu);
+  }
+  origins.delete(menu);
+  activeMenus.delete(menu);
+}
+
 function onShow(event) {
   let toggle = event.target;
   if (!toggle || !toggle.parentNode) return;
   let menu = findMenu(toggle);
-  if (!menu || menu.parentNode === document.getElementById(PORTAL_ID)) return;
-  origins.set(menu, { parent: menu.parentNode, next: menu.nextSibling });
-  menus.set(toggle, menu);
+  if (!menu) return;
+  // If the menu is already in the portal, return it first to avoid duplicates.
+  if (origins.has(menu)) returnMenuToOrigin(menu);
+  origins.set(menu, { parent: menu.parentNode, next: menu.nextSibling, toggle: toggle });
+  activeMenus.add(menu);
   getPortal().appendChild(menu);
   positionMenu(toggle, menu);
 }
 
 function onHidden(event) {
   let toggle = event.target;
-  let menu = toggle && menus.get(toggle);
-  if (!menu) return;
-  let origin = origins.get(menu);
-  if (origin && origin.parent) {
-    // Clear portal positioning before returning the menu to the DOM.
-    menu.style.position = "";
-    menu.style.top = "";
-    menu.style.left = "";
-    if (origin.next && origin.next.parentNode === origin.parent) origin.parent.insertBefore(menu, origin.next);
-    else origin.parent.appendChild(menu);
+  if (!toggle) return;
+  // Find the menu that belongs to this toggle by scanning active menus.
+  for (let menu of activeMenus) {
+    let origin = origins.get(menu);
+    if (origin && origin.toggle === toggle) {
+      returnMenuToOrigin(menu);
+      return;
+    }
   }
-  menus.delete(toggle);
-  origins.delete(menu);
+}
+
+// Safety net: when the user clicks anywhere outside an open menu while it
+// is in the portal, Bootstrap may not fire hidden.bs.dropdown because it
+// can't find the menu in its expected DOM location. This click handler
+// catches those orphaned menus and returns them home after a microtask so
+// Bootstrap's own click handler runs first.
+function onDocumentClick(event) {
+  if (activeMenus.size === 0) return;
+  setTimeout(function () {
+    for (let menu of activeMenus) {
+      // If the menu is still marked .show, Bootstrap is managing it — leave it.
+      if (menu.classList.contains("show")) continue;
+      // Menu lost .show but is still in the portal — return it.
+      returnMenuToOrigin(menu);
+    }
+  }, 50);
 }
 
 let installed = false;
@@ -95,6 +125,7 @@ export function installFloatingDropdowns() {
   installed = true;
   document.addEventListener("show.bs.dropdown", onShow);
   document.addEventListener("hidden.bs.dropdown", onHidden);
+  document.addEventListener("click", onDocumentClick, true);
 }
 
 export default { installFloatingDropdowns };

@@ -269,6 +269,8 @@
         "showAll": "Show All",
         "collapseList": "Collapse list",
         "expandList": "Expand list",
+        "moreTasks": "{n} more tasks",
+        "showLess": "Show less",
         "archive": "Archive",
         "unarchive": "Unarchive",
         "showArchived": "Show {0} archived",

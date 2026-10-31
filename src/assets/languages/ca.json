@@ -269,6 +269,8 @@
         "showAll": "Mostrar tot",
         "collapseList": "Replegar llista",
         "expandList": "Expandir llista",
+        "moreTasks": "{n} tasques més",
+        "showLess": "Mostrar menys",
         "archive": "Arxivar",
         "unarchive": "Desarxivar",
         "showArchived": "Mostrar {0} arxivats",

@@ -391,15 +391,6 @@
                       </button>
                     </div>
 
-                    <div class="form-check form-switch d-flex px-1 mb-3 justify-content-between align-items-center">
-                      <label class="form-check-label" for="load-demo-data-btn">{{ $t("settings.loadDemoData") }}</label>
-                      <button id="load-demo-data-btn" type="button" class="btn py-1 px-2 border" style="width: 140px;"
-                        data-bs-dismiss="modal" @click="loadDemoData">
-                        <i class="icons bi-stars mx-2"></i>
-                        {{ $t("settings.load") }}
-                      </button>
-                    </div>
-
                     <div>
                       <div class="horizontal-divider mb-3"></div>
 
@@ -474,7 +465,6 @@
 import configRepository from "../repositories/configRepository";
 import toastMessage from "../components/toastMessage";
 import exportTool from "../helpers/exportTool";
-import mockDataSeeder from "../helpers/mockDataSeeder";
 import linkList from "../components/linkList";
 import configList from "./configList";
 import notifications from "../helpers/notifications";
@@ -541,9 +531,6 @@ export default {
     isElectron: function () {
       let isElectron = require("is-electron");
       return isElectron();
-    },
-    loadDemoData: function () {
-      mockDataSeeder.seed(this.$store);
     },
     backupNow: function () {
       if (!this.configData.backupFolderPath) {

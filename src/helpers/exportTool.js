@@ -8,7 +8,7 @@ import moment from "moment";
 
 export default {
   export() {
-    var filename = "WeekToDoBackup.wtdb";
+    var filename = "LatticeTodoBackup.wtdb";
     buildFullData(function (data) {
       let string_data = JSON.stringify(data);
       createExportLink(filename, string_data);
@@ -92,7 +92,7 @@ export default {
           const fs = require("fs");
           const path = require("path");
           if (!fs.existsSync(resolved)) fs.mkdirSync(resolved, { recursive: true });
-          let filename = `WeekToDoBackup-${moment().format("YYYY-MM-DD")}.wtdb`;
+          let filename = `LatticeTodoBackup-${moment().format("YYYY-MM-DD")}.wtdb`;
           let fullPath = path.join(resolved, filename);
           let json = JSON.stringify(data);
           fs.writeFileSync(fullPath, json, "utf-8");

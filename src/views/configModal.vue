@@ -137,6 +137,7 @@
                     <option value="organic">{{ $t("themes.organicName") || "Organic chemistry" }}</option>
                     <option value="oxides">{{ $t("themes.oxidesName") || "Metal oxides" }}</option>
                     <option value="photochem">{{ $t("themes.photochemName") || "Photochemistry" }}</option>
+                    <option value="proteins">{{ $t("themes.proteinsName") || "Proteins & folds" }}</option>
                   </select>
                   <!-- Preview strip for the current theme choice. Three
                        characteristic items rendered small so the user can
@@ -412,7 +413,7 @@
                         <input type="text" id="backupFolderPathSetting" class="form-control form-control-sm"
                           v-model="configData.backupFolderPath"
                           @change="changeConfig('backupFolderPath', configData.backupFolderPath)"
-                          placeholder="C:\Users\...\OneDrive - UPV\WeekToDoBackup" />
+                          placeholder="C:\Users\...\OneDrive\LatticeTodoBackup" />
                       </div>
 
                       <div class="form-check form-switch d-flex px-1 mb-3 justify-content-between align-items-center">

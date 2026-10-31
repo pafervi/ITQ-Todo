@@ -7,10 +7,10 @@
     <div class="side-bar-rail" :class="{ 'is-expanded': expanded }">
       <div class="sb-item sb-logo-item" data-bs-toggle="modal" data-bs-target="#aboutModal" :title="$t('about.about')">
         <div class="logo-badge">
-          <img class="logo" src="/img/itq-todo-mark-color.svg" width="30" height="30" alt="ITQ Todo Logo" />
-          <img class="logo logo-white" src="/img/itq-todo-mark-white.svg" width="30" height="30" alt="ITQ Todo Logo" />
+          <img class="logo" src="/img/latticetodo-mark-color.svg" width="30" height="30" alt="LatticeTodo Logo" />
+          <img class="logo logo-white" src="/img/latticetodo-mark-white.svg" width="30" height="30" alt="LatticeTodo Logo" />
         </div>
-        <span class="sb-label sb-brand-label">ITQ&nbsp;Todo</span>
+        <span class="sb-label sb-brand-label">Lattice&nbsp;Todo</span>
       </div>
 
       <div class="sidebar-group sidebar-group-nav">
@@ -86,10 +86,10 @@
           <span class="sb-count">{{ scheduledThisWeek }}</span>
           <span class="sb-label sb-label-small">{{ $t('ui.scheduledWeek') || 'This week' }}</span>
         </span>
-        <span class="sb-item sb-badge zeolite-badge" :title="$t('ui.zeoliteOfDay', [todayLatticeName])"
+        <span class="sb-item sb-badge zeolite-badge" :title="$t('ui.themeItemOfDay', [todayItemName])"
           data-bs-toggle="modal" data-bs-target="#zeoliteInfoModal">
           <i class="ph ph-hexagon sb-icon"></i>
-          <span class="sb-label sb-label-small">{{ todayLatticeName }}</span>
+          <span class="sb-label sb-label-small">{{ todayItemName }}</span>
         </span>
         <span v-if="daysUntilTalk !== null" class="sb-item sb-badge talk-countdown-badge" :title="talkCountdownTitle">
           <i class="ph ph-microphone-stage sb-icon"></i>
@@ -136,8 +136,8 @@
           </li>
           <li>
             <button class="dropdown-item" type="button" data-bs-toggle="modal" data-bs-target="#aboutModal">
-              <img class="about-menu-logo about-menu-logo-color" src="/img/itq-todo-mark-color.svg" alt="" width="14" height="14" />
-              <img class="about-menu-logo about-menu-logo-white" src="/img/itq-todo-mark-white.svg" alt="" width="14" height="14" />
+              <img class="about-menu-logo about-menu-logo-color" src="/img/latticetodo-mark-color.svg" alt="" width="14" height="14" />
+              <img class="about-menu-logo about-menu-logo-white" src="/img/latticetodo-mark-white.svg" alt="" width="14" height="14" />
               <span>{{ $t("about.about") }}</span>
             </button>
           </li>
@@ -175,7 +175,7 @@ import Datepicker from "vue3-datepicker";
 import languageHelper from "../../helpers/languageHelper.js";
 import configRepository from "../../repositories/configRepository";
 import streakHelper from "../../helpers/streakHelper";
-import zeoliteHelper from "../../helpers/zeoliteHelper";
+import themesHelper from "../../helpers/themesHelper";
 import streakCrystal from "../streakCrystal.vue";
 
 export default {
@@ -336,7 +336,7 @@ export default {
       let url = URL.createObjectURL(blob);
       let a = document.createElement("a");
       a.href = url;
-      a.download = `itq-todo-resumen-${moment().format("YYYY-MM-DD")}.md`;
+      a.download = `latticetodo-resumen-${moment().format("YYYY-MM-DD")}.md`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -370,8 +370,10 @@ export default {
     accentColor: function () {
       return this.$store.getters.config.accentColor || "#5e6ef2";
     },
-    todayLatticeName: function () {
-      return zeoliteHelper.getTodayLattice().fullName;
+    todayItemName: function () {
+      let cfg = this.$store.getters.config;
+      let item = themesHelper.getTodayItem(cfg);
+      return item ? item.fullName : "";
     },
     daysUntilTalk: function () {
       let d = this.$store.getters.config.nextTalkDate;

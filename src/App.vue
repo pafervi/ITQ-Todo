@@ -771,7 +771,7 @@ export default {
       setTimeout(
         function () {
           this.initialNotificationText().then((body) => {
-            new Notification("ITQ Todo", {
+            new Notification("LatticeTodo", {
               body: body,
               icon: "/favicon.ico",
               silent: true,

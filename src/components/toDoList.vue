@@ -395,7 +395,7 @@ export default {
       // because some browsers expose it as a bare object.
       for (let i = 0; i < types.length; i++) {
         let t = types[i];
-        if (t === "list-reorder-index" || t === "application/x-itq-list-reorder") {
+        if (t === "list-reorder-index" || t === "application/x-lattice-list-reorder") {
           isReorder = true;
           break;
         }
@@ -408,7 +408,7 @@ export default {
       if (!this.customTodoList || !event.dataTransfer) return;
       let types = event.dataTransfer.types || [];
       for (let i = 0; i < types.length; i++) {
-        if (types[i] === "list-reorder-index" || types[i] === "application/x-itq-list-reorder") {
+        if (types[i] === "list-reorder-index" || types[i] === "application/x-lattice-list-reorder") {
           event.preventDefault();
           this.projectReorderHover = true;
           return;
@@ -435,10 +435,10 @@ export default {
       if (!event.dataTransfer) return;
       let fromIndexRaw =
         event.dataTransfer.getData("list-reorder-index") ||
-        event.dataTransfer.getData("application/x-itq-list-reorder");
+        event.dataTransfer.getData("application/x-lattice-list-reorder");
       if (!fromIndexRaw) {
         let txt = event.dataTransfer.getData("text/plain") || "";
-        let m = txt.match(/^itq-list-reorder:(\d+)$/);
+        let m = txt.match(/^lattice-list-reorder:(\d+)$/);
         if (m) fromIndexRaw = m[1];
       }
       if (!fromIndexRaw) return;

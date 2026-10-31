@@ -3,6 +3,7 @@ import zeoliteHelper from "./zeoliteHelper";
 import organicHelper from "./organicHelper";
 import oxideHelper from "./oxideHelper";
 import photochemHelper from "./photochemHelper";
+import proteinHelper from "./proteinHelper";
 
 // Themes system. The whole app used to assume zeolites, now the user can
 // pick between four themes from Settings:
@@ -10,6 +11,7 @@ import photochemHelper from "./photochemHelper";
 //  - organic: aromatic rings and heterocycles
 //  - oxides: metal oxide unit cells
 //  - photochem: photochemistry concepts
+//  - proteins: structural motifs, folds, landmark proteins
 //
 // Every helper exposes items with the SAME downstream shape (fullName,
 // note, year, meta, svgShape, viewBox) so the splash, the project cover,
@@ -54,6 +56,14 @@ const THEMES = [
     itemLabelKey: "themes.photochemItemLabel",
     suggestedAccent: "#9b3cc9", // magenta / violet, reads as photon / UV
     helper: photochemHelper,
+  },
+  {
+    id: "proteins",
+    labelKey: "themes.proteinsName",
+    todayLabelKey: "themes.proteinsToday",
+    itemLabelKey: "themes.proteinsItemLabel",
+    suggestedAccent: "#2d8a6e", // teal, reads as biochemistry / protein
+    helper: proteinHelper,
   },
 ];
 
@@ -215,6 +225,7 @@ export default {
       organic: ["C6H6", "C5H5N", "C4H5N"],       // benzene, pyridine, pyrrole
       oxides: ["CeO2", "SrTiO3", "ZnO"],          // fluorite, perovskite, hexagonal
       photochem: ["fluor", "phos", "fret"],       // fluorescence, phosphorescence, FRET
+      proteins: ["globin-fold", "tim-barrel", "green-fp"], // globin, TIM barrel, GFP
     }[themeId] || [];
     // Try the given codes; silently drop any that don't exist in the data.
     let out = [];

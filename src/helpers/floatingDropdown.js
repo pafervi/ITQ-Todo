@@ -66,6 +66,7 @@ function returnMenuToOrigin(menu) {
   menu.style.position = "";
   menu.style.top = "";
   menu.style.left = "";
+  menu.style.display = "";
   menu.classList.remove("show");
   if (origin.parent) {
     if (origin.next && origin.next.parentNode === origin.parent) origin.parent.insertBefore(menu, origin.next);
@@ -75,13 +76,19 @@ function returnMenuToOrigin(menu) {
   activeMenus.delete(menu);
 }
 
+function returnAllMenus() {
+  for (let menu of Array.from(activeMenus)) {
+    returnMenuToOrigin(menu);
+  }
+}
+
 function onShow(event) {
   let toggle = event.target;
   if (!toggle || !toggle.parentNode) return;
   let menu = findMenu(toggle);
   if (!menu) return;
-  // If the menu is already in the portal, return it first to avoid duplicates.
-  if (origins.has(menu)) returnMenuToOrigin(menu);
+  // Close any other open menu first.
+  returnAllMenus();
   origins.set(menu, { parent: menu.parentNode, next: menu.nextSibling, toggle: toggle });
   activeMenus.add(menu);
   getPortal().appendChild(menu);
@@ -91,8 +98,7 @@ function onShow(event) {
 function onHidden(event) {
   let toggle = event.target;
   if (!toggle) return;
-  // Find the menu that belongs to this toggle by scanning active menus.
-  for (let menu of activeMenus) {
+  for (let menu of Array.from(activeMenus)) {
     let origin = origins.get(menu);
     if (origin && origin.toggle === toggle) {
       returnMenuToOrigin(menu);
@@ -103,19 +109,39 @@ function onHidden(event) {
 
 // Safety net: when the user clicks anywhere outside an open menu while it
 // is in the portal, Bootstrap may not fire hidden.bs.dropdown because it
-// can't find the menu in its expected DOM location. This click handler
-// catches those orphaned menus and returns them home after a microtask so
-// Bootstrap's own click handler runs first.
+// can't find the menu in its expected DOM location. Instead of checking the
+// .show class (which Bootstrap may have FAILED to remove), we check whether
+// the click landed inside any active menu or on a dropdown toggle. If not,
+// we close everything unconditionally.
 function onDocumentClick(event) {
   if (activeMenus.size === 0) return;
+  // If the click was inside an active menu, let it proceed (menu item click).
+  for (let menu of activeMenus) {
+    if (menu.contains(event.target)) return;
+  }
+  // If the click was on a dropdown toggle, show.bs.dropdown will handle it.
+  let el = event.target;
+  while (el) {
+    if (el.getAttribute && el.getAttribute("data-bs-toggle") === "dropdown") return;
+    el = el.parentNode;
+  }
+  // Click was outside all menus and toggles — close everything after
+  // a microtask so Bootstrap's own handler runs first.
   setTimeout(function () {
-    for (let menu of activeMenus) {
-      // If the menu is still marked .show, Bootstrap is managing it — leave it.
-      if (menu.classList.contains("show")) continue;
-      // Menu lost .show but is still in the portal — return it.
-      returnMenuToOrigin(menu);
-    }
-  }, 50);
+    returnAllMenus();
+  }, 0);
+}
+
+function onKeydown(event) {
+  if (event.key === "Escape" && activeMenus.size > 0) {
+    returnAllMenus();
+  }
+}
+
+function onScroll() {
+  if (activeMenus.size > 0) {
+    returnAllMenus();
+  }
 }
 
 let installed = false;
@@ -126,6 +152,9 @@ export function installFloatingDropdowns() {
   document.addEventListener("show.bs.dropdown", onShow);
   document.addEventListener("hidden.bs.dropdown", onHidden);
   document.addEventListener("click", onDocumentClick, true);
+  document.addEventListener("keydown", onKeydown, true);
+  window.addEventListener("scroll", onScroll, true);
+  window.addEventListener("resize", onScroll);
 }
 
 export default { installFloatingDropdowns };

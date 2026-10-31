@@ -1,10 +1,10 @@
 {
-  "name": "WeekToDo",
+  "name": "LatticeTodo",
   "version": "2.2.2",
   "private": true,
-  "description": "Personal planner and lab notebook for computational catalysis research at ITQ (UPV-CSIC).",
+  "description": "Personal planner and lab notebook for computational catalysis research.",
   "author": "Pau Ferri-Vicedo <pauferrivi@gmail.com>",
-  "homepage": "https://itq.upv-csic.es",
+  "homepage": "https://github.com/pafervi/LatticeTodo",
   "keywords": [
     "ToDo",
     "Weekly Planner",
@@ -27,7 +27,7 @@
     "test:unit:watch": "vitest"
   },
   "main": "dist-electron/main.js",
-  "repository": "https://github.com/pafervi/ITQ-Todo",
+  "repository": "https://github.com/pafervi/LatticeTodo",
   "dependencies": {
     "@achrinza/node-ipc": "^10.1.10",
     "@manuelernestog/click-handler": "^1.4.0",
@@ -66,8 +66,8 @@
     "vitest": "^2.1.4"
   },
   "build": {
-    "appId": "itq-todo.local",
-    "productName": "ITQ Todo",
+    "appId": "latticetodo.local",
+    "productName": "LatticeTodo",
     "publish": null,
     "files": [
       "dist/**/*",
@@ -78,9 +78,9 @@
     },
     "linux": {
       "category": "Office;ProjectManagement",
-      "description": "Personal planner and lab notebook for computational catalysis research at ITQ (UPV-CSIC).",
+      "description": "Personal planner and lab notebook for computational catalysis research.",
       "synopsis": "Personal planner for computational research",
-      "executableName": "itq-todo",
+      "executableName": "latticetodo",
       "target": [
         "AppImage",
         "deb"
@@ -88,11 +88,11 @@
       "icon": "build/linux-icons"
     },
     "deb": {
-      "packageName": "itq-todo",
-      "artifactName": "itq-todo_${version}_amd64.deb"
+      "packageName": "latticetodo",
+      "artifactName": "latticetodo_${version}_amd64.deb"
     },
     "appImage": {
-      "artifactName": "ITQ-Todo-${version}.AppImage"
+      "artifactName": "LatticeTodo-${version}.AppImage"
     },
     "win": {
       "target": [

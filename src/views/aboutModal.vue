@@ -10,16 +10,16 @@
           <div class="d-flex flex-column" style="text-align: center; margin-top: 10px">
             <img
               class="logo align-self-center"
-              src="/img/itq-todo-logo-color.svg"
-              alt="ITQ Todo"
-              title="ITQ Todo Logo"
+              src="/img/latticetodo-logo-color.svg"
+              alt="LatticeTodo"
+              title="LatticeTodo Logo"
               width="180"
             />
             <img
               class="logo logo-white align-self-center"
-              src="/img/itq-todo-logo-white.svg"
-              alt="ITQ Todo"
-              title="ITQ Todo Logo"
+              src="/img/latticetodo-logo-white.svg"
+              alt="LatticeTodo"
+              title="LatticeTodo Logo"
               width="180"
             />
             <span class="mt-3 mb-2" style="font-size: 0.75rem">{{ $t("about.version") }} {{ version }}</span>
@@ -28,7 +28,7 @@
           <div class="text-center px-2" style="line-height: 1.5">
             <p class="mb-2" style="font-size: 0.85rem">{{ $t("about.identity") }}</p>
             <p class="mb-1" style="font-size: 0.72rem; opacity: 0.6">
-              <i class="ph ph-hexagon" style="font-size: 0.8rem"></i> {{ $t("about.zeoliteToday", [zeoliteName]) }}
+              <i class="ph ph-hexagon" style="font-size: 0.8rem"></i> {{ $t("about.themeItemToday", [todayItemName]) }}
             </p>
             <p class="mb-0" style="font-size: 0.68rem; opacity: 0.5">{{ $t("about.freeSoftware") }}</p>
           </div>
@@ -42,7 +42,7 @@
 /* global __APP_VERSION__ */
 // __APP_VERSION__ is replaced at build time by Vite from package.json.
 // See vite.config.mjs → define.
-import zeoliteHelper from "../helpers/zeoliteHelper";
+import themesHelper from "../helpers/themesHelper";
 
 export default {
   name: "aboutModal",
@@ -52,8 +52,10 @@ export default {
     };
   },
   computed: {
-    zeoliteName: function () {
-      return zeoliteHelper.getTodayLattice().fullName;
+    todayItemName: function () {
+      let cfg = this.$store.getters.config;
+      let item = themesHelper.getTodayItem(cfg);
+      return item ? item.fullName : "";
     },
   },
 };

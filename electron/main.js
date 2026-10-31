@@ -209,7 +209,7 @@ async function writeGpuLog() {
     const fs = require("fs");
     const nodePath = require("path");
     let lines = [];
-    lines.push("ITQ Todo - GPU / rendering diagnostic");
+    lines.push("LatticeTodo - GPU / rendering diagnostic");
     lines.push("Generated: " + new Date().toISOString());
     lines.push(
       "Runtime: " + process.platform + " " + process.arch + " | Electron " + process.versions.electron + " | Chromium " + process.versions.chrome
@@ -265,9 +265,9 @@ async function writeGpuLog() {
     let dir = app.getPath("userData");
     let file = nodePath.join(dir, "gpu-status.log");
     fs.writeFileSync(file, lines.join("\n"), "utf8");
-    console.info("[ITQ Todo] GPU diagnostic written to: " + file);
+    console.info("[LatticeTodo] GPU diagnostic written to: " + file);
   } catch (e) {
-    console.error("[ITQ Todo] writeGpuLog failed: " + (e && e.message));
+    console.error("[LatticeTodo] writeGpuLog failed: " + (e && e.message));
   }
 }
 
@@ -290,7 +290,7 @@ function isWindowsVisible(event) {
   event.returnValue = win.isVisible();
 }
 
-const AUTOLAUNCH_NAME = "ITQ Todo";
+const AUTOLAUNCH_NAME = "LatticeTodo";
 // Entry name used before the app was renamed; removed on the fly so users
 // upgrading from it do not end up with two startup entries.
 const LEGACY_AUTOLAUNCH_NAME = "WeekToDo Planner";
@@ -420,7 +420,7 @@ function createTray() {
   ];
 
   trayContextMenu = Menu.buildFromTemplate(trayMenuTemplate);
-  tray.setToolTip("ITQ Todo");
+  tray.setToolTip("LatticeTodo");
   tray.setContextMenu(trayContextMenu);
   tray.on("click", () => {
     tray.popUpContextMenu();
@@ -442,7 +442,7 @@ function creatTrayIconPath() {
 
   var iconPath;
   if (process.platform === "win32") {
-    app.setAppUserModelId("ITQTodo");
+    app.setAppUserModelId("LatticeTodo");
     iconPath = nodePathMod.join(publicBase, `trayIcon${darkPrefix}.ico`);
   } else if (process.platform === "darwin") {
     iconPath = nativeImage.createFromPath(nodePathMod.join(publicBase, `trayIcon${darkPrefix}.png`));

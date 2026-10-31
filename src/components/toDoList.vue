@@ -124,10 +124,17 @@
     </transition>
     <transition name="fade-collapse">
       <ul class="to-do-list" v-show="!collapsed && showTasksView">
-        <li v-for="entry in toDoListEntries" :key="entry.hostListId + '-' + entry.trueIndex">
+        <li v-for="entry in visibleEntries" :key="entry.hostListId + '-' + entry.trueIndex">
           <div class="drop-zone" @drop="onDrop($event, entry.hostListId, entry.trueIndex)" @dragover.prevent @dragenter.prevent>
             <to-do-item :to-do="entry.toDo" :index="entry.trueIndex" :to-do-list-id="entry.hostListId" :render-context="id"></to-do-item>
           </div>
+        </li>
+        <li v-if="hasHiddenTasks" class="show-more-row">
+          <button type="button" class="show-more-btn" @click="tasksExpanded = !tasksExpanded">
+            <i :class="tasksExpanded ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
+            <span v-if="!tasksExpanded">{{ hiddenTasksCount }} {{ $t('ui.moreTasks') || 'more' }}</span>
+            <span v-else>{{ $t('ui.showLess') || 'Show less' }}</span>
+          </button>
         </li>
       </ul>
     </transition>
@@ -202,6 +209,9 @@ export default {
       // Visual feedback while another project header is being dragged over
       // THIS card as a reorder target.
       projectReorderHover: false,
+      // Whether the task list is expanded (showing all tasks) or compact
+      // (showing only the first MAX_VISIBLE_TASKS tasks).
+      tasksExpanded: false,
     };
   },
   mounted() {
@@ -587,6 +597,19 @@ export default {
       // (header progress, empty-state, all-done banner). Includes references.
       return this.toDoListEntries.map((e) => e.toDo);
     },
+    visibleEntries: function () {
+      const COMPACT_LIMIT = 3;
+      if (!this.customTodoList || this.tasksExpanded || this.toDoListEntries.length <= COMPACT_LIMIT) {
+        return this.toDoListEntries;
+      }
+      return this.toDoListEntries.slice(0, COMPACT_LIMIT);
+    },
+    hasHiddenTasks: function () {
+      return this.customTodoList && !this.tasksExpanded && this.toDoListEntries.length > 3;
+    },
+    hiddenTasksCount: function () {
+      return Math.max(0, this.toDoListEntries.length - 3);
+    },
     columns: function () {
       if (this.forceFullWidth) return 1;
       if (this.customTodoList)
@@ -734,6 +757,40 @@ export default {
 .to-do-list li {
   -webkit-transition: all 0.4s ease-out;
   transition: all 0.4s ease-out;
+}
+
+.show-more-row {
+  list-style: none;
+}
+
+.show-more-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  border: none;
+  background: none;
+  padding: 4px 6px;
+  font-size: 0.78rem;
+  color: #6e7681;
+  cursor: pointer;
+  transition: color 0.2s;
+
+  &:hover {
+    color: #24292f;
+  }
+
+  i {
+    font-size: 0.7rem;
+  }
+}
+
+.dark-theme .show-more-btn {
+  color: #8b949e;
+
+  &:hover {
+    color: #e6edf3;
+  }
 }
 
 .todo-input {

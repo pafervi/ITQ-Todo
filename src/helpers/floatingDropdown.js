@@ -38,6 +38,28 @@ function findMenu(toggle) {
   return parent.querySelector(":scope > .dropdown-menu.floating-menu");
 }
 
+function positionMenu(toggle, menu) {
+  let rect = toggle.getBoundingClientRect();
+  // Temporarily show the menu off-screen to measure its height.
+  menu.style.position = "fixed";
+  menu.style.visibility = "hidden";
+  menu.style.display = "block";
+  let menuHeight = menu.offsetHeight;
+  menu.style.visibility = "";
+
+  let spaceBelow = window.innerHeight - rect.bottom;
+  let spaceAbove = rect.top;
+
+  // Flip upward when the menu would overflow the viewport bottom
+  // and there is enough room above.
+  if (spaceBelow < menuHeight && spaceAbove > spaceBelow) {
+    menu.style.top = Math.max(4, rect.top - menuHeight) + "px";
+  } else {
+    menu.style.top = rect.bottom + "px";
+  }
+  menu.style.left = rect.left + "px";
+}
+
 function onShow(event) {
   let toggle = event.target;
   if (!toggle || !toggle.parentNode) return;
@@ -46,6 +68,7 @@ function onShow(event) {
   origins.set(menu, { parent: menu.parentNode, next: menu.nextSibling });
   menus.set(toggle, menu);
   getPortal().appendChild(menu);
+  positionMenu(toggle, menu);
 }
 
 function onHidden(event) {
@@ -54,6 +77,10 @@ function onHidden(event) {
   if (!menu) return;
   let origin = origins.get(menu);
   if (origin && origin.parent) {
+    // Clear portal positioning before returning the menu to the DOM.
+    menu.style.position = "";
+    menu.style.top = "";
+    menu.style.left = "";
     if (origin.next && origin.next.parentNode === origin.parent) origin.parent.insertBefore(menu, origin.next);
     else origin.parent.appendChild(menu);
   }

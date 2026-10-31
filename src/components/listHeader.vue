@@ -100,11 +100,6 @@
           <i class="bi-check2-all"></i> <span>{{ $t('ui.completeAll') }}</span>
         </button>
       </li>
-      <li>
-        <button class="dropdown-item" type="button" @click="sortItems">
-          <i class="bi-sort-down"></i> <span>{{ $t('ui.reorder') }}</span>
-        </button>
-      </li>
       <li v-show="!customTodoList && !allTodoChecked()">
         <button class="dropdown-item" type="button" @click="moveUndoneItems">
           <i class="bi-reply-all"></i> <span>{{ $t('ui.postpone') }}</span>
@@ -117,7 +112,7 @@
       </li>
       <li v-show="customTodoList">
         <button class="dropdown-item" type="button" data-bs-toggle="modal" data-bs-target="#ReorderCustomListsModal">
-          <i class="ph ph-arrows-down-up"></i> <span>{{ $t('ui.reorderCustomLists') || 'Reorder projects' }}</span>
+          <i class="bi-sort-down"></i> <span>{{ $t('ui.reorderCustomLists') || 'Reorder projects' }}</span>
         </button>
       </li>
       <li>
@@ -704,6 +699,31 @@ export default {
     font-size: 0.99rem;
     margin-right: 11px;
     display: inline-block;
+  }
+}
+
+.dark-theme .dropdown-menu {
+  background-color: #1c2128;
+  color: #e6edf3;
+  box-shadow: 0 2px 14px 0 rgba(0, 0, 0, .45);
+  border: 1px solid #30363d;
+
+  .dropdown-item {
+    color: #e6edf3;
+
+    &:hover, &:focus {
+      background-color: #2a313a;
+      color: #ffffff;
+    }
+
+    &:active {
+      background-color: #343b43;
+      color: #ffffff;
+    }
+  }
+
+  .dropdown-divider {
+    border-color: #30363d;
   }
 }
 

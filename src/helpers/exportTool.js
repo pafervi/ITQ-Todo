@@ -47,7 +47,18 @@ export default {
         request2.onsuccess = function () {
           let request3 = dbRepository.clear(db, "repeating_events_by_date");
           request3.onsuccess = function () {
-            location.reload();
+            if (db.objectStoreNames.contains("project_phases")) {
+              let request4 = dbRepository.clear(db, "project_phases");
+              request4.onsuccess = function () {
+                if (db.objectStoreNames.contains("project_log_entries")) {
+                  let request5 = dbRepository.clear(db, "project_log_entries");
+                  request5.onsuccess = function () { location.reload(); };
+                } else { location.reload(); }
+              };
+            } else if (db.objectStoreNames.contains("project_log_entries")) {
+              let request4 = dbRepository.clear(db, "project_log_entries");
+              request4.onsuccess = function () { location.reload(); };
+            } else { location.reload(); }
           };
         };
       };
@@ -171,6 +182,42 @@ function getRepeatinEventByDateData(data, event, onComplete) {
       data.repeating_events_by_date[cursor.key] = cursor.value;
       cursor.continue();
     } else {
+      getProjectPhasesData(data, event, onComplete);
+    }
+  };
+}
+
+function getProjectPhasesData(data, event, onComplete) {
+  var db = event.target.result;
+  if (!db.objectStoreNames.contains("project_phases")) {
+    return getProjectLogEntriesData(data, event, onComplete);
+  }
+  data.project_phases = {};
+  let request = dbRepository.selectAll(db, "project_phases");
+  request.onsuccess = function () {
+    let cursor = request.result;
+    if (cursor) {
+      data.project_phases[cursor.key] = cursor.value;
+      cursor.continue();
+    } else {
+      getProjectLogEntriesData(data, event, onComplete);
+    }
+  };
+}
+
+function getProjectLogEntriesData(data, event, onComplete) {
+  var db = event.target.result;
+  if (!db.objectStoreNames.contains("project_log_entries")) {
+    return onComplete(data);
+  }
+  data.project_log_entries = {};
+  let request = dbRepository.selectAll(db, "project_log_entries");
+  request.onsuccess = function () {
+    let cursor = request.result;
+    if (cursor) {
+      data.project_log_entries[cursor.key] = cursor.value;
+      cursor.continue();
+    } else {
       onComplete(data);
     }
   };
@@ -232,37 +279,59 @@ function importDbRecords(db, data_a, table) {
     keys = Object.keys(data_a.todoLists);
     data = data_a.todoLists;
   } else if (table == "repeating_events") {
-    if (!('repeating_events' in data_a)) location.reload(); // if not exist is an old data, finish the import and reload
+    if (!('repeating_events' in data_a)) return nextImportTable(data_a, table); // old data, skip
     keys = Object.keys(data_a.repeating_events);
     data = data_a.repeating_events;
+  } else if (table == "repeating_events_by_date") {
+    keys = Object.keys(data_a.repeating_events_by_date || {});
+    data = data_a.repeating_events_by_date || {};
+  } else if (table == "project_phases") {
+    keys = Object.keys(data_a.project_phases || {});
+    data = data_a.project_phases || {};
+  } else if (table == "project_log_entries") {
+    keys = Object.keys(data_a.project_log_entries || {});
+    data = data_a.project_log_entries || {};
   } else {
-    keys = Object.keys(data_a.repeating_events_by_date);
-    data = data_a.repeating_events_by_date;
+    return location.reload();
   }
 
   var i = keys.length;
   var req;
 
   if (i == 0) {
-    if (table == "todo_lists") {
-      importIndexedDbData(data_a, "repeating_events");
-    } else if (table == "repeating_events") {
-      importIndexedDbData(data_a, "repeating_events_by_date");
-    } else {
-      location.reload();
-    }
+    nextImportTable(data_a, table);
   } else {
     while (i--) {
       req = dbRepository.add(db, table, keys[i], data[keys[i]]);
     }
     req.onsuccess = function () {
-      if (table == "todo_lists") {
-        importIndexedDbData(data_a, "repeating_events");
-      } else if (table == "repeating_events") {
-        importIndexedDbData(data_a, "repeating_events_by_date");
-      } else {
-        location.reload();
-      }
+      nextImportTable(data_a, table);
     };
+  }
+}
+
+// Chain: todo_lists → repeating_events → repeating_events_by_date
+//        → project_phases → project_log_entries → reload
+function nextImportTable(data_a, currentTable) {
+  if (currentTable == "todo_lists") {
+    importIndexedDbData(data_a, "repeating_events");
+  } else if (currentTable == "repeating_events") {
+    importIndexedDbData(data_a, "repeating_events_by_date");
+  } else if (currentTable == "repeating_events_by_date") {
+    if (data_a.project_phases) {
+      importIndexedDbData(data_a, "project_phases");
+    } else if (data_a.project_log_entries) {
+      importIndexedDbData(data_a, "project_log_entries");
+    } else {
+      location.reload();
+    }
+  } else if (currentTable == "project_phases") {
+    if (data_a.project_log_entries) {
+      importIndexedDbData(data_a, "project_log_entries");
+    } else {
+      location.reload();
+    }
+  } else {
+    location.reload();
   }
 }

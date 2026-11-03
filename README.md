@@ -1,50 +1,50 @@
-# LatticeTodo
+# ITQ Todo
 
-Planificador personal y cuaderno de laboratorio para investigación en
-catálisis computacional. Toda la información se queda en tu ordenador,
-no sale a ningún servidor.
+Planificador personal y cuaderno de laboratorio para investigación en química
+computacional, pensado para el día a día en el ITQ (UPV-CSIC). Toda la
+información se queda en tu ordenador, no sale a ningún servidor.
 
 ## Instalación
 
 Descarga el instalador para tu sistema desde la página de releases:
 
-**[Descargar la última versión →](https://github.com/pafervi/LatticeTodo/releases/latest)**
+**[Descargar la última versión →](https://github.com/pafervi/ITQ-Todo/releases/latest)**
 
 En esa página verás varios ficheros. Elige el que corresponda a tu sistema:
 
 ### Windows
 
-Baja `LatticeTodo Setup <versión>.exe` y haz doble click.
+Baja `ITQ Todo Setup <versión>.exe` y haz doble click.
 
 > La primera vez Windows mostrará "Windows protegió el equipo". Pulsa
 > **Más información → Ejecutar de todas formas**. Es porque la app no está
 > firmada con un certificado corporativo, no porque haya nada raro.
 
 Si prefieres la versión portable (no instala nada, se abre desde el fichero),
-baja `LatticeTodo <versión>.exe` en lugar del Setup.
+baja `ITQ Todo <versión>.exe` en lugar del Setup.
 
 ### Linux (Ubuntu / Debian / derivados)
 
-Baja `latticetodo_<versión>_amd64.deb` y abre un terminal donde esté el fichero:
+Baja `itq-todo_<versión>_amd64.deb` y abre un terminal donde esté el fichero:
 
 ```bash
-sudo apt install ./latticetodo_<versión>_amd64.deb
+sudo apt install ./itq-todo_<versión>_amd64.deb
 ```
 
-Aparecerá en el menú de aplicaciones como "LatticeTodo".
+Aparecerá en el menú de aplicaciones como "ITQ Todo".
 
 ### Linux (otras distros, portable)
 
-Baja `LatticeTodo-<versión>.AppImage`, dale permiso de ejecución y lánzala:
+Baja `ITQ-Todo-<versión>.AppImage`, dale permiso de ejecución y lánzala:
 
 ```bash
-chmod +x LatticeTodo-*.AppImage
-./LatticeTodo-*.AppImage
+chmod +x ITQ-Todo-*.AppImage
+./ITQ-Todo-*.AppImage
 ```
 
 ### macOS
 
-Baja `LatticeTodo-<versión>.dmg`, ábrelo y arrastra la app a la carpeta
+Baja `ITQ Todo-<versión>.dmg`, ábrelo y arrastra la app a la carpeta
 Aplicaciones.
 
 > La primera vez macOS dirá "no se puede abrir porque el desarrollador no

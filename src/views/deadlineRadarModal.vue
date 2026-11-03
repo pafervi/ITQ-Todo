@@ -114,7 +114,7 @@ export default {
       return this.points[this.selectedIndex] || null;
     },
     customLists: function () {
-      return this.$store.getters.customToDoLists || [];
+      return this.$store.getters.cTodoListIds || [];
     },
   },
   methods: {
@@ -128,8 +128,8 @@ export default {
         let m = moment(listId, "YYYYMMDD");
         if (m.isValid()) return m.format("ddd DD MMM");
       }
-      let hit = this.customLists.find((l) => l.id === listId);
-      return hit ? hit.name : "";
+      let hit = this.customLists.find((l) => l.listId === listId);
+      return hit ? hit.listName : "";
     },
     daysLabel: function (days) {
       if (days < 0) return this.$t("ui.deadlineOverdueBy", [Math.abs(days)]) || `Overdue by ${Math.abs(days)} d`;

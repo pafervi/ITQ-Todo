@@ -451,7 +451,18 @@
         "templateNewName": "Mi plantilla",
         "templateNamePlaceholder": "Nombre de la plantilla",
         "templateDelete": "Eliminar plantilla",
-        "templateDeleteConfirm": "Pulsa otra vez para eliminar"
+        "templateDeleteConfirm": "Pulsa otra vez para eliminar",
+        "done": "Hecho",
+        "untitledProject": "Proyecto sin título",
+        "crystalMolecule": "Molécula",
+        "crystalOxide": "Óxido",
+        "crystalConcept": "Concepto",
+        "crystalPickMolecule": "Elige una molécula",
+        "crystalPickOxide": "Elige un óxido",
+        "crystalPickConcept": "Elige un concepto",
+        "paperWords": "palabras",
+        "paperSetTarget": "Fijar objetivo de palabras",
+        "paperTargetPlaceholder": "palabras objetivo, p. ej. 6000"
     },
     "todoDetails": {
         "snooze": "Programar para un día",

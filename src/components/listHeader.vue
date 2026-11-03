@@ -243,8 +243,14 @@ export default {
       this.$store.commit("checkAllItems", this.id);
       this.updateTodoList(this.id, this.$store.getters.todoLists[this.id]);
     },
-    moveUndoneItems: function () {
+    moveUndoneItems: async function () {
       let towmorrow_id = this.moments(this.id).add(1, "d").format("YYYYMMDD");
+      // In "today only" mode tomorrow's list is not rendered, so it may not be
+      // in the store. The mutation needs it there (and the write below would
+      // overwrite its stored tasks otherwise), so load it first.
+      if (!this.$store.getters.todoLists[towmorrow_id]) {
+        await this.$store.dispatch("loadTodoLists", towmorrow_id);
+      }
       this.$store.commit("moveUndoneItems", {
         origenId: this.id,
         destinyId: towmorrow_id,
@@ -329,9 +335,16 @@ export default {
     },
     toggleArchive: function () {
       let archived = !this.isArchived;
-      this.$store.commit("setListArchived", { index: this.cTodoListIndex, archived: archived });
-      customToDoListIdsRepository.update(this.$store.getters.cTodoListIds);
-      if (archived) this.$emit("forceCollapse");
+      // Archiving unmounts this card (unless archived projects are shown). The
+      // options menu is portaled out of the card while open (floatingDropdown),
+      // so unmounting in the same tick as the click would leave it orphaned and
+      // visible. Wait one tick so the dropdown closes and the menu returns to
+      // its place first.
+      setTimeout(() => {
+        this.$store.commit("setListArchived", { index: this.cTodoListIndex, archived: archived });
+        customToDoListIdsRepository.update(this.$store.getters.cTodoListIds);
+        if (archived) this.$emit("forceCollapse");
+      }, 0);
     },
     onHeaderDragStart: function (event) {
       if (!this.customTodoList) return;

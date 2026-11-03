@@ -169,6 +169,7 @@ import configRepository from "../repositories/configRepository";
 import toDoListRepository from "../repositories/toDoListRepository";
 import notifications from "../helpers/notifications";
 import autoTagHelper from "../helpers/autoTagHelper";
+import tasksHelper from "../helpers/tasksHelper";
 
 // Natural-language-ish parser for the "+ add" mode. Supports:
 //   #tag           → tags
@@ -409,30 +410,29 @@ export default {
     // ---- Command actions (feature 1) ----
     cmdToggleTheme: function () { this.toggleTheme(); },
     cmdToggleTodayOnly: function () { this.toggleTodayOnlyMode(); },
-    cmdRolloverOverdue: function () {
-      // Walks every day list older than today, finds unchecked tasks, moves
-      // them to today's list in one commit. Does not touch tasks that live
-      // in custom projects.
+    cmdRolloverOverdue: async function () {
+      // Moves the unfinished tasks of the last 60 days to today's list. In
+      // "today only" mode past days are not rendered, so they are not in the
+      // store: each one is loaded from the database first (same approach as
+      // the start-up carry-over in App.vue). Tasks in projects are not touched.
       let today = moment().format("YYYYMMDD");
-      let all = this.$store.getters.todoLists || {};
-      let keys = Object.keys(all).filter((k) => /^\d{8}$/.test(k) && k < today);
-      keys.forEach((k) => {
-        let list = all[k] || [];
-        let keep = [];
-        list.forEach((t) => {
-          if (t && !t.checked) {
-            t.listId = today;
-            this.$store.commit("addTodo", t);
-          } else {
-            keep.push(t);
-          }
-        });
-        // Overwrite the source day with the kept (checked) items only.
-        toDoListRepository.update(k, keep);
-      });
-      toDoListRepository.update(today, this.$store.getters.todoLists[today]);
-      notifications.refreshDayNotifications(this, today);
       this.hidePalette();
+      await this.$store.dispatch("loadTodoLists", today);
+      for (let i = 1; i <= 60; i++) {
+        let id = moment().subtract(i, "d").format("YYYYMMDD");
+        await this.$store.dispatch("loadTodoLists", id);
+        let pending = (this.$store.getters.todoLists[id] || []).filter((t) => t && !t.checked).length;
+        if (!pending) continue;
+        this.$store.commit("moveUndoneItems", { origenId: id, destinyId: today });
+        await toDoListRepository.updateAsync(id, this.$store.getters.todoLists[id]);
+      }
+      let todayList = this.$store.getters.todoLists[today];
+      if (this.$store.getters.config.autoReorderTasks) {
+        todayList = tasksHelper.reorderTasksList(todayList);
+        this.$store.commit("loadTodoLists", { todoListId: today, todoList: todayList });
+      }
+      await toDoListRepository.updateAsync(today, todayList);
+      notifications.refreshDayNotifications(this, today);
     },
     cmdCheckAllToday: function () {
       let today = moment().format("YYYYMMDD");
@@ -451,7 +451,7 @@ export default {
       // Parse inline so we're never racing a computed update: Enter fires on
       // keydown, Vue flushes v-model + computed after the event dispatch,
       // and a stale this.addPreview would silently drop the task.
-      let parsed = parseTaskInput(this.stripped, this.$store.getters.cTodoListIds || []);
+      let parsed = parseTaskInput(this.stripped, this.activeProjects);
       if (!parsed.text) return;
       let newTodo = {
         text: parsed.text,
@@ -467,13 +467,20 @@ export default {
         alarm: false,
         repeatingEvent: null,
       };
-      // addTodo mutation self-heals a missing array (see todolist.store.js),
-      // so no dispatch-first dance is needed. Keep the write side-effects in
-      // the exact order toDoList.vue uses: commit → repository → notify.
-      this.$store.commit("addTodo", newTodo);
-      toDoListRepository.update(parsed.listId, this.$store.getters.todoLists[parsed.listId]);
-      try { notifications.refreshDayNotifications(this, parsed.listId); } catch (e) { /* notifications are best-effort */ }
-      this.hidePalette();
+      // The target list must be in the store before we write it back. A list
+      // that is not rendered right now (another day in "today only" mode)
+      // is not loaded, and the addTodo mutation would create an empty array
+      // for it, so the update below would overwrite the stored tasks with
+      // just this one. Load it first. Keep the write side-effects in the
+      // order toDoList.vue uses: commit → repository → notify.
+      const save = () => {
+        this.$store.commit("addTodo", newTodo);
+        toDoListRepository.update(parsed.listId, this.$store.getters.todoLists[parsed.listId]);
+        try { notifications.refreshDayNotifications(this, parsed.listId); } catch (e) { /* notifications are best-effort */ }
+        this.hidePalette();
+      };
+      if (this.$store.getters.todoLists[parsed.listId]) save();
+      else this.$store.dispatch("loadTodoLists", parsed.listId).then(save);
     },
     // Single-letter shortcuts on the empty default-mode palette. Letters
     // still flow into the input when there's a query.
@@ -529,6 +536,11 @@ export default {
     },
   },
   computed: {
+    // Projects a "+ task /name" can be sent to: archived ones are out of play,
+    // a task added there would silently disappear from view.
+    activeProjects: function () {
+      return (this.$store.getters.cTodoListIds || []).filter((l) => l && !l.archived);
+    },
     todayOnlyMode: function () {
       return this.$store.getters.config.todayOnlyMode !== false;
     },
@@ -624,7 +636,7 @@ export default {
     },
     addPreview: function () {
       if (this.mode !== "add") return { text: "", tags: [], priority: 0, listId: null };
-      return parseTaskInput(this.stripped, this.$store.getters.cTodoListIds || []);
+      return parseTaskInput(this.stripped, this.activeProjects);
     },
     resultCount: function () {
       if (this.mode === "command") return this.filteredCommands.length;

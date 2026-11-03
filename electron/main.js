@@ -23,6 +23,13 @@ const isDevelopment = !app.isPackaged;
 const gotTheLock = app.requestSingleInstanceLock();
 const isServeMode = () => !!process.env.VITE_DEV_SERVER_URL;
 
+// Folder with the files that live in public/ at source time: the repo's
+// public/ while serving from Vite, and the packaged dist/ (where Vite copies
+// them) in production. public/ itself is not shipped inside the package.
+function publicDir() {
+  return isServeMode() ? path.join(__dirname, "..", "public") : path.join(__dirname, "..", "dist");
+}
+
 let mainWindow = null;
 var tray = null;
 var trayContextMenu = null;
@@ -45,7 +52,7 @@ async function createWindow() {
     minWidth: 1000,
     minHeight: 600,
     show: !config.get("runInBackground"),
-    icon: path.join(__dirname, "../public/icon.png"),
+    icon: path.join(publicDir(), "icon.png"),
     // Frameless on Linux and Windows so the in-app toolbar acts as the title
     // bar (drag region + custom min/max/close buttons). macOS keeps native
     // traffic lights floating over a hidden title bar.
@@ -432,13 +439,9 @@ function creatTrayIconPath() {
   const darkPrefix = config.get("darkTrayIcon") ? "Dark" : "";
 
   // Tray icons live in public/ at source time. In dev Vite serves them at
-  // the dev server root, but Electron needs an on-disk path for Tray().
-  // We resolve them from the repo's public/ in dev and from the packaged
-  // dist/ (which is where electron-builder copies public/ at pack time)
-  // in production.
-  const publicBase = isServeMode()
-    ? nodePathMod.join(__dirname, "..", "public")
-    : nodePathMod.join(__dirname, "..", "dist");
+  // the dev server root, but Electron needs an on-disk path for Tray(), so
+  // resolve them from the repo's public/ in dev and from dist/ in production.
+  const publicBase = publicDir();
 
   var iconPath;
   if (process.platform === "win32") {

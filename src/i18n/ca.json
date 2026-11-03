@@ -451,7 +451,18 @@
         "templateNewName": "La meua plantilla",
         "templateNamePlaceholder": "Nom de la plantilla",
         "templateDelete": "Eliminar plantilla",
-        "templateDeleteConfirm": "Prem una altra vegada per eliminar"
+        "templateDeleteConfirm": "Prem una altra vegada per eliminar",
+        "done": "Fet",
+        "untitledProject": "Projecte sense títol",
+        "crystalMolecule": "Molècula",
+        "crystalOxide": "Òxid",
+        "crystalConcept": "Concepte",
+        "crystalPickMolecule": "Tria una molècula",
+        "crystalPickOxide": "Tria un òxid",
+        "crystalPickConcept": "Tria un concepte",
+        "paperWords": "paraules",
+        "paperSetTarget": "Fixa l'objectiu de paraules",
+        "paperTargetPlaceholder": "paraules objectiu, p. ex. 6000"
     },
     "todoDetails": {
         "snooze": "Programar per a un dia",

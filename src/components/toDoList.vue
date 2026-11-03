@@ -570,8 +570,16 @@ export default {
       let isDayList = /^\d{8}$/.test(this.id);
       if (isDayList) {
         let seen = new Set(own.map((e) => e.hostListId + "@" + e.trueIndex));
+        // Archived projects can end up loaded in the store (search, Friday
+        // review, archiving during the session) but are out of play, so their
+        // dueDate references never land in a day list. Skipping them here keeps
+        // the day list identical regardless of what happens to be loaded.
+        let archivedIds = new Set(
+          (this.$store.getters.cTodoListIds || []).filter((l) => l && l.archived).map((l) => String(l.listId))
+        );
         Object.keys(all).forEach((lid) => {
           if (lid === this.id) return;
+          if (archivedIds.has(lid)) return;
           let list = all[lid] || [];
           list.forEach((t, idx) => {
             if (!t || t.dueDate !== this.id) return;

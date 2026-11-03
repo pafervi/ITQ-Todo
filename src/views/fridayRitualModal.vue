@@ -134,6 +134,7 @@ export default {
     return {
       entry: { win: "", drag: "", next: "" },
       refreshToken: 0,
+      autoTimer: null,
     };
   },
   mounted() {
@@ -142,7 +143,7 @@ export default {
   },
   unmounted() {
     document.getElementById("fridayRitualModal").removeEventListener("show.bs.modal", this.onShow);
-    if (this.autoTimer) clearTimeout(this.autoTimer);
+    if (this.autoTimer) clearInterval(this.autoTimer);
   },
   methods: {
     onShow: function () {
@@ -151,8 +152,10 @@ export default {
       let log = loadLog();
       let key = weekKey();
       this.entry = log[key] ? { ...log[key] } : { win: "", drag: "", next: "" };
-      // Ensure every custom project is loaded so pending/shipped stats are
-      // accurate (archived included — they still ran this week).
+      // Ensure every custom project is loaded so the stats are accurate.
+      // Archived projects are loaded too because what they shipped this week
+      // still counts, but their open tasks are excluded from pending,
+      // overdue and deadline figures (see archivedIds below).
       let lists = this.$store.getters.cTodoListIds || [];
       lists.forEach((l) => this.$store.dispatch("loadTodoLists", l.listId));
       this.refreshToken++;
@@ -307,7 +310,9 @@ export default {
       };
       let out = [];
       let all = this.$store.getters.todoLists || {};
+      let archivedIds = new Set(listIds.filter((l) => l && l.archived).map((l) => String(l.listId)));
       Object.keys(all).forEach((lid) => {
+        if (archivedIds.has(lid)) return;
         (all[lid] || []).forEach((t) => {
           if (!t || t.checked) return;
           out.push({
@@ -340,14 +345,20 @@ export default {
       let overdueNow = 0;
       let deadlinesNext = 0;
       let nextWeekEnd = moment().add(7, "day").format("YYYYMMDD");
+      let archivedIds = new Set(
+        (this.$store.getters.cTodoListIds || []).filter((l) => l && l.archived).map((l) => String(l.listId))
+      );
       Object.keys(all).forEach((lid) => {
         let isDay = /^\d{8}$/.test(lid);
+        let isArchived = archivedIds.has(lid);
         (all[lid] || []).forEach((t) => {
           if (!t) return;
           if (t.checked) {
             if (!isDay || (lid >= r.start && lid <= r.end)) shipped++;
             return;
           }
+          // Open tasks of archived projects are out of play.
+          if (isArchived) return;
           if (isDay && lid < r.today) carried++;
           if (t.deadline && t.deadline < r.today) overdueNow++;
           if (t.deadline && t.deadline >= r.today && t.deadline <= nextWeekEnd) deadlinesNext++;

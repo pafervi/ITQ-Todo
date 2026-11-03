@@ -3,9 +3,9 @@
     <div v-if="show" id="splashScreen" class="splash-screen" ref="splashScreen" :style="latticeStyle">
       <div class="splash-lattice"></div>
       <div class="splash-content">
-        <img v-if="darkTheme" class="logo logo-pulse" src="/img/itq-todo-logo-white.svg" alt="ITQ Todo" />
-        <img v-else class="logo logo-pulse" src="/img/itq-todo-logo-color.svg" alt="ITQ Todo" />
-        <div class="splash-stamp">ITQ · UPV-CSIC</div>
+        <img v-if="darkTheme" class="logo logo-pulse" src="/img/latticetodo-logo-white.svg" alt="LatticeTodo" />
+        <img v-else class="logo logo-pulse" src="/img/latticetodo-logo-color.svg" alt="LatticeTodo" />
+        <div class="splash-stamp">LatticeTodo</div>
         <div class="splash-greeting">
           <span class="splash-greeting-text">{{ greeting }}</span>
           <span class="splash-greeting-date">{{ dateLine }}</span>

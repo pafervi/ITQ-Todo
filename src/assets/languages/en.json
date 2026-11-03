@@ -115,7 +115,8 @@
         "collaborators": "Collaborators",
         "email": "E-mail",
         "blog": "Blog",
-        "license": "License"
+        "license": "License",
+        "themeItemToday": "Today: {0}"
     },
     "generatedData": {
         "data2": "Click to complete task",
@@ -449,7 +450,19 @@
         "templateNewName": "My template",
         "templateNamePlaceholder": "Template name",
         "templateDelete": "Delete template",
-        "templateDeleteConfirm": "Click again to delete"
+        "templateDeleteConfirm": "Click again to delete",
+        "done": "Done",
+        "untitledProject": "Untitled project",
+        "crystalMolecule": "Molecule",
+        "crystalOxide": "Oxide",
+        "crystalConcept": "Concept",
+        "crystalPickMolecule": "Pick a molecule",
+        "crystalPickOxide": "Pick an oxide",
+        "crystalPickConcept": "Pick a concept",
+        "paperWords": "words",
+        "paperSetTarget": "Set target word count",
+        "paperTargetPlaceholder": "target words, e.g. 6000",
+        "themeItemOfDay": "Today: {0}"
     },
     "todoDetails": {
         "snooze": "Schedule for a day",
@@ -687,6 +700,9 @@
         "oxidesItemLabel": "oxide",
         "photochemName": "Photochemistry",
         "photochemToday": "Photochemistry concept of the day",
-        "photochemItemLabel": "concept"
+        "photochemItemLabel": "concept",
+        "proteinsName": "Proteins & folds",
+        "proteinsToday": "Protein of the day",
+        "proteinsItemLabel": "motif"
     }
 }

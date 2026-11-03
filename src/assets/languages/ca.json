@@ -115,7 +115,8 @@
         "collaborators": "Col·laboradors",
         "email": "Correu electrònic",
         "blog": "Blog",
-        "license": "Llicència"
+        "license": "Llicència",
+        "themeItemToday": "Avui: {0}"
     },
     "generatedData": {
         "data2": "Clica per completar la tasca",
@@ -449,7 +450,19 @@
         "templateNewName": "La meua plantilla",
         "templateNamePlaceholder": "Nom de la plantilla",
         "templateDelete": "Eliminar plantilla",
-        "templateDeleteConfirm": "Prem una altra vegada per eliminar"
+        "templateDeleteConfirm": "Prem una altra vegada per eliminar",
+        "done": "Fet",
+        "untitledProject": "Projecte sense títol",
+        "crystalMolecule": "Molècula",
+        "crystalOxide": "Òxid",
+        "crystalConcept": "Concepte",
+        "crystalPickMolecule": "Tria una molècula",
+        "crystalPickOxide": "Tria un òxid",
+        "crystalPickConcept": "Tria un concepte",
+        "paperWords": "paraules",
+        "paperSetTarget": "Fixa l'objectiu de paraules",
+        "paperTargetPlaceholder": "paraules objectiu, p. ex. 6000",
+        "themeItemOfDay": "Avui: {0}"
     },
     "todoDetails": {
         "snooze": "Programar per a un dia",
@@ -687,6 +700,9 @@
         "oxidesItemLabel": "òxid",
         "photochemName": "Fotoquímica",
         "photochemToday": "Concepte fotoquímic del dia",
-        "photochemItemLabel": "concepte"
+        "photochemItemLabel": "concepte",
+        "proteinsName": "Proteïnes i plegaments",
+        "proteinsToday": "Proteïna del dia",
+        "proteinsItemLabel": "motiu"
     }
 }

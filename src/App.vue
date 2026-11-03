@@ -116,7 +116,7 @@
             class="ph ph-caret-left slider-btn"
             @click="customMoveLeft"
             :style="{
-              visibility: cTodoList.length > customColumns ? 'visible' : 'hidden',
+              visibility: visibleCTodoList.length > customColumns ? 'visible' : 'hidden',
             }"
           ></i>
           <div class="todo-slider slides" ref="customListContainer">
@@ -135,12 +135,12 @@
             class="ph ph-caret-right slider-btn"
             @click="customMoveRight"
             :style="{
-              visibility: cTodoList.length > customColumns ? 'visible' : 'hidden',
+              visibility: visibleCTodoList.length > customColumns ? 'visible' : 'hidden',
             }"
           ></i>
         </div>
 
-        <div v-if="todayOnlyMode && archivedCount" class="archived-toggle-link" @click="showArchived = !showArchived">
+        <div v-if="showCustomList && archivedCount" class="archived-toggle-link" @click="showArchived = !showArchived">
           <i :class="showArchived ? 'ph ph-eye-slash' : 'ph ph-archive'"></i>
           {{ showArchived ? $t('ui.hideArchived') : $t('ui.showArchived', [archivedCount]) }}
         </div>
@@ -178,8 +178,7 @@
       <zeolite-info-modal></zeolite-info-modal>
       <deadline-radar-modal></deadline-radar-modal>
       <focus-mode></focus-mode>
-      <batch-tracker-modal :target-list-id="$store.getters.batchTrackerTarget"></batch-tracker-modal>
-      <paper-tracker-modal :target-list-id="$store.getters.paperTrackerTarget"></paper-tracker-modal>
+      <batch-tracker-modal :target-list-id="$store.getters.batchTrackerTarget"></batch-tracker-modal>      <paper-tracker-modal :target-list-id="$store.getters.paperTrackerTarget"></paper-tracker-modal>
       <feature-guide-modal></feature-guide-modal>
       <mission-control-modal></mission-control-modal>
       <weekly-summary-modal></weekly-summary-modal>
@@ -258,8 +257,7 @@ import fontHelper from "./helpers/fontHelper";
 import faviconHelper from "./helpers/faviconHelper";
 import focusMode from "./components/focusMode.vue";
 import dayGreeting from "./components/dayGreeting.vue";
-import batchTrackerModal from "./views/batchTrackerModal.vue";
-import paperTrackerModal from "./views/paperTrackerModal.vue";
+import batchTrackerModal from "./views/batchTrackerModal.vue";import paperTrackerModal from "./views/paperTrackerModal.vue";
 import featureGuideModal from "./views/featureGuideModal.vue";
 import missionControlModal from "./components/missionControlModal.vue";
 import weeklySummaryModal from "./components/weeklySummaryModal.vue";
@@ -323,6 +321,7 @@ export default {
       initialListToLoad: 0,
       initialListLoaded: 0,
       showArchived: false,
+      resizerY: 0,
       deadlinesSoonText: "",
       backupCheckInterval: null,
       nowHour: moment().hour(),
@@ -908,6 +907,12 @@ export default {
     },
   },
   watch: {
+    // Once the last archived project is unarchived (or deleted) the toggle
+    // link disappears; reset the flag so the next project archived hides
+    // right away instead of staying visible.
+    archivedCount: function (count) {
+      if (!count) this.showArchived = false;
+    },
     fontFamilyKey: {
       immediate: true,
       handler: function (val) {

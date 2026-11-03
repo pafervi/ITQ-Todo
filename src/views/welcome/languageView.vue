@@ -1,7 +1,7 @@
 <template>
   <div class="row">
     <div class="col-md-4">
-      <img class="logo info-image" src="/img/itq-todo-logo-color.svg" alt="ITQ Todo" title="ITQ Todo Logo" width="80" />
+      <img class="logo info-image" src="/img/latticetodo-logo-color.svg" alt="LatticeTodo" title="LatticeTodo Logo" width="80" />
     </div>
     <div class="col-md-8">
       <div>

@@ -10,7 +10,6 @@
               class="form-select re-input w-auto mx-3"
               aria-label="Default select example"
               v-model="repeatingType"
-              :disabled="repeatingEvent"
             >
               <option value="all">{{ $t("ui.showAll") }}</option>
               <option value="3">{{ $t("todoDetails.daily") }}</option>

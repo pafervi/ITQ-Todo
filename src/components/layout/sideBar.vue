@@ -399,8 +399,14 @@ export default {
       let endOfWeek = moment().endOf("isoWeek").startOf("day");
       let count = 0;
       let lists = this.$store.getters.todoLists || {};
-      Object.values(lists).forEach((list) => {
-        (list || []).forEach((t) => {
+      // Archived projects may be loaded in the store (search, Friday review,
+      // archived this session) but must not count toward the week.
+      let archivedIds = new Set(
+        (this.$store.getters.cTodoListIds || []).filter((l) => l && l.archived).map((l) => String(l.listId))
+      );
+      Object.keys(lists).forEach((lid) => {
+        if (archivedIds.has(lid)) return;
+        (lists[lid] || []).forEach((t) => {
           if (!t || !t.dueDate || t.checked) return;
           if (!/^\d{8}$/.test(t.dueDate)) return;
           let d = moment(t.dueDate, "YYYYMMDD");

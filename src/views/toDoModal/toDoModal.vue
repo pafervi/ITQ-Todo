@@ -170,8 +170,7 @@ import moment from "moment";
 import dbRepository from "../../repositories/dbRepository";
 import { Toast, Modal } from "bootstrap";
 import toastMessage from "../../components/toastMessage";
-import colorPicker from "./colorPicker";
-import priorityPicker from "./priorityPicker";
+import colorPicker from "./colorPicker";import priorityPicker from "./priorityPicker";
 import deadlinePicker from "./deadlinePicker";
 import timePicker from "./timePicker";
 import tagHelper from "../../helpers/tagHelper";
@@ -335,7 +334,11 @@ export default {
       toDoListRepository.update(todoListId, TodoList);
     },
     getCListOptions: function () {
-      this.cListOptions = this.$store.getters.cTodoListIds;
+      // Archived projects are not valid destinations (a task moved there would
+      // vanish from view), except the one the task already lives in.
+      this.cListOptions = (this.$store.getters.cTodoListIds || []).filter(
+        (l) => l && (!l.archived || l.listId == this.todo.listId)
+      );
     },
     moveToTodoList: function (newListID) {
       if (newListID == "Invalid date" || newListID == "") return;

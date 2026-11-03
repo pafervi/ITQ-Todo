@@ -128,6 +128,7 @@ export default {
       selectedId: null,
       lines: [],
       justSaved: false,
+      savedTimeout: null,
       iconChoices: listTemplates.iconChoices,
       colorChoices: listTemplates.colorChoices,
       draftName: "",
@@ -265,8 +266,8 @@ export default {
     },
     flashSaved: function () {
       this.justSaved = true;
-      clearTimeout(this._savedTimeout);
-      this._savedTimeout = setTimeout(() => {
+      clearTimeout(this.savedTimeout);
+      this.savedTimeout = setTimeout(() => {
         this.justSaved = false;
       }, 1600);
     },

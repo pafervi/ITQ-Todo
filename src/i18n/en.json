@@ -451,7 +451,18 @@
         "templateNewName": "My template",
         "templateNamePlaceholder": "Template name",
         "templateDelete": "Delete template",
-        "templateDeleteConfirm": "Click again to delete"
+        "templateDeleteConfirm": "Click again to delete",
+        "done": "Done",
+        "untitledProject": "Untitled project",
+        "crystalMolecule": "Molecule",
+        "crystalOxide": "Oxide",
+        "crystalConcept": "Concept",
+        "crystalPickMolecule": "Pick a molecule",
+        "crystalPickOxide": "Pick an oxide",
+        "crystalPickConcept": "Pick a concept",
+        "paperWords": "words",
+        "paperSetTarget": "Set target word count",
+        "paperTargetPlaceholder": "target words, e.g. 6000"
     },
     "todoDetails": {
         "snooze": "Schedule for a day",

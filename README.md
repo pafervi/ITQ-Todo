@@ -13,7 +13,7 @@ queda en tu ordenador.
 
 Descarga el instalador para tu sistema desde la página de releases:
 
-**[Descargar la última versión →](https://github.com/pafervi/LatticeTodo/releases/latest)**
+**[Descargar la última versión →](https://github.com/pafervi/ITQ-Todo/releases/latest)**
 
 En esa página verás varios ficheros. Elige el que corresponda a tu sistema:
 

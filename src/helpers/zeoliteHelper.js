@@ -26,6 +26,12 @@ function ngonMaskUrl(sides, size, ry) {
     let y = (cy + radiusY * Math.sin(a)).toFixed(2);
     pts.push(x + "," + y);
   }
+  let dots = pts
+    .map(function (p) {
+      let xy = p.split(",");
+      return "<circle cx='" + xy[0] + "' cy='" + xy[1] + "' r='1.2' fill='#000'/>";
+    })
+    .join("");
   let svg =
     "<svg xmlns='http://www.w3.org/2000/svg' width='" +
     size +
@@ -37,7 +43,9 @@ function ngonMaskUrl(sides, size, ry) {
     size +
     "'><polygon points='" +
     pts.join(" ") +
-    "' fill='none' stroke='#000' stroke-width='1.1'/></svg>";
+    "' fill='none' stroke='#000' stroke-width='1.1'/>" +
+    dots +
+    "</svg>";
   return 'url("data:image/svg+xml,' + encodeURIComponent(svg) + '")';
 }
 
@@ -45,7 +53,7 @@ function ngonMaskUrl(sides, size, ry) {
 // sides/ry/size drive the silhouette; itq/year mark the ones born at the ITQ.
 const FRAMEWORKS = [
   // Reference frameworks (not ITQ, kept because Pau works with or against them)
-  { code: "MFI", fullName: "MFI (ZSM-5)", ring: "10-MR", sides: 10, ry: 12, size: 40, itq: false, note: "The workhorse of your fellowship: sinusoidal + straight 10-ring channels." },
+  { code: "MFI", fullName: "MFI (ZSM-5)", ring: "10-MR", sides: 10, ry: 40, size: 40, itq: false, note: "The workhorse of your fellowship: sinusoidal + straight 10-ring channels." },
   { code: "FAU", fullName: "FAU (Faujasite / Y)", ring: "12-MR", sides: 12, size: 42, itq: false, note: "Large 12-ring pores opening into big supercages." },
   { code: "CHA", fullName: "CHA (Chabazite)", ring: "8-MR", sides: 8, size: 34, itq: false, note: "Small-pore 8-ring, cha cages. Key in methanol-to-olefins." },
   { code: "BEA", fullName: "*BEA (Zeolite Beta)", ring: "12-MR", sides: 12, size: 42, itq: false, note: "Intergrown 12-ring three-dimensional channel system." },
@@ -107,6 +115,7 @@ function build(fw) {
     year: fw.year || null,
     note: fw.note,
     sides: fw.sides,
+    ry: fw.ry || null,
     polygonPoints: polygonPoints(fw.sides, fw.ry),
     mask: ngonMaskUrl(fw.sides, fw.size, fw.ry),
     size: fw.size + "px " + fw.size + "px",

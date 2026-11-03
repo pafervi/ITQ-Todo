@@ -69,52 +69,108 @@ const THEMES = [
 
 const BY_ID = Object.fromEntries(THEMES.map((t) => [t.id, t]));
 
-// Compute an offset-polygon's points at a given phase shift (in radians).
-// Used for the "double ring desfasado" effect, where the back ring shares
-// the same vertex count but is rotated by half-step so its vertices sit
-// between the main ring's vertices. The result is a star-like double
-// outline when both are overlaid.
-function shiftedPolygonPoints(sides, ry, phase) {
-  let rx = 44;
-  let radiusY = ry ? (ry / 50) * 44 : 44;
-  let cx = 50;
-  let cy = 50;
-  let pts = [];
-  for (let i = 0; i < sides; i++) {
-    let a = (Math.PI * 2 * i) / sides - Math.PI / 2 + (phase || 0);
-    let x = (cx + rx * Math.cos(a)).toFixed(2);
-    let y = (cy + radiusY * Math.sin(a)).toFixed(2);
-    pts.push(x + "," + y);
+// ---- Zeolite renderer ----
+// Each framework is drawn as the pore seen down the channel: a ring of T
+// atoms (the largest pore ring, as before) bridged by oxygens, with the
+// first shell of neighbouring rings around it and a faint channel lumen
+// inside. The shell style (4-rings, 3-rings or a double shell) is picked
+// from the IZA code so frameworks that share a ring size still read
+// differently. Stylised, not crystallographic. Everything is currentColor.
+
+const CX = 50;
+const CY = 50;
+
+function parsePoints(str) {
+  return str.split(" ").map((p) => {
+    const xy = p.split(",");
+    return [parseFloat(xy[0]), parseFloat(xy[1])];
+  });
+}
+
+function scaleAbout(pts, k) {
+  return pts.map((p) => [CX + (p[0] - CX) * k, CY + (p[1] - CY) * k]);
+}
+
+function edgeMids(pts, k) {
+  const n = pts.length;
+  const cosHalf = Math.cos(Math.PI / n);
+  return pts.map((p, i) => {
+    const q = pts[(i + 1) % n];
+    const m = [(p[0] + q[0]) / 2, (p[1] + q[1]) / 2];
+    return [CX + (m[0] - CX) * (k / cosHalf), CY + (m[1] - CY) * (k / cosHalf)];
+  });
+}
+
+const f1 = (v) => Math.round(v * 10) / 10;
+const ptStr = (pts) => pts.map((p) => f1(p[0]) + "," + f1(p[1])).join(" ");
+const dot = (p, r, hollow) =>
+  hollow
+    ? '<circle cx="' + f1(p[0]) + '" cy="' + f1(p[1]) + '" r="' + r + '" fill="currentColor" fill-opacity="0.12" stroke="currentColor" stroke-width="0.9" opacity="0.8"/>'
+    : '<circle cx="' + f1(p[0]) + '" cy="' + f1(p[1]) + '" r="' + r + '" fill="currentColor"/>';
+
+function hashStr(s) {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+  return h;
+}
+
+function cell(pts, op) {
+  return '<polygon points="' + ptStr(pts) + '" fill="currentColor" fill-opacity="0.07" stroke="currentColor" stroke-width="0.9" stroke-linejoin="round" opacity="' + op + '"/>';
+}
+
+function zeoliteSvg(fw) {
+  const base = parsePoints(fw.polygonPoints);
+  const n = base.length;
+  const style = hashStr(fw.code) % 3;
+  const ring = scaleAbout(base, 0.62);
+  let out = "";
+
+  // Outer shells first, so the main ring sits on top.
+  if (style === 0) {
+    const w = scaleAbout(base, 0.82);
+    for (let i = 0; i < n; i++) out += cell([ring[i], ring[(i + 1) % n], w[(i + 1) % n], w[i]], 0.6);
+    out += '<polygon points="' + ptStr(w) + '" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" opacity="0.7"/>';
+    w.forEach((p) => (out += dot(p, n > 16 ? 1 : 1.3, true)));
+  } else if (style === 1) {
+    const s = edgeMids(base, 0.86);
+    for (let i = 0; i < n; i++) out += cell([ring[i], s[i], ring[(i + 1) % n]], 0.6);
+    s.forEach((p) => (out += dot(p, n > 16 ? 1 : 1.3, true)));
+  } else {
+    const w = scaleAbout(base, 0.74);
+    const s = edgeMids(base, 0.97);
+    for (let i = 0; i < n; i++) {
+      out += cell([ring[i], ring[(i + 1) % n], w[(i + 1) % n], w[i]], 0.55);
+      out += cell([w[i], s[i], w[(i + 1) % n]], 0.5);
+    }
+    s.forEach((p) => (out += dot(p, n > 16 ? 0.9 : 1.2, true)));
   }
-  return pts.join(" ");
+
+  // Channel lumen: faint inner wall plus the axis.
+  out += '<polygon points="' + ptStr(scaleAbout(base, 0.34)) + '" fill="currentColor" fill-opacity="0.05" stroke="currentColor" stroke-width="0.8" stroke-dasharray="2 2" opacity="0.35"/>';
+
+  // Main pore ring: halo, crisp stroke, soft fill.
+  const rp = ptStr(ring);
+  out += '<polygon points="' + rp + '" fill="none" stroke="currentColor" stroke-width="5.5" stroke-linejoin="round" opacity="0.16"/>';
+  out += '<polygon points="' + rp + '" fill="currentColor" fill-opacity="0.1" stroke="currentColor" stroke-width="2.6" stroke-linejoin="round"/>';
+
+  // T atoms on the vertices, oxygen bridges on the edges.
+  const rT = n > 18 ? 1.5 : 2;
+  ring.forEach((p) => (out += dot(p, rT, false)));
+  if (n < 24) {
+    for (let i = 0; i < n; i++) {
+      const q = ring[(i + 1) % n];
+      out += dot([(ring[i][0] + q[0]) / 2, (ring[i][1] + q[1]) / 2], 0.9, true);
+    }
+  }
+  return out;
 }
 
 // Normalise a zeolite framework object into the common item shape so the
 // splash, project cover and info modal can read svgShape/viewBox without
 // knowing which theme is active. Zeolite masks (CSS data URL) are kept so
 // the splash background pattern still renders the same way.
-//
-// The svgShape here renders the framework as a dual-stroke polygon plus a
-// slightly-rotated second ring behind it (double ring "desfasado"), so
-// the pore reads as a layered pore rather than a flat polygon. All
-// strokes use currentColor so the host container's accent tint carries
-// through unchanged.
 function normalizeZeoliteItem(fw) {
   if (!fw) return null;
-  // Back ring: same geometry, rotated by half-step so vertices sit
-  // between the main ring's vertices. Faint stroke for depth.
-  let shiftedPts = shiftedPolygonPoints(fw.sides, fw.ry, Math.PI / fw.sides);
-  // Dual-stroke on main ring: a wider halo stroke underneath + the usual
-  // crisp stroke on top. Reads as a line with its own shadow.
-  let polyAttr =
-    // Back layer: phase-shifted outline (double ring).
-    '<polygon points="' + shiftedPts + '" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" opacity="0.35"/>' +
-    // Shadow halo underneath main stroke.
-    '<polygon points="' + fw.polygonPoints + '" fill="none" stroke="currentColor" stroke-width="5.5" stroke-linejoin="round" opacity="0.18"/>' +
-    // Main stroke.
-    '<polygon points="' + fw.polygonPoints + '" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/>' +
-    // Soft fill inside.
-    '<polygon points="' + fw.polygonPoints + '" fill="currentColor" fill-opacity="0.1"/>';
   return {
     code: fw.code,
     name: fw.name,
@@ -123,7 +179,7 @@ function normalizeZeoliteItem(fw) {
     year: fw.year || null,
     meta: fw.ring || "",
     itq: !!fw.itq,
-    svgShape: polyAttr,
+    svgShape: zeoliteSvg(fw),
     viewBox: "0 0 100 100",
     mask: fw.mask,
     maskSize: fw.size,

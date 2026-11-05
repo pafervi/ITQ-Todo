@@ -2,10 +2,22 @@
 
 Planificador personal y cuaderno de laboratorio para investigación en
 catálisis computacional. Semana en una pantalla, proyectos con contexto
-científico, ninguna conexión a ningún servidor: toda la información se
-queda en tu ordenador.
+científico, planificación del curso completo y ninguna conexión a ningún
+servidor: toda la información se queda en tu ordenador.
 
 ![Vista semanal con proyectos de investigación](docs/screenshots/01-hero.png)
+
+**Contenido:** [Instalación](#instalación) ·
+[Primeros pasos](#primeros-pasos) ·
+[Día a día](#el-día-a-día) ·
+[Proyectos](#proyectos) ·
+[Vista del curso](#vista-del-curso-planificación-a-largo-plazo) ·
+[Deadlines](#deadlines-y-radar-de-urgencia) ·
+[Resúmenes](#resúmenes-y-cierre-semanal) ·
+[Personalización](#personalización) ·
+[Datos](#dónde-viven-tus-datos) ·
+[Atajos](#atajos-de-teclado) ·
+[Desarrollo](#desarrollo)
 
 ---
 
@@ -64,13 +76,15 @@ Al abrir por primera vez, la app crea una base de datos vacía en tu
 ordenador. Los datos nunca salen de aquí; si cambias de equipo tienes que
 **exportar y re-importar** desde el menú de configuración.
 
-En el menú de configuración encontrarás también:
+Tres cosas que conviene hacer el primer día:
 
-- **Idioma**: inglés, castellano o catalán.
-- **Tema**: claro u oscuro.
-- **Copia de seguridad diaria**: elige una carpeta sincronizada con la
-  nube (OneDrive, Google Drive, Dropbox) y la app guardará una copia
-  cada día.
+1. **Elegir idioma y tema** en Ajustes (inglés, castellano o catalán; claro u
+   oscuro, y un tema científico para los fondos).
+2. **Activar la copia de seguridad diaria**: elige una carpeta sincronizada
+   con la nube (OneDrive, Google Drive, Dropbox) y la app guardará una copia
+   cada día.
+3. **Crear tu primer proyecto** desde la barra lateral, como checklist o por
+   fases (ver [Proyectos](#proyectos)).
 
 Dentro de la app, pulsa **?** en cualquier momento para ver los atajos de
 teclado y abrir la guía de funciones.
@@ -94,21 +108,90 @@ línea. Con **doble clic** en el círculo de estado de una tarea entras en
 modo foco: una sola tarea en pantalla, cronómetro simple, `Esc` para
 salir.
 
-### Proyectos con contexto
+**Captura global.** Con la app de escritorio, `Ctrl+Alt+Space` (o
+`Cmd+Alt+Space` en macOS) abre una ventana mínima para apuntar una tarea
+desde cualquier programa, sin cambiar de ventana.
+
+Las tareas se etiquetan solas: si escribes VASP, MACE, DFT, SLURM o el
+nombre de una zeolita, la app añade el tag correspondiente (se desactiva
+en Ajustes).
+
+### Proyectos
 
 Cada proyecto es su propia lista, con nombre, color, una carpeta
 enlazada (que abres con un clic en el icono de carpeta), notas en
-Markdown y opcionalmente un *kind* (reunión, ciclo de active learning…)
-que le da identidad visual propia. Las plantillas iniciales cubren los
-flujos típicos de investigación: proyecto nuevo, becario / estudiante,
-viaje, cierre de paper, preparación de reunión, ciclo de active
-learning.
+Markdown y la zeolita (framework) asociada. Al crearlo eliges el tipo:
+
+- **Checklist**: proyecto clásico, con tareas que se tachan.
+- **Por fases**: proyecto científico con fecha de inicio y fin, dividido en
+  fases a lo largo del tiempo.
 
 Pulsa el título de un proyecto y se abre su **cristal**: estadísticas,
-próxima fecha límite, tareas abiertas y la zeolita (framework) asociada
-al proyecto.
+próxima fecha límite, tareas abiertas y el framework asociado.
 
 ![Cristal del proyecto MFI Defect Engineering](docs/screenshots/03-project-crystal.png)
+
+#### Proyectos por fases
+
+Un proyecto por fases tiene tres pestañas: **Tareas**, **Timeline** y
+**Feed**.
+
+- **Timeline**: fases con nombre, fechas, color y estado (pendiente,
+  activa, hecha, bloqueada). Por ejemplo, *Benchmark DFT → MACE L1 →
+  Búsqueda de TS*.
+- **Feed**: el diario del proyecto. Cada entrada es una nota, un hito o una
+  decisión, con fecha y fase opcional.
+- **Exportar a Markdown**: desde el menú del proyecto, *Export timeline and
+  log (.md)* genera un fichero con las fases y el feed, listo para pegar en
+  un informe o dárselo como contexto a un asistente.
+
+#### Herramientas de proyecto
+
+Se activan desde el menú de tres puntos del proyecto:
+
+- **Paper tracker**: seguimiento de un manuscrito por secciones, con palabras
+  escritas y objetivo, borrador conceptual con casillas y plantillas de
+  artículo. En escritorio puede leer el `.tex` o `.md` de la carpeta
+  enlazada para actualizar el recuento. La cabecera del proyecto muestra el
+  porcentaje.
+- **Batch tracker**: una tanda larga de cálculos (por ejemplo 60 singlepoints)
+  se sigue como una sola tarea, con barra de progreso y botones
+  `-10 / -1 / +1 / +10`. Nunca por cálculo individual.
+
+Además, puedes crear **plantillas propias** de lista (viaje, reunión, cierre
+de paper…) con nombre, icono, color y checklist, y reutilizarlas al crear
+proyectos nuevos.
+
+### Vista del curso: planificación a largo plazo
+
+El botón de la barra lateral abre la **vista del curso académico**
+(septiembre a agosto), una pizarra por carriles para ver de golpe todo lo
+que viene.
+
+![Vista del curso académico exportada como imagen](docs/screenshots/13-overview-export.png)
+
+Qué contiene:
+
+- **Proyectos** con fecha de inicio y fin, dibujados como barras. Si un
+  proyecto tiene paper tracker, el porcentaje aparece en su barra.
+- **Deadlines** de todas las tareas, con los de paper en morado y la próxima
+  charla en rojo. Se abren y editan desde la propia vista.
+- **Carriles propios** (investigación, docencia, lo que necesites) con
+  bloques y hitos. Haz clic en un hueco para añadir, arrastra para mover
+  (también a otro carril) y tira de los bordes para cambiar la duración.
+- **No disponible**: vacaciones, festivos, épocas de docencia o exámenes y
+  estancias, pintados como bandas grises de fondo.
+- **Fases** de los proyectos por fases, que se pueden mostrar u ocultar.
+- **Ideas sin fecha**: un panel lateral para apuntar cosas sin colocarlas
+  todavía. Arrástralas a un carril para darles fecha.
+- **Carga por semana**: una franja de color bajo los meses que indica cuántas
+  cosas coinciden cada semana; al pasar el ratón, cuáles son.
+- **Próximos 30 días**: lista con lo más cercano y la semana más cargada.
+  La misma lista aparece en el Cierre del viernes y en el resumen semanal.
+
+Para enseñar el plan, el botón de exportar genera una **imagen PNG** o un
+**PDF** en A4 apaisado, siempre en tema claro. También exporta un `.md`
+pensado como contexto para un asistente de IA.
 
 ### Deadlines y radar de urgencia
 
@@ -121,7 +204,8 @@ tarde) con el proyecto de origen a la vista.
 Para una vista espacial del mismo material, el **radar de vencimientos**
 coloca cada deadline como un punto en anillos concéntricos: más cerca del
 centro, más urgente. Las fechas de papers se pintan en color distinto;
-si has configurado una charla próxima, se destaca en rojo.
+si has configurado una charla próxima, se destaca en rojo y la barra
+lateral muestra la cuenta atrás.
 
 ### Mission control
 
@@ -142,19 +226,6 @@ agrupa en una sola persona.
 
 ![Panel Gente con menciones a Mercedes, Rafa y Veronique](docs/screenshots/06-people.png)
 
-### Identidad científica
-
-Cada día la app elige una **zeolita del día**. La silueta del framework
-pinta el fondo del splash y la carátula de los proyectos. Puedes
-clicar la insignia de la sidebar para abrir la ficha, que indica el
-tamaño del anillo mayor del framework y si fue descubierta en el ITQ.
-
-![Ficha de zeolita del día: ITH (ITQ-13)](docs/screenshots/07-zeolite-of-day.png)
-
-Además de zeolitas, hay temas alternativos (química orgánica, óxidos
-metálicos, fotoquímica) con sus propias siluetas del día. Se cambian
-desde Ajustes → Display.
-
 ### Caja rápida: buscar y ejecutar
 
 Pulsa **Ctrl+K** (o **/**) desde cualquier parte: te abre una caja que
@@ -171,16 +242,36 @@ prioridad (`!1`, `!2`, `!3`) y proyecto (`/ceo2`).
 A partir de las 17:00 la app te ofrece el **resumen del día** (lo que
 has cerrado y lo que toca mañana). Los viernes a partir de las 17:00 se
 abre el **Cierre del viernes**: lo que acabaste, lo que arrastras al
-lunes, y tres preguntas cortas para dejar la semana ordenada. En la
-sidebar se lleva la cuenta de la **racha** de días completos al 100%.
+lunes, los próximos 30 días y tres preguntas cortas para dejar la semana
+ordenada. Se puede exportar a Markdown. En la sidebar se lleva la cuenta
+de la **racha** de días completos al 100%.
+
+El **resumen semanal** agrupa lo completado por proyecto y por día, y
+tiene el mismo bloque de próximas semanas. Desde ahí se exporta el
+**cuaderno de laboratorio**, semanal o mensual, en una vista imprimible
+con espacio para firma (*PDF / Print*); la versión mensual lleva portada.
+
+### Identidad científica
+
+Cada día la app elige un motivo del tema activo. La silueta pinta el
+fondo del splash y la carátula de los proyectos. Puedes clicar la
+insignia de la sidebar para abrir la ficha; en el tema de zeolitas indica
+el tamaño del anillo mayor del framework y si fue descubierta en el ITQ.
+
+![Ficha de zeolita del día: ITH (ITQ-13)](docs/screenshots/07-zeolite-of-day.png)
+
+Hay cinco temas científicos, cada uno con sus propias siluetas del día:
+**zeolitas**, **química orgánica**, **óxidos metálicos**, **fotoquímica**
+y **proteínas**. Se cambian desde Ajustes → Display, y la app sugiere un
+color de acento para cada uno.
 
 ### Personalización
 
 Desde Ajustes puedes cambiar idioma (inglés / castellano / catalán),
-tema claro u oscuro, densidad (aireada o densa), tipografía, color de
-acento y ancho de tarjeta de proyecto. Hay un **modo rendimiento** que
-desactiva los fondos difuminados si tu equipo rinde justo con la GPU
-integrada.
+tema claro u oscuro, tema científico, densidad (aireada o densa),
+tipografía, color de acento y ancho de tarjeta de proyecto. Hay un **modo
+rendimiento** que desactiva los fondos difuminados si tu equipo rinde
+justo con la GPU integrada.
 
 ![Ajustes con los controles principales](docs/screenshots/10-settings.png)
 
@@ -189,7 +280,9 @@ integrada.
 Todo se guarda localmente, en la base de datos IndexedDB del navegador
 embebido. Nada se envía a ningún servidor. Para migrar a otro equipo
 usas **Exportar / Importar** desde Ajustes → Datos, o la **copia de
-seguridad automática** diaria a una carpeta sincronizada con la nube.
+seguridad automática** diaria a una carpeta sincronizada con la nube. La
+copia incluye proyectos, fases, feed y la vista del curso, y puede
+cargarse sola al arrancar.
 
 ### Guía dentro de la app
 
@@ -215,9 +308,53 @@ Los esenciales (los puedes ver en cualquier momento pulsando **?**):
 | `Ctrl+K` | Abre la caja rápida de comandos |
 | `D` | Abre deadlines |
 | `?` | Muestra esta ayuda |
-| `Esc` | Cierra el diálogo abierto |
+| `Esc` | Cierra el diálogo abierto, o la vista del curso |
+| `Ctrl+Alt+Space` | Captura global de una tarea (app de escritorio) |
 
 ![Modal de atajos de teclado](docs/screenshots/12-shortcuts.png)
+
+---
+
+## Desarrollo
+
+La app es Electron 25 con Vue 3, Vuex 4 y vue-i18n, empaquetada con Vite.
+Necesitas Node 20 o superior.
+
+```bash
+git clone https://github.com/pafervi/ITQ-Todo.git
+cd ITQ-Todo
+npm install
+npm run dev          # recarga en caliente
+npm run lint         # ESLint sobre src y electron
+npm run test:unit    # tests de los helpers (vitest)
+npm run electron:build   # instaladores locales en release/
+```
+
+Estructura básica:
+
+| Carpeta | Contenido |
+|---|---|
+| `electron/` | Proceso principal: ventana sin marco, bandeja, autoarranque, captura global |
+| `src/components`, `src/views` | Componentes y modales de Vue |
+| `src/helpers` | Lógica pura, con tests en `__tests__/` |
+| `src/store` | Módulos de Vuex |
+| `src/repositories` | Acceso a IndexedDB y configuración |
+| `src/assets/languages`, `src/i18n` | Textos en en / es / ca (mantener ambas carpetas sincronizadas) |
+
+### Publicar una versión
+
+Los instaladores los compila GitHub Actions al subir un tag que empieza por
+`v`. Sube la versión en `package.json` antes de etiquetar:
+
+```bash
+git add package.json
+git commit -m "Bump to 3.0.4"
+git tag v3.0.4
+git push && git push --tags
+```
+
+El workflow `release.yml` genera `.exe`, `.deb`, `.AppImage`, `.dmg` y
+`.pkg` y los adjunta a la Release, normalmente en 10 a 15 minutos.
 
 ---
 

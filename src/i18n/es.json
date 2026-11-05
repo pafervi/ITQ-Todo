@@ -42,7 +42,6 @@
         "moveCompletedSubTaskToBottom": "Mover las subtareas completadas al final",
         "weekStartOnMonday": "La semana comienza el lunes.",
         "todayOnlyMode": "Mostrar solo Hoy en la franja de calendario",
-        "loadDemoData": "Cargar datos de ejemplo (proyectos y tareas)",
         "load": "Cargar",
         "compactProjectCards": "Tarjetas de proyecto compactas",
         "projectCardWidth": "Ancho de las tarjetas de proyecto",

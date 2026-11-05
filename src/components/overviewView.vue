@@ -275,7 +275,6 @@
 import moment from "moment";
 import { Modal } from "bootstrap";
 import overviewHelper from "../helpers/overviewHelper";
-import projectColorHelper from "../helpers/projectColorHelper";
 import deadlinesHelper from "../helpers/deadlinesHelper";
 import overviewAgenda from "../helpers/overviewAgenda";
 import overviewExport from "../helpers/overviewExport";

@@ -16,8 +16,7 @@ servidor: toda la información se queda en tu ordenador.
 [Resúmenes](#resúmenes-y-cierre-semanal) ·
 [Personalización](#personalización) ·
 [Datos](#dónde-viven-tus-datos) ·
-[Atajos](#atajos-de-teclado) ·
-[Desarrollo](#desarrollo)
+[Atajos](#atajos-de-teclado)
 
 ---
 
@@ -83,8 +82,8 @@ Tres cosas que conviene hacer el primer día:
 2. **Activar la copia de seguridad diaria**: elige una carpeta sincronizada
    con la nube (OneDrive, Google Drive, Dropbox) y la app guardará una copia
    cada día.
-3. **Crear tu primer proyecto** desde la barra lateral, como checklist o por
-   fases (ver [Proyectos](#proyectos)).
+3. **Crear tu primer proyecto**, como checklist o por fases (ver
+   [Proyectos](#proyectos)).
 
 Dentro de la app, pulsa **?** en cualquier momento para ver los atajos de
 teclado y abrir la guía de funciones.
@@ -99,7 +98,7 @@ La pantalla principal muestra Hoy y los proyectos activos a la vez. Las
 tareas sin terminar de días anteriores pasan solas a Hoy cuando abres la
 app o cuando el reloj cruza medianoche con la app abierta. La franja
 superior deja saltar a cualquier día de la semana con un clic, o cambiar
-entre vista **Today** (sólo el día centrado) y **Week** (siete días en
+entre vista **Today** (solo el día centrado) y **Week** (siete días en
 columna).
 
 Para crear una tarea rápida pulsas **N** desde cualquier sitio, tecleas
@@ -127,7 +126,7 @@ Markdown y la zeolita (framework) asociada. Al crearlo eliges el tipo:
   fases a lo largo del tiempo.
 
 Pulsa el título de un proyecto y se abre su **cristal**: estadísticas,
-próxima fecha límite, tareas abiertas y el framework asociado.
+próxima fecha límite y tareas abiertas.
 
 ![Cristal del proyecto MFI Defect Engineering](docs/screenshots/03-project-crystal.png)
 
@@ -164,9 +163,9 @@ proyectos nuevos.
 
 ### Vista del curso: planificación a largo plazo
 
-El botón de la barra lateral abre la **vista del curso académico**
-(septiembre a agosto), una pizarra por carriles para ver de golpe todo lo
-que viene.
+El botón **Vista global** de la barra lateral abre la **vista del curso
+académico** (septiembre a agosto), una pizarra por carriles para ver de
+golpe todo lo que viene.
 
 ![Vista del curso académico exportada como imagen](docs/screenshots/13-overview-export.png)
 
@@ -189,7 +188,7 @@ Qué contiene:
 - **Próximos 30 días**: lista con lo más cercano y la semana más cargada.
   La misma lista aparece en el Cierre del viernes y en el resumen semanal.
 
-Para enseñar el plan, el botón de exportar genera una **imagen PNG** o un
+Para enseñar el plan, los botones de exportar de la cabecera generan una **imagen PNG** o un
 **PDF** en A4 apaisado, siempre en tema claro. También exporta un `.md`
 pensado como contexto para un asistente de IA.
 
@@ -312,49 +311,6 @@ Los esenciales (los puedes ver en cualquier momento pulsando **?**):
 | `Ctrl+Alt+Space` | Captura global de una tarea (app de escritorio) |
 
 ![Modal de atajos de teclado](docs/screenshots/12-shortcuts.png)
-
----
-
-## Desarrollo
-
-La app es Electron 25 con Vue 3, Vuex 4 y vue-i18n, empaquetada con Vite.
-Necesitas Node 20 o superior.
-
-```bash
-git clone https://github.com/pafervi/ITQ-Todo.git
-cd ITQ-Todo
-npm install
-npm run dev          # recarga en caliente
-npm run lint         # ESLint sobre src y electron
-npm run test:unit    # tests de los helpers (vitest)
-npm run electron:build   # instaladores locales en release/
-```
-
-Estructura básica:
-
-| Carpeta | Contenido |
-|---|---|
-| `electron/` | Proceso principal: ventana sin marco, bandeja, autoarranque, captura global |
-| `src/components`, `src/views` | Componentes y modales de Vue |
-| `src/helpers` | Lógica pura, con tests en `__tests__/` |
-| `src/store` | Módulos de Vuex |
-| `src/repositories` | Acceso a IndexedDB y configuración |
-| `src/assets/languages`, `src/i18n` | Textos en en / es / ca (mantener ambas carpetas sincronizadas) |
-
-### Publicar una versión
-
-Los instaladores los compila GitHub Actions al subir un tag que empieza por
-`v`. Sube la versión en `package.json` antes de etiquetar:
-
-```bash
-git add package.json
-git commit -m "Bump to 3.0.4"
-git tag v3.0.4
-git push && git push --tags
-```
-
-El workflow `release.yml` genera `.exe`, `.deb`, `.AppImage`, `.dmg` y
-`.pkg` y los adjunta a la Release, normalmente en 10 a 15 minutos.
 
 ---
 

@@ -52,8 +52,20 @@ export default {
 
     let deadlines = (input.deadlines || []).filter((d) => touches(d.date, d.date)).sort((a, b) => a.date.localeCompare(b.date));
     lines.push("## Task deadlines", "");
-    if (!deadlines.length) lines.push("No pending task deadlines in this academic year.");
-    deadlines.forEach((d) => lines.push("- " + d.date + " " + clean(d.title) + (d.listName ? " (" + clean(d.listName) + ")" : "")));
+    let talk = input.talk && touches(input.talk.date, input.talk.date) ? input.talk : null;
+    if (!deadlines.length && !talk) lines.push("No pending task deadlines in this academic year.");
+    let rows = deadlines.map((d) => ({ date: d.date, text: "- " + d.date + (d.isPaper ? " [paper]" : "") + " " + clean(d.title) + (d.listName ? " (" + clean(d.listName) + ")" : "") }));
+    if (talk) rows.push({ date: talk.date, text: "- " + talk.date + " [talk] " + (clean(talk.title) || "Next talk") });
+    rows.sort((a, b) => a.date.localeCompare(b.date)).forEach((r) => lines.push(r.text));
+    lines.push("");
+
+    let away = items.filter((it) => it.kind === "away" && it.startDate && touches(it.startDate, it.endDate)).sort((a, b) => a.startDate.localeCompare(b.startDate));
+    lines.push("## Unavailable periods", "");
+    if (!away.length) lines.push("None.");
+    away.forEach((it) => {
+      let notes = clean(it.notes);
+      lines.push("- " + period(it.startDate, it.endDate) + " " + clean(it.title) + (notes ? ": " + notes : ""));
+    });
     lines.push("");
 
     let laneName = {};

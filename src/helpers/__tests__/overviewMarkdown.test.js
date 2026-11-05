@@ -12,13 +12,16 @@ const input = {
     { id: "2", laneId: "l1", kind: "milestone", title: "Congress", startDate: "2027-03-10", endDate: "2027-03-10" },
     { id: "3", laneId: "l2", kind: "block", title: "Old course", startDate: "2025-01-01", endDate: "2025-02-01" },
     { id: "4", laneId: "l2", kind: "block", title: "ML course", startDate: "", endDate: "" },
+    { id: "5", laneId: "__away__", kind: "away", title: "Christmas break", startDate: "2026-12-24", endDate: "2027-01-06", notes: "" },
   ],
   projects: [{ id: "p1", name: "Al-pair MFI", startDate: "2026-09-01", endDate: "2027-02-15" }],
   phases: { p1: [{ name: "Training", startDate: "2026-10-16", endDate: "2026-12-20", status: "active" }] },
   deadlines: [
     { date: "2026-12-03", title: "Send report", listName: "Al-pair MFI" },
     { date: "2025-12-03", title: "Past year", listName: "" },
+    { date: "2026-12-10", title: "Response to reviewers", listName: "Paper", isPaper: true },
   ],
+  talk: { date: "2027-02-01", title: "Group seminar" },
 };
 
 describe("overviewMarkdown.build", () => {
@@ -41,6 +44,14 @@ describe("overviewMarkdown.build", () => {
     expect(out).toContain("- 2026-12-03 Send report (Al-pair MFI)");
     expect(out).not.toContain("Past year");
     expect(out).toContain("- ML course (Teaching)");
+  });
+  it("lists unavailable periods apart from the lanes", () => {
+    expect(out).toContain("## Unavailable periods\n\n- 2026-12-24 to 2027-01-06 Christmas break");
+    expect(out.split("## Unavailable periods")[0]).not.toContain("Christmas break");
+  });
+  it("flags papers and the next talk among the deadlines", () => {
+    expect(out).toContain("- 2026-12-10 [paper] Response to reviewers (Paper)");
+    expect(out).toContain("- 2027-02-01 [talk] Group seminar");
   });
   it("builds a filename", () => {
     expect(md.filename(2026, "2026-11-05")).toBe("academic-year-2026-27-overview-2026-11-05.md");

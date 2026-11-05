@@ -753,6 +753,35 @@
         "laneColor": "Color del carril",
         "moveUp": "Pujar carril",
         "moveDown": "Baixar carril",
-        "confirmDelete": "Prem una altra vegada per a esborrar"
+        "confirmDelete": "Prem una altra vegada per a esborrar",
+        "load": "Càrrega",
+        "loadTooltip": "Setmana del {0}: {1} element(s)",
+        "away": "No disponible",
+        "kindAway": "No disponible (vacances, estada...)",
+        "awayNeedsDates": "Un període necessita data d'inici.",
+        "agenda": "Pròxims 30 dies",
+        "agendaEmpty": "Res programat en els pròxims 30 dies.",
+        "agendaPeak": "Setmana més carregada: {0} ({1} elements)",
+        "agendaNow": "Ara",
+        "kindPaper": "paper",
+        "exportPng": "Exportar com a imatge (PNG)",
+        "exportPdf": "Exportar com a PDF",
+        "exportFailed": "Ha fallat l'exportació. Torna-ho a provar.",
+        "exportedOn": "Exportat el {0}",
+        "nextWeeks": "Properes setmanes",
+        "nextWeeksEmpty": "Res programat en els pròxims 30 dies.",
+        "nextWeeksPeak": "Setmana més carregada: {0} ({1} elements)",
+        "agendaKind": {
+            "deadline": "Deadline",
+            "paper": "Deadline de paper",
+            "talk": "Xarrada",
+            "milestone": "Fita",
+            "starts": "Comença",
+            "ends": "Acaba",
+            "phaseStart": "Comença fase",
+            "phaseEnd": "Acaba fase",
+            "projectEnd": "Acaba projecte",
+            "away": "No disponible"
+        }
     }
 }

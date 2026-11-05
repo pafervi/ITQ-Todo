@@ -26,6 +26,12 @@
         <button type="button" class="ov-chip-btn" @click="addLane">
           <i class="ph ph-rows"></i> {{ $t("overview.addLane") }}
         </button>
+        <button type="button" class="ov-icon-btn" :title="$t('overview.exportPng')" :disabled="exporting" @click="exportImage('png')">
+          <i class="ph ph-image"></i>
+        </button>
+        <button type="button" class="ov-icon-btn" :title="$t('overview.exportPdf')" :disabled="exporting" @click="exportImage('pdf')">
+          <i class="ph ph-file-pdf"></i>
+        </button>
         <button type="button" class="ov-icon-btn" :title="$t('overview.exportMd')" @click="exportMarkdown">
           <i class="ph ph-file-text"></i>
         </button>
@@ -34,6 +40,8 @@
         </button>
       </div>
     </header>
+
+    <p v-if="exportError" class="ov-export-error">{{ exportError }}</p>
 
     <div class="ov-body">
       <div class="ov-board">
@@ -53,9 +61,25 @@
             </div>
           </div>
 
-          <div v-for="layout in layouts" :key="layout.lane.id" class="ov-row ov-lane" :class="{ 'is-projects': layout.virtual }">
+          <div class="ov-row ov-load-row">
+            <div class="ov-label ov-load-label">{{ $t("overview.load") }}</div>
+            <div class="ov-track ov-load-track">
+              <div
+                v-for="c in loadCells"
+                :key="c.start"
+                class="ov-load-cell"
+                :class="'lv-' + c.level"
+                :style="{ left: c.left + '%', width: c.width + '%' }"
+                :title="c.tooltip"
+              ></div>
+            </div>
+          </div>
+
+          <div v-for="a in awayBands" :key="'band-' + a.id" class="ov-away-band" :style="{ '--l': a.left / 100, '--w': a.width / 100 }" :title="a.title"></div>
+
+          <div v-for="layout in layouts" :key="layout.lane.id" class="ov-row ov-lane" :class="{ 'is-projects': layout.virtual, 'is-away-lane': layout.away }">
             <div class="ov-label">
-              <template v-if="layout.virtual">
+              <template v-if="layout.virtual || layout.away">
                 <i class="ph" :class="layout.icon"></i>
                 <span class="ov-lane-name">{{ layout.lane.name }}</span>
               </template>
@@ -104,7 +128,7 @@
                 :class="[
                   'kind-' + bar.kind,
                   bar.status ? 'status-' + bar.status : '',
-                  { 'is-project': layout.virtual, 'is-link': !!bar.projectId || !!bar.task, 'is-phase': bar.isPhase, 'no-label': bar.noLabel, 'is-dragging': drag && drag.id === bar.id, 'clip-start': bar.geom.clippedStart, 'clip-end': bar.geom.clippedEnd },
+                  { 'is-project': layout.virtual, 'is-away': layout.away, 'is-link': !!bar.projectId || !!bar.task, 'is-phase': bar.isPhase, 'no-label': bar.noLabel, 'is-dragging': drag && drag.id === bar.id, 'clip-start': bar.geom.clippedStart, 'clip-end': bar.geom.clippedEnd },
                 ]"
                 :style="barStyle(bar)"
                 :title="bar.tooltip"
@@ -139,7 +163,25 @@
         <p class="ov-hint">{{ $t("overview.hint") }}</p>
       </div>
 
-      <aside class="ov-ideas">
+      <div class="ov-side">
+      <section class="ov-panel ov-agenda">
+        <div class="ov-ideas-head">
+          <h6><i class="ph ph-calendar-dots"></i> {{ $t("overview.agenda") }}</h6>
+        </div>
+        <p v-if="agendaData.load" class="ov-agenda-peak">{{ $t("overview.agendaPeak", [formatDay(agendaData.load.start), agendaData.load.count]) }}</p>
+        <ul v-if="agendaData.entries.length" class="ov-agenda-list">
+          <li v-for="(e, i) in agendaData.entries" :key="i" class="ov-agenda-item" :class="'ak-' + e.kind">
+            <span class="ov-agenda-date">{{ e.ongoing ? $t("overview.agendaNow") : formatDay(e.date) }}</span>
+            <span class="ov-agenda-main">
+              <span class="ov-agenda-title">{{ e.title }}</span>
+              <span class="ov-agenda-meta">{{ $t("overview.agendaKind." + kindKey(e.kind)) }}{{ e.source ? " · " + e.source : "" }}</span>
+            </span>
+          </li>
+        </ul>
+        <p v-else class="ov-ideas-empty">{{ $t("overview.agendaEmpty") }}</p>
+      </section>
+
+      <aside class="ov-panel ov-ideas">
         <div class="ov-ideas-head">
           <h6><i class="ph ph-lightbulb"></i> {{ $t("overview.unscheduled") }}</h6>
           <button type="button" class="ov-icon-btn" :title="$t('overview.addIdea')" @click="newIdea">
@@ -155,6 +197,7 @@
         </ul>
         <p v-else class="ov-ideas-empty">{{ $t("overview.unscheduledEmpty") }}</p>
       </aside>
+      </div>
     </div>
 
     <!-- Teleported to <body>: inside the app's zoomed container a fixed element
@@ -178,9 +221,10 @@
             <select v-model="form.kind">
               <option value="block">{{ $t("overview.kindBlock") }}</option>
               <option value="milestone">{{ $t("overview.kindMilestone") }}</option>
+              <option value="away">{{ $t("overview.kindAway") }}</option>
             </select>
           </label>
-          <label class="ov-field">
+          <label v-if="form.kind !== 'away'" class="ov-field">
             <span>{{ $t("overview.lane") }}</span>
             <select v-model="form.laneId">
               <option v-for="l in lanes" :key="l.id" :value="l.id">{{ l.name }}</option>
@@ -233,6 +277,9 @@ import { Modal } from "bootstrap";
 import overviewHelper from "../helpers/overviewHelper";
 import projectColorHelper from "../helpers/projectColorHelper";
 import deadlinesHelper from "../helpers/deadlinesHelper";
+import overviewAgenda from "../helpers/overviewAgenda";
+import overviewExport from "../helpers/overviewExport";
+import paperTrackerHelper from "../helpers/paperTrackerHelper";
 import overviewMarkdown from "../helpers/overviewMarkdown";
 import projectLogMarkdown from "../helpers/projectLogMarkdown";
 
@@ -240,6 +287,9 @@ const ROW_H = 30;
 const LANE_COLORS = ["#5e6ef2", "#2fb590", "#e8a33d", "#d9578c", "#7a8aa0", "#9b6bd6"];
 const PROJECTS_LANE = "__projects__";
 const DEADLINES_LANE = "__deadlines__";
+const AWAY_LANE = "__away__";
+const AWAY_COLOR = "#8087a0";
+const TALK_COLOR = "#e8553d";
 const TOGGLES_KEY = "latticetodo.overview.toggles";
 
 export default {
@@ -261,6 +311,8 @@ export default {
       showDeadlines: true,
       showPhases: false,
       deadlineTasks: [],
+      exporting: false,
+      exportError: "",
     };
   },
   computed: {
@@ -277,7 +329,7 @@ export default {
       return this.$store.getters.overviewItems;
     },
     unscheduled() {
-      return this.items.filter((it) => !it.startDate);
+      return this.items.filter((it) => !it.startDate && it.kind !== "away");
     },
     ghostStyle() {
       let d = this.ideaDrag;
@@ -300,23 +352,50 @@ export default {
       return (this.$store.getters.cTodoListIds || []).filter((p) => p && p.type === "phased" && !p.archived).map((p) => p.listId);
     },
     deadlineItems() {
-      let lists = this.$store.getters.cTodoListIds || [];
-      return this.deadlineTasks
-        .map((t) => {
-          // Task deadlines are stored as YYYYMMDD; accept ISO dates too.
-          let d = moment(t.deadline, ["YYYYMMDD", overviewHelper.FMT], true);
-          if (!d.isValid()) return null;
-          let project = lists.find((l) => l && String(l.listId) === String(t.listId));
-          return {
-            id: "dl-" + t.listId + "-" + t.index,
-            task: { listId: t.listId, index: t.index },
-            date: d.format(overviewHelper.FMT),
-            title: t.text,
-            listName: project ? project.listName : "",
-            color: project ? project.color || projectColorHelper.solidFor(project.listId) : "#e8a33d",
-          };
+      return overviewAgenda.deadlinesFrom(this.deadlineTasks, this.$store.getters.cTodoListIds);
+    },
+    talk() {
+      return overviewAgenda.talkFrom(this.$store.getters.config);
+    },
+    awayItems() {
+      return this.items.filter((it) => it.kind === "away" && it.startDate);
+    },
+    awayBands() {
+      return this.awayItems
+        .map((it) => {
+          let g = overviewHelper.geometry(this.range, it.startDate, it.endDate);
+          return g ? { id: it.id, left: g.left, width: g.width, title: it.title } : null;
         })
         .filter(Boolean);
+    },
+    // Weekly load strip: how many things overlap in each ISO week.
+    loadCells() {
+      let entries = overviewHelper.loadEntries({ items: this.items, projects: this.projectBars, deadlines: this.deadlineItems, talk: this.talk });
+      return overviewHelper.weeklyLoad(this.range, entries).map((w) => ({
+        start: w.start,
+        left: w.left,
+        width: w.width,
+        count: w.count,
+        level: overviewHelper.loadLevel(w.count),
+        tooltip: this.$t("overview.loadTooltip", [this.formatDay(w.start), w.count]) + (w.names.length ? "\n" + w.names.map((n) => "- " + n).join("\n") : ""),
+      }));
+    },
+    agendaData() {
+      return overviewAgenda.build(
+        { items: this.items, projects: this.projectBars, phases: this.$store.getters.phases || {}, deadlines: this.deadlineItems, talk: this.talk },
+        undefined,
+        30
+      );
+    },
+    paperPct() {
+      let out = {};
+      (this.$store.getters.cTodoListIds || []).forEach((l) => {
+        if (l && l.paper && Array.isArray(l.paper.sections) && l.paper.sections.length) {
+          let t = paperTrackerHelper.totals(l.paper);
+          if (t && t.pct !== null && t.pct !== undefined) out[l.listId] = t.pct;
+        }
+      });
+      return out;
     },
     todayPct() {
       let p = overviewHelper.pct(this.range, moment().format(overviewHelper.FMT));
@@ -324,27 +403,14 @@ export default {
     },
     formColor: {
       get() {
-        return this.form.color || this.laneColor(this.form.laneId);
+        return this.form.color || (this.form.kind === "away" ? AWAY_COLOR : this.laneColor(this.form.laneId));
       },
       set(v) {
         this.form.color = v;
       },
     },
     projectBars() {
-      // A phased project without explicit start/end dates takes its range
-      // from its phases, so it still shows up on the board.
-      let phases = this.$store.getters.phases || {};
-      let entries = (this.$store.getters.cTodoListIds || []).map((p) => {
-        if (!p || p.type !== "phased") return p;
-        let hasRange = overviewHelper.parse(p.startDate) && overviewHelper.parse(p.endDate);
-        let list = phases[p.listId] || [];
-        if (hasRange || !list.length) return p;
-        let starts = list.map((ph) => ph.startDate).filter((d) => overviewHelper.parse(d)).sort();
-        let ends = list.map((ph) => ph.endDate).filter((d) => overviewHelper.parse(d)).sort();
-        if (!starts.length || !ends.length) return p;
-        return { ...p, startDate: starts[0], endDate: ends[ends.length - 1] };
-      });
-      return overviewHelper.projectBars(entries, (id) => projectColorHelper.solidFor(id));
+      return overviewAgenda.projectsFrom(this.$store.getters.cTodoListIds, this.$store.getters.phases);
     },
     otherYearsCount() {
       return this.items.filter((it) => it.startDate && !overviewHelper.geometry(this.range, it.startDate, it.endDate)).length;
@@ -366,7 +432,7 @@ export default {
           id: "prj-" + p.id,
           projectId: p.id,
           kind: "block",
-          title: p.name,
+          title: p.name + (this.paperPct[p.id] !== undefined ? " · " + this.paperPct[p.id] + "%" : ""),
           color: p.color,
           row: row,
           geom: overviewHelper.geometry(range, p.startDate, p.endDate),
@@ -408,32 +474,68 @@ export default {
         out.push({ virtual: true, icon: "ph-kanban", lane: { id: PROJECTS_LANE, name: this.$t("overview.projects"), color: "" }, rows: rows, bars: bars });
       }
 
-      // Task deadlines, drawn as small unlabelled diamonds (title in the tooltip).
+      // Task deadlines (small unlabelled diamonds, papers in purple) plus the
+      // next talk (labelled). Titles are in the tooltips.
       if (this.showDeadlines) {
         let pts = this.deadlineItems.filter((d) => overviewHelper.geometry(range, d.date, d.date));
-        if (pts.length) {
-          let pack = overviewHelper.packRows(
-            pts.map((d) => ({ id: d.id, startDate: d.date, endDate: d.date })),
-            6
-          );
-          out.push({
-            virtual: true,
-            icon: "ph-target",
-            lane: { id: DEADLINES_LANE, name: this.$t("overview.deadlines"), color: "" },
-            rows: pack.count,
-            bars: pts.map((d) => ({
-              id: d.id,
-              task: d.task,
+        let talk = this.talk && overviewHelper.geometry(range, this.talk.date, this.talk.date) ? this.talk : null;
+        if (pts.length || talk) {
+          let entries = pts.map((d) => ({ id: d.id, startDate: d.date, endDate: d.date }));
+          // The talk label needs room to its right, like a milestone.
+          if (talk) entries.push({ id: "talk", startDate: talk.date, endDate: overviewHelper.shiftDate(talk.date, 20) });
+          let pack = overviewHelper.packRows(entries, 6);
+          let bars = pts.map((d) => ({
+            id: d.id,
+            task: d.task,
+            kind: "milestone",
+            noLabel: true,
+            title: d.title,
+            color: d.color,
+            row: pack.rows[d.id],
+            geom: overviewHelper.geometry(range, d.date, d.date),
+            tooltip: (d.isPaper ? "[" + this.$t("overview.kindPaper") + "] " : "") + d.title + " (" + d.date + (d.listName ? ", " + d.listName : "") + ")",
+          }));
+          if (talk) {
+            let label = talk.title || this.$t("ui.talk");
+            bars.push({
+              id: "talk",
               kind: "milestone",
-              noLabel: true,
-              title: d.title,
-              color: d.color,
-              row: pack.rows[d.id],
-              geom: overviewHelper.geometry(range, d.date, d.date),
-              tooltip: d.title + " (" + d.date + (d.listName ? ", " + d.listName : "") + ")",
-            })),
-          });
+              noLabel: false,
+              title: label,
+              color: TALK_COLOR,
+              row: pack.rows.talk,
+              geom: overviewHelper.geometry(range, talk.date, talk.date),
+              tooltip: label + " (" + talk.date + ")",
+            });
+          }
+          out.push({ virtual: true, icon: "ph-target", lane: { id: DEADLINES_LANE, name: this.$t("overview.deadlines"), color: "" }, rows: pack.count, bars: bars });
         }
+      }
+
+      // "Not available" lane (holidays, stays, exams): editable, and mirrored as grey bands behind everything.
+      {
+        let mine = this.awayItems.filter((it) => overviewHelper.geometry(range, it.startDate, it.endDate));
+        let pack = overviewHelper.packRows(mine);
+        out.push({
+          virtual: false,
+          away: true,
+          icon: "ph-prohibit",
+          lane: { id: AWAY_LANE, name: this.$t("overview.away"), color: "" },
+          rows: pack.count,
+          bars: mine.map((it) => {
+            let eff = this.effectiveDates(it);
+            return {
+              id: it.id,
+              item: it,
+              kind: "block",
+              title: it.title,
+              color: it.color || AWAY_COLOR,
+              row: pack.rows[it.id],
+              geom: overviewHelper.geometry(range, eff.startDate, eff.endDate),
+              tooltip: it.title + " (" + eff.startDate + " to " + eff.endDate + ")" + (it.notes ? "\n" + it.notes : ""),
+            };
+          }),
+        });
       }
 
       this.lanes.forEach((lane) => {
@@ -548,6 +650,66 @@ export default {
       this.dragMoved = false;
       this.ideaDrag = null;
     },
+    kindKey(kind) {
+      return overviewAgenda.kindKey(kind);
+    },
+    formatDay(date) {
+      return moment(date, overviewHelper.FMT).locale(this.language).format("D MMM");
+    },
+    exportModel() {
+      let today = moment().format(overviewHelper.FMT);
+      return {
+        title: this.$t("overview.title") + " " + this.range.label,
+        subtitle: this.$t("overview.exportedOn", [today]),
+        width: 1600,
+        months: this.months.map((m) => ({ left: m.left, width: m.width, label: this.monthLabel(m), current: this.isCurrentMonth(m) })),
+        loadLabel: this.$t("overview.load"),
+        load: this.loadCells.map((c) => ({ left: c.left, width: c.width, level: c.level })),
+        away: this.awayBands,
+        todayPct: this.todayPct,
+        lanes: this.layouts.map((l) => ({
+          name: l.lane.name,
+          color: l.virtual || l.away ? "" : l.lane.color,
+          virtual: l.virtual,
+          rows: l.rows,
+          bars: l.bars.map((b) => ({
+            left: b.geom.left,
+            width: b.geom.width,
+            row: b.row,
+            title: b.title,
+            color: b.color,
+            kind: b.kind,
+            noLabel: b.noLabel,
+            isPhase: b.isPhase,
+            status: b.status,
+            away: !!l.away,
+          })),
+        })),
+        footer: "LatticeTodo, " + today,
+      };
+    },
+    async exportImage(kind) {
+      if (this.exporting) return;
+      this.exporting = true;
+      this.exportError = "";
+      try {
+        let built = overviewExport.buildSvg(this.exportModel());
+        let canvas = await overviewExport.svgToCanvas(built.svg, built.width, built.height, 2);
+        if (kind === "png") {
+          let blob = await overviewExport.canvasToBlob(canvas, "image/png");
+          overviewExport.download(overviewExport.filename(this.range.label, "png"), blob);
+        } else {
+          let jpeg = await overviewExport.canvasToBlob(canvas, "image/jpeg", 0.92);
+          let bytes = new Uint8Array(await jpeg.arrayBuffer());
+          let pdf = overviewExport.pdfFromJpeg(bytes, { width: canvas.width, height: canvas.height });
+          overviewExport.download(overviewExport.filename(this.range.label, "pdf"), new Blob([pdf], { type: "application/pdf" }));
+        }
+      } catch (e) {
+        this.exportError = this.$t("overview.exportFailed");
+      } finally {
+        this.exporting = false;
+      }
+    },
     exportMarkdown() {
       let phases = {};
       this.projectBars.forEach((p) => (phases[p.id] = (this.$store.getters.phases || {})[p.id] || []));
@@ -558,6 +720,7 @@ export default {
         projects: this.projectBars,
         phases: phases,
         deadlines: this.deadlineItems,
+        talk: this.talk,
       });
       projectLogMarkdown.download(overviewMarkdown.filename(this.startYear), text);
     },
@@ -614,6 +777,7 @@ export default {
       return now.year() === m.year && now.month() === m.month;
     },
     effectiveLane(it) {
+      if (it.kind === "away") return AWAY_LANE;
       return this.lanes.some((l) => l.id === it.laneId) ? it.laneId : this.lanes.length ? this.lanes[0].id : "";
     },
     laneColor(id) {
@@ -625,6 +789,7 @@ export default {
       return l ? l.name : "";
     },
     colorOf(it) {
+      if (it.kind === "away") return it.color || AWAY_COLOR;
       return it.color || this.laneColor(it.laneId);
     },
     barStyle(bar) {
@@ -688,6 +853,15 @@ export default {
         this.formError = this.$t("overview.titleRequired");
         return;
       }
+      if (item.kind === "away") {
+        if (!item.startDate) {
+          this.formError = this.$t("overview.awayNeedsDates");
+          return;
+        }
+        item.laneId = AWAY_LANE;
+      } else if (item.laneId === AWAY_LANE || !item.laneId) {
+        item.laneId = this.defaultLane();
+      }
       if (!item.id) item.id = overviewHelper.newId("ov");
       await this.$store.dispatch("saveOverviewItem", item);
       this.editing = false;
@@ -730,7 +904,11 @@ export default {
       if (layout.virtual || Date.now() < this.suppressClickUntil) return;
       let start = this.dateAtX(event.currentTarget, event.clientX);
       if (!start) return;
-      this.openEditor({ ...this.blankForm(), laneId: layout.lane.id, startDate: start, endDate: overviewHelper.shiftDate(start, 13) }, true);
+      let isAway = !!layout.away;
+      this.openEditor(
+        { ...this.blankForm(), kind: isAway ? "away" : "block", laneId: layout.lane.id, startDate: start, endDate: overviewHelper.shiftDate(start, isAway ? 6 : 13) },
+        true
+      );
     },
 
     // Drag to move / resize
@@ -758,6 +936,7 @@ export default {
         pxPerDay: width / this.range.days,
         deltaDays: 0,
         dy: 0,
+        isAway: bar.item.kind === "away",
         targetLane: this.effectiveLane(bar.item),
       };
       this.dragMoved = false;
@@ -774,7 +953,8 @@ export default {
       if (this.drag.mode === "move" && this.dragMoved) {
         this.drag.dy = dy;
         let lane = this.laneAtPoint(event.clientX, event.clientY, true);
-        if (lane) this.drag.targetLane = lane;
+        // "Away" blocks stay in their lane and nothing else may enter it.
+        if (lane && (lane === AWAY_LANE) === this.drag.isAway) this.drag.targetLane = lane;
       }
     },
     async onDragEnd() {
@@ -826,7 +1006,8 @@ export default {
       d.x = event.clientX;
       d.y = event.clientY;
       if (!d.moved && Math.hypot(d.x - d.startX, d.y - d.startY) > 4) d.moved = true;
-      d.targetLane = d.moved ? this.laneAtPoint(d.x, d.y, false) : null;
+      let lane = d.moved ? this.laneAtPoint(d.x, d.y, false) : null;
+      d.targetLane = lane === AWAY_LANE ? null : lane;
     },
     async onIdeaEnd() {
       let d = this.ideaDrag;
@@ -993,6 +1174,14 @@ export default {
     z-index: 3;
     background: var(--ov-surface);
   }
+  &.ov-load-row {
+    border-top: none;
+    position: sticky;
+    top: 30px;
+    z-index: 3;
+    background: var(--ov-surface);
+    padding-bottom: 6px;
+  }
 }
 .ov-label {
   display: flex;
@@ -1109,6 +1298,61 @@ export default {
   width: 1px;
   background: var(--ov-line);
   pointer-events: none;
+}
+.ov-load-label {
+  padding-top: 0;
+  align-items: center;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--ov-muted);
+}
+.ov-load-track {
+  height: 16px;
+  min-height: 16px;
+  cursor: default;
+}
+.ov-load-cell {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-right: 1px solid var(--ov-surface);
+  border-radius: 3px;
+  background: var(--ov-line);
+
+  &.lv-1 {
+    background: color-mix(in srgb, var(--accent-color, #5e6ef2) 22%, transparent);
+  }
+  &.lv-2 {
+    background: color-mix(in srgb, var(--accent-color, #5e6ef2) 42%, transparent);
+  }
+  &.lv-3 {
+    background: color-mix(in srgb, var(--accent-color, #5e6ef2) 64%, transparent);
+  }
+  &.lv-4 {
+    background: var(--accent-color, #5e6ef2);
+  }
+}
+.ov-away-band {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(var(--ov-label-w) + (100% - var(--ov-label-w)) * var(--l));
+  width: calc((100% - var(--ov-label-w)) * var(--w));
+  background: repeating-linear-gradient(135deg, rgba(128, 135, 160, 0.17) 0 6px, rgba(128, 135, 160, 0.08) 6px 12px);
+  pointer-events: none;
+  z-index: 0;
+}
+.ov-lane.is-away-lane .ov-label {
+  color: var(--ov-muted);
+}
+.ov-bar.is-away {
+  background: color-mix(in srgb, var(--ov-color) 30%, transparent);
+  border-style: solid;
+}
+.ov-export-error {
+  margin: 0 0 8px;
+  font-size: 0.8rem;
+  color: #d64545;
 }
 .ov-today {
   position: absolute;
@@ -1238,8 +1482,65 @@ export default {
   color: var(--ov-muted);
 }
 
-.ov-ideas {
-  flex: 0 0 230px;
+.ov-side {
+  flex: 0 0 250px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+}
+.ov-agenda-peak {
+  margin: 0 0 8px;
+  font-size: 0.76rem;
+  color: var(--ov-muted);
+}
+.ov-agenda-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  overflow: auto;
+}
+.ov-agenda-item {
+  display: flex;
+  gap: 10px;
+  padding: 5px 2px;
+  font-size: 0.82rem;
+  border-top: 1px solid var(--ov-line);
+
+  &:first-child {
+    border-top: none;
+  }
+}
+.ov-agenda-date {
+  flex: 0 0 52px;
+  font-variant-numeric: tabular-nums;
+  color: var(--ov-muted);
+  font-size: 0.76rem;
+  padding-top: 1px;
+}
+.ov-agenda-main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.ov-agenda-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ov-agenda-meta {
+  font-size: 0.72rem;
+  color: var(--ov-muted);
+}
+.ov-agenda-item.ak-deadline .ov-agenda-meta,
+.ov-agenda-item.ak-talk .ov-agenda-meta {
+  color: #e8553d;
+}
+.ov-agenda-item.ak-paper .ov-agenda-meta {
+  color: #9b6bd6;
+}
+.ov-panel {
+  flex: 1 1 0;
   display: flex;
   flex-direction: column;
   min-height: 0;

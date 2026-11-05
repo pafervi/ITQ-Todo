@@ -84,3 +84,41 @@ describe("overviewHelper", () => {
     expect(bars[1].color).toBe("#f00");
   });
 });
+
+describe("overviewHelper weekly load", () => {
+  const range = helper.yearRange(2026);
+
+  it("builds load entries without away blocks", () => {
+    let e = helper.loadEntries({
+      items: [
+        { id: "a", title: "A", startDate: "2026-10-01", endDate: "2026-10-10", kind: "block" },
+        { id: "b", title: "Holiday", startDate: "2026-12-20", endDate: "2027-01-06", kind: "away" },
+        { id: "c", title: "Idea", startDate: "", endDate: "" },
+      ],
+      projects: [{ id: "p", name: "P", startDate: "2026-09-01", endDate: "2026-12-01" }],
+      deadlines: [{ id: "d", title: "D", date: "2026-10-05" }],
+      talk: { date: "2026-11-20", title: "Talk" },
+    });
+    expect(e.map((x) => x.id)).toEqual(["a", "prj-p", "d", "talk"]);
+  });
+
+  it("counts overlaps per ISO week and clips weeks to the range", () => {
+    let weeks = helper.weeklyLoad(range, [
+      { label: "A", startDate: "2026-10-01", endDate: "2026-10-10" },
+      { label: "B", startDate: "2026-10-05", endDate: "2026-10-05" },
+    ]);
+    expect(weeks[0].start).toBe("2026-08-31");
+    expect(weeks[0].left).toBe(0);
+    let w = weeks.find((x) => x.start === "2026-10-05");
+    expect(w.count).toBe(2);
+    expect(w.names).toEqual(["A", "B"]);
+    expect(weeks.find((x) => x.start === "2026-09-28").count).toBe(1);
+    expect(weeks.find((x) => x.start === "2026-10-12").count).toBe(0);
+    let last = weeks[weeks.length - 1];
+    expect(last.left + last.width).toBeCloseTo(100, 6);
+  });
+
+  it("maps counts to levels", () => {
+    expect([0, 1, 2, 3, 4, 5, 6, 7, 12].map((n) => helper.loadLevel(n))).toEqual([0, 1, 1, 2, 2, 3, 3, 4, 4]);
+  });
+});

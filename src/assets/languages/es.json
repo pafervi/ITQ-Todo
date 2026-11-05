@@ -753,6 +753,35 @@
         "laneColor": "Color del carril",
         "moveUp": "Subir carril",
         "moveDown": "Bajar carril",
-        "confirmDelete": "Pulsa otra vez para borrar"
+        "confirmDelete": "Pulsa otra vez para borrar",
+        "load": "Carga",
+        "loadTooltip": "Semana del {0}: {1} elemento(s)",
+        "away": "No disponible",
+        "kindAway": "No disponible (vacaciones, estancia...)",
+        "awayNeedsDates": "Un periodo necesita fecha de inicio.",
+        "agenda": "Próximos 30 días",
+        "agendaEmpty": "Nada programado en los próximos 30 días.",
+        "agendaPeak": "Semana más cargada: {0} ({1} elementos)",
+        "agendaNow": "Ahora",
+        "kindPaper": "paper",
+        "exportPng": "Exportar como imagen (PNG)",
+        "exportPdf": "Exportar como PDF",
+        "exportFailed": "Falló la exportación. Inténtalo de nuevo.",
+        "exportedOn": "Exportado el {0}",
+        "nextWeeks": "Próximas semanas",
+        "nextWeeksEmpty": "Nada programado en los próximos 30 días.",
+        "nextWeeksPeak": "Semana más cargada: {0} ({1} elementos)",
+        "agendaKind": {
+            "deadline": "Deadline",
+            "paper": "Deadline de paper",
+            "talk": "Charla",
+            "milestone": "Hito",
+            "starts": "Empieza",
+            "ends": "Termina",
+            "phaseStart": "Empieza fase",
+            "phaseEnd": "Termina fase",
+            "projectEnd": "Termina proyecto",
+            "away": "No disponible"
+        }
     }
 }

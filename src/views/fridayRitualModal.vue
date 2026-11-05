@@ -62,6 +62,12 @@
             </div>
           </div>
 
+          <!-- Look ahead: the next 30 days from the long-term overview. -->
+          <div class="ritual-ahead">
+            <h3 class="ritual-sect-head">{{ $t('overview.nextWeeks') }}</h3>
+            <overview-agenda-list :refresh-token="refreshToken" :limit="6" @loaded="agenda = $event"></overview-agenda-list>
+          </div>
+
           <!-- Free-text prompts: 3 lines the user actually fills in. These
                are what give the ritual a trail across weeks. -->
           <div class="ritual-prompts">
@@ -104,6 +110,7 @@
 import { Modal } from "bootstrap";
 import moment from "moment";
 import configRepository from "../repositories/configRepository";
+import overviewAgendaList from "../components/overviewAgendaList.vue";
 
 const STORAGE_KEY = "fridayRitualLog";
 
@@ -130,8 +137,10 @@ function weekKey() {
 
 export default {
   name: "fridayRitualModal",
+  components: { overviewAgendaList },
   data() {
     return {
+      agenda: { entries: [], load: null },
       entry: { win: "", drag: "", next: "" },
       refreshToken: 0,
       autoTimer: null,
@@ -199,6 +208,14 @@ export default {
       this.pendingTop.forEach((t) => {
         lines.push(`- [${t.overdue ? "!" : " "}] ${t.text}  _— ${t.listName}${t.deadlineLabel ? ", " + t.deadlineLabel : ""}_`);
       });
+      lines.push("");
+      lines.push("## Next 30 days");
+      if (this.agenda.load) lines.push(`_Busiest week: ${this.agenda.load.start} (${this.agenda.load.count} items)_`);
+      if (this.agenda.entries.length) {
+        this.agenda.entries.forEach((e) => lines.push(`- ${e.date} [${e.kind}] ${e.title}${e.source ? " (" + e.source + ")" : ""}`));
+      } else {
+        lines.push("_Nothing scheduled._");
+      }
       lines.push("");
       lines.push("## The big thing you shipped");
       lines.push(this.entry.win || "_(empty)_");
@@ -471,6 +488,10 @@ export default {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 20px;
+  margin-bottom: 24px;
+}
+
+.ritual-ahead {
   margin-bottom: 24px;
 }
 

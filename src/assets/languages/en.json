@@ -753,6 +753,35 @@
         "laneColor": "Lane color",
         "moveUp": "Move lane up",
         "moveDown": "Move lane down",
-        "confirmDelete": "Click again to delete"
+        "confirmDelete": "Click again to delete",
+        "load": "Load",
+        "loadTooltip": "Week of {0}: {1} item(s)",
+        "away": "Not available",
+        "kindAway": "Not available (holiday, stay...)",
+        "awayNeedsDates": "A period needs a start date.",
+        "agenda": "Next 30 days",
+        "agendaEmpty": "Nothing scheduled in the next 30 days.",
+        "agendaPeak": "Busiest week: {0} ({1} items)",
+        "agendaNow": "Now",
+        "kindPaper": "paper",
+        "exportPng": "Export as image (PNG)",
+        "exportPdf": "Export as PDF",
+        "exportFailed": "The export failed. Try again.",
+        "exportedOn": "Exported on {0}",
+        "nextWeeks": "Next weeks",
+        "nextWeeksEmpty": "Nothing scheduled in the next 30 days.",
+        "nextWeeksPeak": "Busiest week: {0} ({1} items)",
+        "agendaKind": {
+            "deadline": "Deadline",
+            "paper": "Paper deadline",
+            "talk": "Talk",
+            "milestone": "Milestone",
+            "starts": "Starts",
+            "ends": "Ends",
+            "phaseStart": "Phase starts",
+            "phaseEnd": "Phase ends",
+            "projectEnd": "Project ends",
+            "away": "Not available"
+        }
     }
 }

@@ -122,6 +122,67 @@ export default {
     return { rows: rows, count: Math.max(rowEnds.length, 1) };
   },
 
+  // Entries that count as "load" in the weekly strip: everything the user has
+  // to deal with, but not the grey "away" blocks. Each entry is
+  // { id, label, startDate, endDate }. Inputs:
+  //   items: overview items, projects: projectBars() output,
+  //   deadlines: [{ id, date, title }], talk: { date, title } | null
+  loadEntries(input) {
+    let out = [];
+    (input.items || []).forEach((it) => {
+      if (!it.startDate || it.kind === "away") return;
+      out.push({ id: it.id, label: it.title, startDate: it.startDate, endDate: it.endDate || it.startDate });
+    });
+    (input.projects || []).forEach((p) => out.push({ id: "prj-" + p.id, label: p.name, startDate: p.startDate, endDate: p.endDate }));
+    (input.deadlines || []).forEach((d) => out.push({ id: d.id, label: d.title, startDate: d.date, endDate: d.date }));
+    if (input.talk && parse(input.talk.date)) out.push({ id: "talk", label: input.talk.title || "Talk", startDate: input.talk.date, endDate: input.talk.date });
+    return out;
+  },
+
+  // One cell per ISO week (Monday to Sunday) that touches the range. Returns
+  // [{ start, end, left, width, count, names }] where left/width are percent
+  // of the range (clipped) and names lists up to six overlapping labels.
+  weeklyLoad(range, entries) {
+    let weeks = [];
+    let monday = range.start.clone().startOf("isoWeek");
+    let list = (entries || [])
+      .map((e) => ({ label: e.label, s: parse(e.startDate), e: parse(e.endDate) || parse(e.startDate) }))
+      .filter((e) => e.s);
+    while (!monday.isAfter(range.end, "day")) {
+      let sunday = monday.clone().add(6, "days");
+      let cs = monday.isBefore(range.start, "day") ? range.start : monday;
+      let ce = sunday.isAfter(range.end, "day") ? range.end : sunday;
+      let names = [];
+      let count = 0;
+      list.forEach((e) => {
+        let end = e.e.isBefore(e.s) ? e.s : e.e;
+        if (!end.isBefore(monday, "day") && !e.s.isAfter(sunday, "day")) {
+          count++;
+          if (names.length < 6) names.push(e.label);
+        }
+      });
+      weeks.push({
+        start: monday.format(FMT),
+        end: sunday.format(FMT),
+        left: (cs.diff(range.start, "days") / range.days) * 100,
+        width: ((ce.diff(cs, "days") + 1) / range.days) * 100,
+        count: count,
+        names: names,
+      });
+      monday = monday.clone().add(7, "days");
+    }
+    return weeks;
+  },
+
+  // 0 (free) to 4 (overloaded) bucket for the weekly strip colours.
+  loadLevel(count) {
+    if (count <= 0) return 0;
+    if (count <= 2) return 1;
+    if (count <= 4) return 2;
+    if (count <= 6) return 3;
+    return 4;
+  },
+
   shiftDate(date, days) {
     let d = parse(date);
     return d ? d.clone().add(days, "days").format(FMT) : date;

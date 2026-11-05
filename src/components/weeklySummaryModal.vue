@@ -46,6 +46,9 @@
               </li>
             </ul>
             <p class="ws-empty" v-else>{{ $t("ui.weeklySummaryEmpty") }}</p>
+
+            <h6 class="ws-lists-title">{{ $t("overview.nextWeeks") }}</h6>
+            <overview-agenda-list :limit="8"></overview-agenda-list>
           </template>
         </div>
       </div>
@@ -104,9 +107,11 @@
 import moment from "moment";
 import weeklySummaryHelper from "../helpers/weeklySummaryHelper";
 import labNotebookHelper from "../helpers/labNotebookHelper";
+import overviewAgendaList from "./overviewAgendaList.vue";
 
 export default {
   name: "weeklySummaryModal",
+  components: { overviewAgendaList },
   data() {
     return {
       loading: true,

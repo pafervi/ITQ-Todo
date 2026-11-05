@@ -6,7 +6,12 @@ import dbRepository from "../../repositories/dbRepository";
 // migration. Project ids are never "__overview__", so there is no collision.
 //
 //   { items: [ { id, laneId, kind, title, startDate, endDate, color, notes } ],
-//     lanes: [ { id, name, color } ] }
+//     lanes: [ { id, name, color } ],
+//     focus: [ { id, weekStart, kind: 'phase'|'goal', projectId, phaseId,
+//                title, subtitle, done, order } ] }
+//
+// `focus` is the weekly plan (what to work on each week, see
+// overviewFocus.js). Documents saved before it existed simply have no focus.
 //
 // `open` controls whether the overview replaces the main area; it is UI state
 // and is not persisted.
@@ -16,6 +21,8 @@ const KEY = "__overview__";
 const state = {
   items: [],
   lanes: [],
+  focus: [],
+  mode: "course", // 'course' | 'weeks', which board the overview shows
   loaded: false,
   failed: false,
   fresh: false,
@@ -25,6 +32,8 @@ const state = {
 const getters = {
   overviewItems: (state) => state.items,
   overviewLanes: (state) => state.lanes,
+  overviewFocus: (state) => state.focus,
+  overviewMode: (state) => state.mode,
   overviewLoaded: (state) => state.loaded,
   // True while no overview document has ever been saved, so the view can
   // seed the default lanes exactly once.
@@ -36,6 +45,7 @@ const mutations = {
   setOverview(state, doc) {
     state.items = (doc && doc.items) || [];
     state.lanes = (doc && doc.lanes) || [];
+    state.focus = (doc && doc.focus) || [];
     state.loaded = true;
     state.fresh = !doc;
   },
@@ -44,12 +54,25 @@ const mutations = {
   setOverviewFailed(state) {
     state.items = [];
     state.lanes = [];
+    state.focus = [];
     state.loaded = true;
     state.failed = true;
     state.fresh = false;
   },
   setOverviewOpen(state, value) {
     state.open = !!value;
+  },
+  setOverviewMode(state, mode) {
+    state.mode = mode === "weeks" ? "weeks" : "course";
+  },
+  upsertOverviewFocus(state, item) {
+    let idx = state.focus.findIndex((x) => x.id === item.id);
+    if (idx < 0) state.focus.push(item);
+    else state.focus[idx] = item;
+    state.fresh = false;
+  },
+  removeOverviewFocus(state, id) {
+    state.focus = state.focus.filter((x) => x.id !== id);
   },
   upsertOverviewItem(state, item) {
     let idx = state.items.findIndex((x) => x.id === item.id);
@@ -69,7 +92,7 @@ const mutations = {
 function persist(state) {
   return new Promise((resolve) => {
     if (state.failed) return resolve(false);
-    let doc = { items: state.items, lanes: state.lanes };
+    let doc = { items: state.items, lanes: state.lanes, focus: state.focus };
     let db_req = dbRepository.open();
     db_req.onerror = () => resolve(false);
     db_req.onsuccess = function (event) {
@@ -114,6 +137,14 @@ const actions = {
   },
   deleteOverviewItem({ commit, state }, id) {
     commit("removeOverviewItem", id);
+    return persist(state);
+  },
+  saveOverviewFocus({ commit, state }, item) {
+    commit("upsertOverviewFocus", item);
+    return persist(state);
+  },
+  deleteOverviewFocus({ commit, state }, id) {
+    commit("removeOverviewFocus", id);
     return persist(state);
   },
   saveOverviewLanes({ commit, state }, lanes) {

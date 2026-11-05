@@ -36,6 +36,7 @@
         <app-toolbar :scroll-progress="scrollProgress"></app-toolbar>
         <day-greeting v-if="todayOnlyMode && showCalendar && !overviewOpen" :scroll-progress="scrollProgress"></day-greeting>
         <week-strip v-if="todayOnlyMode && showCalendar && !overviewOpen" :selected-date="selected_date" @select-date="setSelectedDate"></week-strip>
+        <week-focus-bar v-if="todayOnlyMode && showCalendar && !overviewOpen"></week-focus-bar>
         <tag-filter-bar v-if="todayOnlyMode && showCustomList && !overviewOpen"></tag-filter-bar>
         <div v-if="overviewOpen" class="overview-host">
           <overview-view></overview-view>
@@ -265,6 +266,7 @@ import featureGuideModal from "./views/featureGuideModal.vue";
 import missionControlModal from "./components/missionControlModal.vue";
 import weeklySummaryModal from "./components/weeklySummaryModal.vue";
 import overviewView from "./components/overviewView.vue";
+import weekFocusBar from "./components/weekFocusBar.vue";
 import dailySummaryModal from "./components/dailySummaryModal.vue";
 import peopleModal from "./views/peopleModal.vue";
 import projectCrystalModal from "./views/projectCrystalModal.vue";
@@ -312,6 +314,7 @@ export default {
     missionControlModal,
     weeklySummaryModal,
     overviewView,
+    weekFocusBar,
     dailySummaryModal,
     peopleModal,
     projectCrystalModal,
@@ -1628,6 +1631,13 @@ body {
   font-size: 0.85rem;
   cursor: pointer;
   padding: 6px 0px 20px 0px;
+}
+
+/* In the Week view the main area is a flex column, where "flex: 0 0 100%"
+   would mean 100% of the HEIGHT and squash the calendar and the project
+   lists to a few pixels. In a column the link just takes its own height. */
+.flex-column > .archived-toggle-link {
+  flex: 0 0 auto;
 }
 
 .archived-toggle-link:hover {

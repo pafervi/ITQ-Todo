@@ -2,7 +2,15 @@
   <div class="overview-view">
     <header class="ov-head">
       <h4 class="ov-title"><i class="ph ph-chart-bar-horizontal"></i> {{ $t("overview.title") }}</h4>
-      <div class="ov-year-nav">
+      <div class="ov-mode" role="group">
+        <button type="button" class="ov-chip-btn" :class="{ 'is-on': mode === 'course' }" :aria-pressed="mode === 'course'" @click="setMode('course')">
+          {{ $t("overview.modeCourse") }}
+        </button>
+        <button type="button" class="ov-chip-btn" :class="{ 'is-on': mode === 'weeks' }" :aria-pressed="mode === 'weeks'" @click="setMode('weeks')">
+          {{ $t("overview.modeWeeks") }}
+        </button>
+      </div>
+      <div v-if="mode === 'course'" class="ov-year-nav">
         <button type="button" class="ov-icon-btn" :title="$t('overview.prevYear')" @click="startYear--">
           <i class="ph ph-caret-left"></i>
         </button>
@@ -14,6 +22,7 @@
         <span v-if="otherYearsCount" class="ov-other-years">{{ $t("overview.otherYears", [otherYearsCount]) }}</span>
       </div>
       <div class="ov-actions">
+        <template v-if="mode === 'course'">
         <button type="button" class="ov-chip-btn" :class="{ 'is-on': showDeadlines }" :aria-pressed="showDeadlines" @click="toggleDeadlines">
           <i class="ph ph-target"></i> {{ $t("overview.deadlines") }}
         </button>
@@ -32,6 +41,7 @@
         <button type="button" class="ov-icon-btn" :title="$t('overview.exportPdf')" :disabled="exporting" @click="exportImage('pdf')">
           <i class="ph ph-file-pdf"></i>
         </button>
+        </template>
         <button type="button" class="ov-icon-btn" :title="$t('overview.exportMd')" @click="exportMarkdown">
           <i class="ph ph-file-text"></i>
         </button>
@@ -43,7 +53,7 @@
 
     <p v-if="exportError" class="ov-export-error">{{ exportError }}</p>
 
-    <div class="ov-body">
+    <div v-if="mode === 'course'" class="ov-body">
       <div class="ov-board">
         <div class="ov-grid" ref="grid">
           <div class="ov-row ov-months-row">
@@ -199,6 +209,7 @@
       </aside>
       </div>
     </div>
+    <overview-weeks v-else></overview-weeks>
 
     <!-- Teleported to <body>: inside the app's zoomed container a fixed element
          is scaled, so it would drift away from the pointer when zoom != 100%. -->
@@ -275,6 +286,8 @@
 import moment from "moment";
 import { Modal } from "bootstrap";
 import overviewHelper from "../helpers/overviewHelper";
+import overviewFocus from "../helpers/overviewFocus";
+import overviewWeeks from "./overviewWeeks.vue";
 import deadlinesHelper from "../helpers/deadlinesHelper";
 import overviewAgenda from "../helpers/overviewAgenda";
 import overviewExport from "../helpers/overviewExport";
@@ -293,6 +306,7 @@ const TOGGLES_KEY = "latticetodo.overview.toggles";
 
 export default {
   name: "overviewView",
+  components: { overviewWeeks },
   data() {
     return {
       ROW_H: ROW_H,
@@ -315,6 +329,9 @@ export default {
     };
   },
   computed: {
+    mode() {
+      return this.$store.getters.overviewMode;
+    },
     range() {
       return overviewHelper.yearRange(this.startYear);
     },
@@ -632,6 +649,10 @@ export default {
     close() {
       this.$store.commit("setOverviewOpen", false);
     },
+    setMode(mode) {
+      this.cancelDrags();
+      this.$store.commit("setOverviewMode", mode);
+    },
     onKeydown(event) {
       if (event.key !== "Escape") return;
       if (this.drag || this.ideaDrag) {
@@ -721,6 +742,11 @@ export default {
         deadlines: this.deadlineItems,
         talk: this.talk,
       });
+      let projects = (this.$store.getters.cTodoListIds || [])
+        .filter((p) => p && !p.archived)
+        .map((p) => ({ id: p.listId, name: p.listName || "", color: p.color || "" }));
+      let phasesById = this.$store.getters.phases || {};
+      text += "\n" + overviewFocus.markdown(this.$store.getters.overviewFocus, undefined, 8, (f) => overviewFocus.describe(f, projects, phasesById));
       projectLogMarkdown.download(overviewMarkdown.filename(this.startYear), text);
     },
     onBarClick(bar) {
@@ -1080,6 +1106,10 @@ export default {
   display: flex;
   align-items: center;
   gap: 8px;
+}
+.ov-mode {
+  display: flex;
+  gap: 6px;
 }
 .ov-year-nav,
 .ov-actions {

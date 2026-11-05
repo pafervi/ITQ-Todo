@@ -781,6 +781,30 @@
             "phaseEnd": "Acaba fase",
             "projectEnd": "Acaba projecte",
             "away": "No disponible"
-        }
+        },
+        "modeCourse": "Curs",
+        "modeWeeks": "Setmanes",
+        "weekThis": "Aquesta setmana",
+        "weekNext": "Propera setmana",
+        "weekN": "Setmana {0}",
+        "weeksPrev": "Setmana anterior",
+        "weeksNext": "Setmana següent",
+        "weeksHint": "Arrossega fases a una setmana o escriu objectius. Marca'ls en acabar-los.",
+        "poolTitle": "Fases per col·locar",
+        "poolHint": "Arrossega una fase a una setmana, o prem + per afegir-la a aquesta setmana.",
+        "poolEmpty": "No hi ha fases obertes. Crea un projecte per fases i afegeix-hi fases per planificar-les ací.",
+        "dropRemove": "Deixa-ho anar ací per treure-ho del pla.",
+        "placedTitle": "Planificada en {0} setmana/es",
+        "addToThisWeek": "Afegir a aquesta setmana",
+        "addGoal": "Afegir objectiu",
+        "goalPlaceholder": "Objectiu per a aquesta setmana...",
+        "goalNoProject": "Sense projecte",
+        "weekEmpty": "Sense pla",
+        "removeFocus": "Treure del pla",
+        "outOfDates": "Aquesta setmana queda fora de les dates de la fase",
+        "phaseMissing": "Aquesta fase ja no existeix",
+        "plusMore": "+{0} més",
+        "focusPrompt": "En què et centres aquesta setmana?",
+        "focusEdit": "Editar"
     }
 }

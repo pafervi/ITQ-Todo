@@ -1,5 +1,7 @@
 # LatticeTodo
 
+**Español** · [English](README.en.md)
+
 Planificador personal y cuaderno de laboratorio para investigación en
 catálisis computacional. Semana en una pantalla, proyectos con contexto
 científico, planificación del curso completo y ninguna conexión a ningún
@@ -12,6 +14,7 @@ servidor: toda la información se queda en tu ordenador.
 [Día a día](#el-día-a-día) ·
 [Proyectos](#proyectos) ·
 [Vista del curso](#vista-del-curso-planificación-a-largo-plazo) ·
+[Semanas](#modo-semanas-qué-hago-esta-semana) ·
 [Deadlines](#deadlines-y-radar-de-urgencia) ·
 [Resúmenes](#resúmenes-y-cierre-semanal) ·
 [Personalización](#personalización) ·
@@ -118,6 +121,11 @@ nombre de una zeolita, la app añade el tag correspondiente (se desactiva
 en Ajustes). Una barra de tags permite filtrar las tareas por etiqueta y
 volver a verlas todas con un clic.
 
+**Foco de la semana.** Bajo la franja de días, la pantalla de Hoy muestra
+en qué te centras esta semana (fases y objetivos que has colocado en el
+[modo Semanas](#modo-semanas-qué-hago-esta-semana)). Un clic abre el
+planificador.
+
 **Tareas recurrentes.** Desde la barra lateral puedes definir tareas que
 se repiten (reuniones de grupo, revisiones semanales…) y aparecen solas en
 su día.
@@ -206,6 +214,29 @@ Qué contiene:
 Para enseñar el plan, los botones de exportar de la cabecera generan una **imagen PNG** o un
 **PDF** en A4 apaisado, siempre en tema claro. También exporta un `.md`
 pensado como contexto para un asistente de IA.
+
+#### Modo Semanas: qué hago esta semana
+
+El selector **Curso / Semanas** de la cabecera cambia la pizarra por un
+planificador semanal, pensado para cuando todos los proyectos están vivos a
+la vez y necesitas decidir qué toca ahora.
+
+- **Seis columnas**, una por semana, con navegación para avanzar y volver a
+  "Esta semana". Cada columna muestra arriba los deadlines, hitos y
+  ausencias de esos días.
+- **Fases por colocar**: panel lateral con las fases pendientes de tus
+  proyectos por fases. Arrástralas a una semana, o pulsa **+** para añadirlas
+  a la actual. Una fase puede repartirse en varias semanas (el panel cuenta
+  cuántas veces la has colocado).
+- **Objetivos libres**: "Añadir objetivo" crea una tarjeta de texto, con
+  proyecto opcional, para lo que no es una fase.
+- **Tarjetas**: se marcan como hechas, se arrastran a otra semana y se
+  quitan con la **×** o arrastrándolas de vuelta al panel. Un aviso indica
+  si la semana queda fuera de las fechas de la fase.
+
+El foco de la semana en curso aparece también en la pantalla de **Hoy**,
+bajo la franja de días; pulsarlo abre el planificador. El export `.md` de la
+vista incluye una sección "Weekly focus" con las próximas semanas.
 
 ### Deadlines y radar de urgencia
 

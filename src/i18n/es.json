@@ -781,6 +781,30 @@
             "phaseEnd": "Termina fase",
             "projectEnd": "Termina proyecto",
             "away": "No disponible"
-        }
+        },
+        "modeCourse": "Curso",
+        "modeWeeks": "Semanas",
+        "weekThis": "Esta semana",
+        "weekNext": "Próxima semana",
+        "weekN": "Semana {0}",
+        "weeksPrev": "Semana anterior",
+        "weeksNext": "Semana siguiente",
+        "weeksHint": "Arrastra fases a una semana o escribe objetivos. Márcalos al terminarlos.",
+        "poolTitle": "Fases por colocar",
+        "poolHint": "Arrastra una fase a una semana, o pulsa + para añadirla a esta semana.",
+        "poolEmpty": "No hay fases abiertas. Crea un proyecto por fases y añade fases para planificarlas aquí.",
+        "dropRemove": "Suelta aquí para quitarlo del plan.",
+        "placedTitle": "Planificada en {0} semana(s)",
+        "addToThisWeek": "Añadir a esta semana",
+        "addGoal": "Añadir objetivo",
+        "goalPlaceholder": "Objetivo para esta semana...",
+        "goalNoProject": "Sin proyecto",
+        "weekEmpty": "Sin plan",
+        "removeFocus": "Quitar del plan",
+        "outOfDates": "Esta semana queda fuera de las fechas de la fase",
+        "phaseMissing": "Esta fase ya no existe",
+        "plusMore": "+{0} más",
+        "focusPrompt": "¿En qué te centras esta semana?",
+        "focusEdit": "Editar"
     }
 }

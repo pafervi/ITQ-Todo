@@ -781,6 +781,30 @@
             "phaseEnd": "Phase ends",
             "projectEnd": "Project ends",
             "away": "Not available"
-        }
+        },
+        "modeCourse": "Course",
+        "modeWeeks": "Weeks",
+        "weekThis": "This week",
+        "weekNext": "Next week",
+        "weekN": "Week {0}",
+        "weeksPrev": "Previous week",
+        "weeksNext": "Next week",
+        "weeksHint": "Drag phases to a week, or type goals. Check them off as you go.",
+        "poolTitle": "Phases to place",
+        "poolHint": "Drag a phase to a week, or press + to add it to this week.",
+        "poolEmpty": "No open phases. Create a phased project and add phases to plan them here.",
+        "dropRemove": "Drop here to remove it from the plan.",
+        "placedTitle": "Planned in {0} week(s)",
+        "addToThisWeek": "Add to this week",
+        "addGoal": "Add goal",
+        "goalPlaceholder": "Goal for this week...",
+        "goalNoProject": "No project",
+        "weekEmpty": "Nothing planned",
+        "removeFocus": "Remove from the plan",
+        "outOfDates": "This week is outside the dates of the phase",
+        "phaseMissing": "This phase no longer exists",
+        "plusMore": "+{0} more",
+        "focusPrompt": "What are you focusing on this week?",
+        "focusEdit": "Edit"
     }
 }

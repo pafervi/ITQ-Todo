@@ -73,7 +73,8 @@ Aplicaciones.
 
 Al abrir por primera vez, la app crea una base de datos vacía en tu
 ordenador. Los datos nunca salen de aquí; si cambias de equipo tienes que
-**exportar y re-importar** desde el menú de configuración.
+**exportar y re-importar** desde Ajustes (ver
+[Exportar e importar](#exportar-e-importar)).
 
 Tres cosas que conviene hacer el primer día:
 
@@ -86,7 +87,8 @@ Tres cosas que conviene hacer el primer día:
    [Proyectos](#proyectos)).
 
 Dentro de la app, pulsa **?** en cualquier momento para ver los atajos de
-teclado y abrir la guía de funciones.
+teclado. La guía de funciones está en el menú de tres puntos de la barra
+lateral.
 
 ---
 
@@ -113,7 +115,16 @@ desde cualquier programa, sin cambiar de ventana.
 
 Las tareas se etiquetan solas: si escribes VASP, MACE, DFT, SLURM o el
 nombre de una zeolita, la app añade el tag correspondiente (se desactiva
-en Ajustes).
+en Ajustes). Una barra de tags permite filtrar las tareas por etiqueta y
+volver a verlas todas con un clic.
+
+**Tareas recurrentes.** Desde la barra lateral puedes definir tareas que
+se repiten (reuniones de grupo, revisiones semanales…) y aparecen solas en
+su día.
+
+**App de escritorio.** Se queda en la bandeja del sistema, puede abrirse al
+iniciar el ordenador y seguir en segundo plano, y avisa al arrancar de lo
+que toca hoy, con sonido opcional.
 
 ### Proyectos
 
@@ -140,6 +151,10 @@ Un proyecto por fases tiene tres pestañas: **Tareas**, **Timeline** y
   Búsqueda de TS*.
 - **Feed**: el diario del proyecto. Cada entrada es una nota, un hito o una
   decisión, con fecha y fase opcional.
+- **Instantáneas semanales**: los lunes al abrir y los viernes al cerrar, la
+  app te pregunta por cada proyecto por fases cómo está y qué se mueve (o
+  qué se cerró y qué queda), y lo guarda como entrada del feed. Se puede
+  saltar.
 - **Exportar a Markdown**: desde el menú del proyecto, *Export timeline and
   log (.md)* genera un fichero con las fases y el feed, listo para pegar en
   un informe o dárselo como contexto a un asistente.
@@ -268,8 +283,9 @@ color de acento para cada uno.
 
 Desde Ajustes puedes cambiar idioma (inglés / castellano / catalán),
 tema claro u oscuro, tema científico, densidad (aireada o densa),
-tipografía, color de acento y ancho de tarjeta de proyecto. Hay un **modo
-rendimiento** que desactiva los fondos difuminados si tu equipo rinde
+tipografía, color de acento, zoom, número de columnas, tarjetas de
+proyecto compactas y su ancho, y si la semana empieza en lunes. Hay un
+**modo rendimiento** que desactiva los fondos difuminados si tu equipo rinde
 justo con la GPU integrada.
 
 ![Ajustes con los controles principales](docs/screenshots/10-settings.png)
@@ -277,11 +293,39 @@ justo con la GPU integrada.
 ### Dónde viven tus datos
 
 Todo se guarda localmente, en la base de datos IndexedDB del navegador
-embebido. Nada se envía a ningún servidor. Para migrar a otro equipo
-usas **Exportar / Importar** desde Ajustes → Datos, o la **copia de
-seguridad automática** diaria a una carpeta sincronizada con la nube. La
-copia incluye proyectos, fases, feed y la vista del curso, y puede
-cargarse sola al arrancar.
+embebido. Nada se envía a ningún servidor.
+
+#### Exportar e importar
+
+Para pasar tus datos a otro equipo, o para guardarlos a mano:
+
+1. **Exportar**: Ajustes → Datos → **Exportar datos**. Se descarga el fichero
+   `LatticeTodoBackup.wtdb` con tareas, proyectos, fases, feed, vista global,
+   tareas recurrentes y ajustes.
+2. **Importar**: en el otro equipo, Ajustes → Datos → **Importar datos** y
+   elige el `.wtdb`.
+
+> Importar **sustituye** todos los datos actuales por los del fichero. Si el
+> fichero no es válido, la app avisa y no toca nada.
+
+En Ajustes → Datos también está **Borrar datos**, que vacía la app por
+completo y no se puede deshacer.
+
+#### Copia de seguridad automática
+
+Con la app de escritorio puedes activar una copia diaria en una carpeta que
+elijas, por ejemplo una sincronizada con OneDrive. Genera ficheros
+`LatticeTodoBackup-AAAA-MM-DD.wtdb`, con el mismo contenido que una
+exportación manual. Hay también un botón para hacer la copia en el momento
+y una opción para **cargar la copia más reciente al abrir la app**, útil si
+trabajas en dos ordenadores con la misma carpeta sincronizada.
+
+#### Exportar para informes
+
+El menú de tres puntos de la barra lateral incluye **Exportar todos los
+proyectos**, un resumen en Markdown de todos tus proyectos. Cada proyecto
+por fases, la vista global y los resúmenes semanales tienen además su propia
+exportación.
 
 ### Guía dentro de la app
 

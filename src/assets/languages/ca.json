@@ -462,7 +462,8 @@
         "paperWords": "paraules",
         "paperSetTarget": "Fixa l'objectiu de paraules",
         "paperTargetPlaceholder": "paraules objectiu, p. ex. 6000",
-        "themeItemOfDay": "Avui: {0}"
+        "themeItemOfDay": "Avui: {0}",
+        "overview": "Vista global"
     },
     "todoDetails": {
         "snooze": "Programar per a un dia",
@@ -686,7 +687,8 @@
         "errNoProject": "Falta l'id del projecte",
         "closePanel": "Tancar panell",
         "entrySingular": "entrada",
-        "entryPlural": "entrades"
+        "entryPlural": "entrades",
+        "exportLog": "Exportar timeline i log (.md)"
     },
     "themes": {
         "zeolitesName": "Frameworks de zeolita",
@@ -704,5 +706,53 @@
         "proteinsName": "Proteïnes i plegaments",
         "proteinsToday": "Proteïna del dia",
         "proteinsItemLabel": "motiu"
+    },
+    "overview": {
+        "title": "Vista del curs acadèmic",
+        "prevYear": "Curs anterior",
+        "nextYear": "Curs següent",
+        "thisYear": "Aquest curs",
+        "addItem": "Afegir element",
+        "addLane": "Afegir carril",
+        "addIdea": "Afegir una idea sense data",
+        "close": "Tancar vista global",
+        "projects": "Projectes",
+        "empty": "Encara no hi ha carrils. Afegeix-ne un per a començar a planificar.",
+        "hint": "Fes clic en un buit d'un carril per a afegir un element. Arrossega una barra per a moure-la (també a un altre carril) i les vores per a canviar-ne la durada. Arrossega una idea del panell lateral a un carril per a col·locar-la.",
+        "unscheduled": "Idees sense data",
+        "unscheduledEmpty": "Res pendent. Ací apareixen les idees que encara no has col·locat al calendari.",
+        "newItem": "Nou element",
+        "editItem": "Editar element",
+        "itemTitle": "Títol",
+        "kind": "Tipus",
+        "kindBlock": "Període",
+        "kindMilestone": "Fita / deadline",
+        "lane": "Carril",
+        "date": "Data",
+        "start": "Inici",
+        "end": "Fi",
+        "color": "Color",
+        "notes": "Notes",
+        "unscheduledHint": "Sense data d'inici es queda a la llista d'idees.",
+        "titleRequired": "Escriu un títol primer.",
+        "save": "Guardar",
+        "cancel": "Cancel·lar",
+        "delete": "Esborrar",
+        "unschedule": "Passar a idees",
+        "newLane": "Nou carril",
+        "deleteLane": "Esborrar carril",
+        "deleteLaneBlocked": "Un carril només es pot esborrar si està buit i no és l'últim",
+        "laneResearch": "Investigació",
+        "laneTeaching": "Docència",
+        "laneWriting": "Escriptura",
+        "laneAdmin": "Gestió",
+        "deadlines": "Deadlines",
+        "phases": "Fases",
+        "otherYears": "{0} element(s) en altres cursos",
+        "exportMd": "Exportar vista global a Markdown",
+        "laneColor": "Color del carril",
+        "moveUp": "Pujar carril",
+        "moveDown": "Baixar carril",
+        "confirmDelete": "Prem una altra vegada per a esborrar"
     }
 }

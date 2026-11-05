@@ -9,6 +9,7 @@ import activeTodo from "./modules/activeTodo.store";
 import mainStore from './modules/main.store';
 import phases from './modules/phase.store';
 import logEntries from './modules/logEntry.store';
+import overview from './modules/overview.store';
 
 
 export const store = createStore({
@@ -22,7 +23,8 @@ export const store = createStore({
         mainStore: mainStore,
         activeTodo: activeTodo,
         phases: phases,
-        logEntries: logEntries
+        logEntries: logEntries,
+        overview: overview
     },
     state: {},
     getters: {},

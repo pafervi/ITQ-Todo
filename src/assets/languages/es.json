@@ -462,7 +462,8 @@
         "paperWords": "palabras",
         "paperSetTarget": "Fijar objetivo de palabras",
         "paperTargetPlaceholder": "palabras objetivo, p. ej. 6000",
-        "themeItemOfDay": "Hoy: {0}"
+        "themeItemOfDay": "Hoy: {0}",
+        "overview": "Vista global"
     },
     "todoDetails": {
         "snooze": "Programar para un día",
@@ -686,7 +687,8 @@
         "errNoProject": "Falta el id del proyecto",
         "closePanel": "Cerrar panel",
         "entrySingular": "entrada",
-        "entryPlural": "entradas"
+        "entryPlural": "entradas",
+        "exportLog": "Exportar timeline y log (.md)"
     },
     "themes": {
         "zeolitesName": "Frameworks de zeolita",
@@ -704,5 +706,53 @@
         "proteinsName": "Proteínas y plegamientos",
         "proteinsToday": "Proteína del día",
         "proteinsItemLabel": "motivo"
+    },
+    "overview": {
+        "title": "Vista del curso académico",
+        "prevYear": "Curso anterior",
+        "nextYear": "Curso siguiente",
+        "thisYear": "Este curso",
+        "addItem": "Añadir elemento",
+        "addLane": "Añadir carril",
+        "addIdea": "Añadir una idea sin fecha",
+        "close": "Cerrar vista global",
+        "projects": "Proyectos",
+        "empty": "Aún no hay carriles. Añade uno para empezar a planificar.",
+        "hint": "Haz clic en un hueco de un carril para añadir un elemento. Arrastra una barra para moverla (también a otro carril) y sus bordes para cambiar la duración. Arrastra una idea del panel lateral a un carril para colocarla.",
+        "unscheduled": "Ideas sin fecha",
+        "unscheduledEmpty": "Nada pendiente. Aquí aparecen las ideas que aún no has colocado en el calendario.",
+        "newItem": "Nuevo elemento",
+        "editItem": "Editar elemento",
+        "itemTitle": "Título",
+        "kind": "Tipo",
+        "kindBlock": "Periodo",
+        "kindMilestone": "Hito / deadline",
+        "lane": "Carril",
+        "date": "Fecha",
+        "start": "Inicio",
+        "end": "Fin",
+        "color": "Color",
+        "notes": "Notas",
+        "unscheduledHint": "Sin fecha de inicio se queda en la lista de ideas.",
+        "titleRequired": "Escribe un título primero.",
+        "save": "Guardar",
+        "cancel": "Cancelar",
+        "delete": "Borrar",
+        "unschedule": "Pasar a ideas",
+        "newLane": "Nuevo carril",
+        "deleteLane": "Borrar carril",
+        "deleteLaneBlocked": "Un carril solo se puede borrar si está vacío y no es el último",
+        "laneResearch": "Investigación",
+        "laneTeaching": "Docencia",
+        "laneWriting": "Escritura",
+        "laneAdmin": "Gestión",
+        "deadlines": "Deadlines",
+        "phases": "Fases",
+        "otherYears": "{0} elemento(s) en otros cursos",
+        "exportMd": "Exportar vista global a Markdown",
+        "laneColor": "Color del carril",
+        "moveUp": "Subir carril",
+        "moveDown": "Bajar carril",
+        "confirmDelete": "Pulsa otra vez para borrar"
     }
 }

@@ -129,6 +129,11 @@
         </button>
       </li>
       <li v-show="customTodoList && isPhased">
+        <button class="dropdown-item" type="button" @click="exportTimelineLog">
+          <i class="bi-journal-text"></i> <span>{{ $t('phased.exportLog') }}</span>
+        </button>
+      </li>
+      <li v-show="customTodoList && isPhased">
         <hr class="dropdown-divider" />
       </li>
       <li v-show="customTodoList">
@@ -187,6 +192,7 @@ import tasksHelper from "../helpers/tasksHelper";
 import isElectron from "is-electron";
 import projectColorHelper from "../helpers/projectColorHelper";
 import paperTrackerHelper from "../helpers/paperTrackerHelper";
+import projectLogMarkdown from "../helpers/projectLogMarkdown";
 import { Toast, Modal } from 'bootstrap';
 
 export default {
@@ -478,6 +484,23 @@ export default {
       this.$store.commit("setPaperTrackerTarget", this.id);
       let modalEl = document.getElementById("paperTrackerModal");
       if (modalEl) Modal.getOrCreateInstance(modalEl).show();
+    },
+    // Phased projects only: Gantt (Mermaid + table) and log feed as one .md,
+    // meant to be dropped into a report or an LLM project as context.
+    exportTimelineLog: async function () {
+      if (!this.customTodoList || !this.isPhased) return;
+      let listId = this.id;
+      // Normally already in the store (loaded when the project mounts); load
+      // from the DB only if it is missing.
+      if (!this.$store.getters.phases[listId]) await this.$store.dispatch("loadPhases", listId);
+      if (!this.$store.getters.logEntries[listId]) await this.$store.dispatch("loadLogEntries", listId);
+      let project = this.$store.getters.cTodoListIds[this.cTodoListIndex] || {};
+      let text = projectLogMarkdown.build(
+        project,
+        this.$store.getters.phases[listId] || [],
+        this.$store.getters.logEntries[listId] || []
+      );
+      projectLogMarkdown.download(projectLogMarkdown.filename(project.listName), text);
     },
     exportMarkdown: function () {
       let title = this.todo_list_name || "list";

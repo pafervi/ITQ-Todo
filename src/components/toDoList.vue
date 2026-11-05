@@ -651,9 +651,9 @@ export default {
       if (color) {
         style["--project-color"] = color;
         style["--project-tint"] =
-          `color-mix(in srgb, ${color} 7%, transparent)`;
+          `color-mix(in srgb, ${color} 10%, transparent)`;
         style["--project-tint-strong"] =
-          `color-mix(in srgb, ${color} 11%, transparent)`;
+          `color-mix(in srgb, ${color} 15%, transparent)`;
       }
       return style;
     },
@@ -828,11 +828,16 @@ export default {
   padding-left: 18px;
   border-top-left-radius: 10px;
   border-top-right-radius: 10px;
-  background: linear-gradient(
-    135deg,
-    var(--project-tint, transparent) 0%,
-    transparent 58%
-  );
+  /* The `background` shorthand resets the colour layer, so the card
+     surface (--card-surface, defined for light themes only) is repeated
+     here as the bottom layer; otherwise these cards end up transparent. */
+  background:
+    linear-gradient(
+      135deg,
+      var(--project-tint, transparent) 0%,
+      transparent 58%
+    ),
+    var(--card-surface, transparent);
 }
 
 .to-do-list-container.has-accent-color::after {
@@ -851,11 +856,13 @@ export default {
 }
 
 .to-do-list-container.has-accent-color:hover {
-  background: linear-gradient(
-    135deg,
-    var(--project-tint-strong, transparent) 0%,
-    transparent 62%
-  );
+  background:
+    linear-gradient(
+      135deg,
+      var(--project-tint-strong, transparent) 0%,
+      transparent 62%
+    ),
+    var(--card-surface, transparent);
 }
 
 /* Project reorder drop target highlight. Painted while another project

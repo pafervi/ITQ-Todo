@@ -34,13 +34,16 @@
 
       <div class="app-main-column">
         <app-toolbar :scroll-progress="scrollProgress"></app-toolbar>
-        <day-greeting v-if="todayOnlyMode && showCalendar" :scroll-progress="scrollProgress"></day-greeting>
-        <week-strip v-if="todayOnlyMode && showCalendar" :selected-date="selected_date" @select-date="setSelectedDate"></week-strip>
-        <tag-filter-bar v-if="todayOnlyMode && showCustomList"></tag-filter-bar>
+        <day-greeting v-if="todayOnlyMode && showCalendar && !overviewOpen" :scroll-progress="scrollProgress"></day-greeting>
+        <week-strip v-if="todayOnlyMode && showCalendar && !overviewOpen" :selected-date="selected_date" @select-date="setSelectedDate"></week-strip>
+        <tag-filter-bar v-if="todayOnlyMode && showCustomList && !overviewOpen"></tag-filter-bar>
+        <div v-if="overviewOpen" class="overview-host">
+          <overview-view></overview-view>
+        </div>
         <div class="h-100 d-flex"
           ref="mainScrollArea"
           @scroll="onMainScroll"
-          :class="{ 'flex-column': !todayOnlyMode, 'today-only-layout': todayOnlyMode, 'compact-cards': todayOnlyMode && compactProjectCards }"
+          :class="{ 'overview-hidden': overviewOpen, 'flex-column': !todayOnlyMode, 'today-only-layout': todayOnlyMode, 'compact-cards': todayOnlyMode && compactProjectCards }"
           :style="{ '--card-width': projectCardWidth + 'px' }">
         <div
           v-show="showCalendar"
@@ -261,6 +264,7 @@ import batchTrackerModal from "./views/batchTrackerModal.vue";import paperTracke
 import featureGuideModal from "./views/featureGuideModal.vue";
 import missionControlModal from "./components/missionControlModal.vue";
 import weeklySummaryModal from "./components/weeklySummaryModal.vue";
+import overviewView from "./components/overviewView.vue";
 import dailySummaryModal from "./components/dailySummaryModal.vue";
 import peopleModal from "./views/peopleModal.vue";
 import projectCrystalModal from "./views/projectCrystalModal.vue";
@@ -307,6 +311,7 @@ export default {
     featureGuideModal,
     missionControlModal,
     weeklySummaryModal,
+    overviewView,
     dailySummaryModal,
     peopleModal,
     projectCrystalModal,
@@ -623,6 +628,8 @@ export default {
       }
     },
     setSelectedDate: function (date) {
+      // Picking a day leaves the long-term overview.
+      this.$store.commit("setOverviewOpen", false);
       this.selected_date = date;
       this.$nextTick(function () {
         document
@@ -1021,6 +1028,9 @@ export default {
     showCalendar: function () {
       return this.$store.getters.config.calendar;
     },
+    overviewOpen: function () {
+      return this.$store.getters.overviewOpen;
+    },
     columns: function () {
       return this.$store.getters.config.columns;
     },
@@ -1107,12 +1117,28 @@ body {
   min-height: 0;
 }
 
+/* The long-term overview replaces the main area; the lists stay mounted
+   (just hidden) so nothing reloads when it is closed. Bootstrap's .d-flex
+   is !important, so a plain v-show would not win. */
+.app-main-column > .h-100.d-flex.overview-hidden {
+  display: none !important;
+}
+
+.overview-host {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+
 #app-container {
   font-family: var(--app-font-family, inherit);
 }
 
 #app-container:not(.dark-theme) {
   background-color: #f4f5f7;
+  /* Opaque-ish white behind every card in light themes, so cards stand
+     out from the board and from each other (see toDoList.vue). */
+  --card-surface: rgba(255, 255, 255, 0.96);
 }
 
 /* Deep-navy dark palette: not an inversion of the light theme. The
@@ -1523,9 +1549,10 @@ body {
      so a live blur bought nothing here beyond cost - this many cards
      blurred at once was the single biggest backdrop-filter cost in the
      app. A flat translucent tint reads the same at a glance and is free. */
-  background-color: rgba(255, 255, 255, 0.92);
+  background-color: rgba(255, 255, 255, 0.96);
   border-radius: 10px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06),
+    0 0 0 1px rgba(0, 0, 0, 0.04);
   transition: box-shadow 0.2s ease, transform 0.2s ease;
 }
 

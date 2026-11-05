@@ -29,6 +29,10 @@
           <i class="ph ph-calendar-blank sb-icon"></i>
           <span class="sb-label">{{ $t('ui.calendar') }}</span>
         </div>
+        <div class="sb-item" :class="{ 'sb-active': overviewOpen }" @click="toggleOverview" :title="$t('ui.overview')">
+          <i class="ph ph-chart-bar-horizontal sb-icon"></i>
+          <span class="sb-label">{{ $t('ui.overview') }}</span>
+        </div>
       </div>
 
       <div class="sidebar-divider"></div>
@@ -235,6 +239,9 @@ export default {
     clearTimeout(this.enterTimer);
   },
   methods: {
+    toggleOverview: function () {
+      this.$store.commit("setOverviewOpen", !this.$store.getters.overviewOpen);
+    },
     handleEnter: function () {
       // 180ms grace keeps a passing cursor from triggering the full expand.
       clearTimeout(this.enterTimer);
@@ -359,6 +366,9 @@ export default {
     },
     showCalendar: function () {
       return this.$store.getters.config.calendar;
+    },
+    overviewOpen: function () {
+      return this.$store.getters.overviewOpen;
     },
     weekStartOnMonday: function () {
       return this.$store.getters.config.weekStartOnMonday ? 1 : 0;
@@ -500,6 +510,11 @@ export default {
     background-color 0.18s ease,
     color 0.18s ease,
     transform 0.4s var(--spring-ease, cubic-bezier(0.34, 1.56, 0.64, 1));
+}
+
+.sb-item.sb-active {
+  color: var(--accent-color, #5e6ef2);
+  background-color: color-mix(in srgb, var(--accent-color, #5e6ef2) 12%, transparent);
 }
 
 .sb-item:hover {

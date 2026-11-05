@@ -462,7 +462,8 @@
         "crystalPickConcept": "Pick a concept",
         "paperWords": "words",
         "paperSetTarget": "Set target word count",
-        "paperTargetPlaceholder": "target words, e.g. 6000"
+        "paperTargetPlaceholder": "target words, e.g. 6000",
+        "overview": "Overview"
     },
     "todoDetails": {
         "snooze": "Schedule for a day",
@@ -686,7 +687,8 @@
         "errNoProject": "Project id missing",
         "closePanel": "Close",
         "entrySingular": "entry",
-        "entryPlural": "entries"
+        "entryPlural": "entries",
+        "exportLog": "Export timeline and log (.md)"
     },
     "themes": {
         "zeolitesName": "Zeolite frameworks",
@@ -704,5 +706,53 @@
         "proteinsName": "Proteins & folds",
         "proteinsToday": "Protein of the day",
         "proteinsItemLabel": "motif"
+    },
+    "overview": {
+        "title": "Academic year overview",
+        "prevYear": "Previous year",
+        "nextYear": "Next year",
+        "thisYear": "This year",
+        "addItem": "Add item",
+        "addLane": "Add lane",
+        "addIdea": "Add an idea without a date",
+        "close": "Close overview",
+        "projects": "Projects",
+        "empty": "No lanes yet. Add one to start planning.",
+        "hint": "Click an empty spot of a lane to add an item. Drag a bar to move it (also to another lane) and its edges to resize. Drag an idea from the side panel onto a lane to schedule it.",
+        "unscheduled": "Ideas without a date",
+        "unscheduledEmpty": "Nothing waiting. Ideas you have not scheduled yet appear here.",
+        "newItem": "New item",
+        "editItem": "Edit item",
+        "itemTitle": "Title",
+        "kind": "Type",
+        "kindBlock": "Period",
+        "kindMilestone": "Milestone / deadline",
+        "lane": "Lane",
+        "date": "Date",
+        "start": "Start",
+        "end": "End",
+        "color": "Color",
+        "notes": "Notes",
+        "unscheduledHint": "Without a start date it stays in the ideas list.",
+        "titleRequired": "Write a title first.",
+        "save": "Save",
+        "cancel": "Cancel",
+        "delete": "Delete",
+        "unschedule": "Move to ideas",
+        "newLane": "New lane",
+        "deleteLane": "Delete lane",
+        "deleteLaneBlocked": "A lane can only be deleted when it is empty and not the last one",
+        "laneResearch": "Research",
+        "laneTeaching": "Teaching",
+        "laneWriting": "Writing",
+        "laneAdmin": "Admin",
+        "deadlines": "Deadlines",
+        "phases": "Phases",
+        "otherYears": "{0} item(s) in other years",
+        "exportMd": "Export overview as Markdown",
+        "laneColor": "Lane color",
+        "moveUp": "Move lane up",
+        "moveDown": "Move lane down",
+        "confirmDelete": "Click again to delete"
     }
 }

@@ -1,60 +1,62 @@
 # LatticeTodo
 
-**Español** · [English](README.en.md)
+[Español](README.es.md) · **English**
 
-Planificador personal y cuaderno de laboratorio para investigación en
-catálisis computacional. Semana en una pantalla, proyectos con contexto
-científico, planificación del curso completo y ninguna conexión a ningún
-servidor: toda la información se queda en tu ordenador.
+Personal planner and lab notebook for computational catalysis research. Your
+week on one screen, projects with scientific context, planning for the whole
+academic year, and no connection to any server: all your data stays on your
+computer.
 
-![Vista semanal con proyectos de investigación](docs/screenshots/01-hero.png)
+![Weekly view with research projects](docs/screenshots/01-hero.png)
 
-**Contenido:** [Instalación](#instalación) ·
-[Primeros pasos](#primeros-pasos) ·
-[Día a día](#el-día-a-día) ·
-[Proyectos](#proyectos) ·
-[Vista del curso](#vista-del-curso-planificación-a-largo-plazo) ·
-[Semanas](#modo-semanas-qué-hago-esta-semana) ·
-[Deadlines](#deadlines-y-radar-de-urgencia) ·
-[Resúmenes](#resúmenes-y-cierre-semanal) ·
-[Personalización](#personalización) ·
-[Datos](#dónde-viven-tus-datos) ·
-[Atajos](#atajos-de-teclado)
+**Contents:** [Installation](#installation) ·
+[Getting started](#getting-started) ·
+[Day to day](#day-to-day) ·
+[Projects](#projects) ·
+[Course overview](#course-overview-long-term-planning) ·
+[Weeks mode](#weeks-mode-what-am-i-doing-this-week) ·
+[Deadlines](#deadlines-and-the-urgency-radar) ·
+[Summaries](#summaries-and-the-weekly-wrap-up) ·
+[Customization](#customization) ·
+[Data](#where-your-data-lives) ·
+[Shortcuts](#keyboard-shortcuts)
 
 ---
 
-## Instalación
+## Installation
 
-Descarga el instalador para tu sistema desde la página de releases:
+Download the installer for your system from the releases page:
 
-**[Descargar la última versión →](https://github.com/pafervi/ITQ-Todo/releases/latest)**
+**[Download the latest version →](https://github.com/pafervi/ITQ-Todo/releases/latest)**
 
-En esa página verás varios ficheros. Elige el que corresponda a tu sistema:
+You will see several files on that page. Pick the one that matches your
+system:
 
 ### Windows
 
-Baja `LatticeTodo Setup <versión>.exe` y haz doble click.
+Download `LatticeTodo Setup <version>.exe` and double-click it.
 
-> La primera vez Windows mostrará "Windows protegió el equipo". Pulsa
-> **Más información → Ejecutar de todas formas**. Es porque la app no está
-> firmada con un certificado corporativo, no porque haya nada raro.
+> The first time, Windows will show "Windows protected your PC". Click
+> **More info → Run anyway**. This happens because the app is not signed with
+> a corporate certificate, not because anything is wrong.
 
-Si prefieres la versión portable (no instala nada, se abre desde el fichero),
-baja `LatticeTodo <versión>.exe` en lugar del Setup.
+If you prefer the portable version (it installs nothing and runs straight
+from the file), download `LatticeTodo <version>.exe` instead of the Setup.
 
-### Linux (Ubuntu / Debian / derivados)
+### Linux (Ubuntu / Debian / derivatives)
 
-Baja `latticetodo_<versión>_amd64.deb` y abre un terminal donde esté el fichero:
+Download `latticetodo_<version>_amd64.deb` and open a terminal in the folder
+where the file is:
 
 ```bash
-sudo apt install ./latticetodo_<versión>_amd64.deb
+sudo apt install ./latticetodo_<version>_amd64.deb
 ```
 
-Aparecerá en el menú de aplicaciones como "LatticeTodo".
+It will appear in the application menu as "LatticeTodo".
 
-### Linux (otras distros, portable)
+### Linux (other distros, portable)
 
-Baja `LatticeTodo-<versión>.AppImage`, dale permiso de ejecución y lánzala:
+Download `LatticeTodo-<version>.AppImage`, make it executable and run it:
 
 ```bash
 chmod +x LatticeTodo-*.AppImage
@@ -63,337 +65,324 @@ chmod +x LatticeTodo-*.AppImage
 
 ### macOS
 
-Baja `LatticeTodo-<versión>.dmg`, ábrelo y arrastra la app a la carpeta
-Aplicaciones.
+Download `LatticeTodo-<version>.dmg`, open it and drag the app to the
+Applications folder.
 
-> La primera vez macOS dirá "no se puede abrir porque el desarrollador no
-> está identificado". Haz click derecho sobre la app en Aplicaciones y
-> elige **Abrir → Abrir**. Solo pasa la primera vez.
-
----
-
-## Primeros pasos
-
-Al abrir por primera vez, la app crea una base de datos vacía en tu
-ordenador. Los datos nunca salen de aquí; si cambias de equipo tienes que
-**exportar y re-importar** desde Ajustes (ver
-[Exportar e importar](#exportar-e-importar)).
-
-Tres cosas que conviene hacer el primer día:
-
-1. **Elegir idioma y tema** en Ajustes (inglés, castellano o catalán; claro u
-   oscuro, y un tema científico para los fondos).
-2. **Activar la copia de seguridad diaria**: elige una carpeta sincronizada
-   con la nube (OneDrive, Google Drive, Dropbox) y la app guardará una copia
-   cada día.
-3. **Crear tu primer proyecto**, como checklist o por fases (ver
-   [Proyectos](#proyectos)).
-
-Dentro de la app, pulsa **?** en cualquier momento para ver los atajos de
-teclado. La guía de funciones está en el menú de tres puntos de la barra
-lateral.
+> The first time, macOS will say "cannot be opened because the developer
+> cannot be verified". Right-click the app in Applications and choose
+> **Open → Open**. This only happens once.
 
 ---
 
-## Qué puedes hacer con la app
+## Getting started
 
-### El día a día
+When you open the app for the first time, it creates an empty database on
+your computer. Your data never leaves it; if you switch computers you have to
+**export and re-import** from Settings (see
+[Export and import](#export-and-import)).
 
-La pantalla principal muestra Hoy y los proyectos activos a la vez. Las
-tareas sin terminar de días anteriores pasan solas a Hoy cuando abres la
-app o cuando el reloj cruza medianoche con la app abierta. La franja
-superior deja saltar a cualquier día de la semana con un clic, o cambiar
-entre vista **Today** (solo el día centrado) y **Week** (siete días en
-columna).
+Three things worth doing on day one:
 
-Para crear una tarea rápida pulsas **N** desde cualquier sitio, tecleas
-el texto y Enter. Si pegas texto multilínea, se crea una tarea por
-línea. Con **doble clic** en el círculo de estado de una tarea entras en
-modo foco: una sola tarea en pantalla, cronómetro simple, `Esc` para
-salir.
+1. **Pick a language and theme** in Settings (English, Spanish or Catalan;
+   light or dark, plus a scientific theme for the backgrounds).
+2. **Turn on the daily backup**: choose a cloud-synced folder (OneDrive,
+   Google Drive, Dropbox) and the app will save a copy every day.
+3. **Create your first project**, as a checklist or phased (see
+   [Projects](#projects)).
 
-**Captura global.** Con la app de escritorio, `Ctrl+Alt+Space` (o
-`Cmd+Alt+Space` en macOS) abre una ventana mínima para apuntar una tarea
-desde cualquier programa, sin cambiar de ventana.
+Inside the app, press **?** at any time to see the keyboard shortcuts. The
+feature guide is in the three-dot menu of the sidebar.
 
-Las tareas se etiquetan solas: si escribes VASP, MACE, DFT, SLURM o el
-nombre de una zeolita, la app añade el tag correspondiente (se desactiva
-en Ajustes). Una barra de tags permite filtrar las tareas por etiqueta y
-volver a verlas todas con un clic.
+---
 
-**Foco de la semana.** Bajo la franja de días, la pantalla de Hoy muestra
-en qué te centras esta semana (fases y objetivos que has colocado en el
-[modo Semanas](#modo-semanas-qué-hago-esta-semana)). Un clic abre el
-planificador.
+## What you can do with the app
 
-**Tareas recurrentes.** Desde la barra lateral puedes definir tareas que
-se repiten (reuniones de grupo, revisiones semanales…) y aparecen solas en
-su día.
+### Day to day
 
-**App de escritorio.** Se queda en la bandeja del sistema, puede abrirse al
-iniciar el ordenador y seguir en segundo plano, y avisa al arrancar de lo
-que toca hoy, con sonido opcional.
+The main screen shows Today and your active projects at the same time.
+Unfinished tasks from previous days move to Today on their own when you open
+the app or when the clock crosses midnight with the app open. The top strip
+lets you jump to any day of the week with one click, or switch between the
+**Today** view (only the centered day) and the **Week** view (seven days in a
+column).
 
-### Proyectos
+To create a quick task, press **N** from anywhere, type the text and hit
+Enter. If you paste multi-line text, one task is created per line.
+**Double-click** the status circle of a task to enter focus mode: a single
+task on screen, a simple timer, and `Esc` to leave.
 
-Cada proyecto es su propia lista, con nombre, color, una carpeta
-enlazada (que abres con un clic en el icono de carpeta), notas en
-Markdown y la zeolita (framework) asociada. Al crearlo eliges el tipo:
+**Global capture.** With the desktop app, `Ctrl+Alt+Space` (or
+`Cmd+Alt+Space` on macOS) opens a minimal window to jot down a task from any
+program, without switching windows.
 
-- **Checklist**: proyecto clásico, con tareas que se tachan.
-- **Por fases**: proyecto científico con fecha de inicio y fin, dividido en
-  fases a lo largo del tiempo.
+Tasks tag themselves: if you write VASP, MACE, DFT, SLURM or the name of a
+zeolite, the app adds the matching tag (you can turn this off in Settings). A
+tag bar lets you filter tasks by label and see them all again with one click.
 
-Pulsa el título de un proyecto y se abre su **cristal**: estadísticas,
-próxima fecha límite y tareas abiertas.
+**Weekly focus.** Below the day strip, the Today screen shows what you are
+focusing on this week (the phases and goals you placed in
+[Weeks mode](#weeks-mode-what-am-i-doing-this-week)). One click opens the
+planner.
 
-![Cristal del proyecto MFI Defect Engineering](docs/screenshots/03-project-crystal.png)
+**Recurring tasks.** From the sidebar you can define tasks that repeat (group
+meetings, weekly reviews…) and they show up on their own on the right day.
 
-#### Proyectos por fases
+**Desktop app.** It stays in the system tray, can launch when your computer
+starts and keep running in the background, and notifies you on startup of
+what is due today, with optional sound.
 
-Un proyecto por fases tiene tres pestañas: **Tareas**, **Timeline** y
-**Feed**.
+### Projects
 
-- **Timeline**: fases con nombre, fechas, color y estado (pendiente,
-  activa, hecha, bloqueada). Por ejemplo, *Benchmark DFT → MACE L1 →
-  Búsqueda de TS*.
-- **Feed**: el diario del proyecto. Cada entrada es una nota, un hito o una
-  decisión, con fecha y fase opcional.
-- **Instantáneas semanales**: los lunes al abrir y los viernes al cerrar, la
-  app te pregunta por cada proyecto por fases cómo está y qué se mueve (o
-  qué se cerró y qué queda), y lo guarda como entrada del feed. Se puede
-  saltar.
-- **Exportar a Markdown**: desde el menú del proyecto, *Export timeline and
-  log (.md)* genera un fichero con las fases y el feed, listo para pegar en
-  un informe o dárselo como contexto a un asistente.
+Each project is its own list, with a name, a color, a linked folder (which you
+open with one click on the folder icon), notes in Markdown and the associated
+zeolite (framework). When you create it you choose the type:
 
-#### Herramientas de proyecto
+- **Checklist**: the classic project, with tasks you tick off.
+- **Phased**: a scientific project with a start and end date, divided into
+  phases over time.
 
-Se activan desde el menú de tres puntos del proyecto:
+Click a project's title to open its **crystal**: statistics, next deadline and
+open tasks.
 
-- **Paper tracker**: seguimiento de un manuscrito por secciones, con palabras
-  escritas y objetivo, borrador conceptual con casillas y plantillas de
-  artículo. En escritorio puede leer el `.tex` o `.md` de la carpeta
-  enlazada para actualizar el recuento. La cabecera del proyecto muestra el
-  porcentaje.
-- **Batch tracker**: una tanda larga de cálculos (por ejemplo 60 singlepoints)
-  se sigue como una sola tarea, con barra de progreso y botones
-  `-10 / -1 / +1 / +10`. Nunca por cálculo individual.
+![Crystal of the MFI Defect Engineering project](docs/screenshots/03-project-crystal.png)
 
-Además, puedes crear **plantillas propias** de lista (viaje, reunión, cierre
-de paper…) con nombre, icono, color y checklist, y reutilizarlas al crear
-proyectos nuevos.
+#### Phased projects
 
-### Vista del curso: planificación a largo plazo
+A phased project has three tabs: **Tasks**, **Timeline** and **Feed**.
 
-El botón **Vista global** de la barra lateral abre la **vista del curso
-académico** (septiembre a agosto), una pizarra por carriles para ver de
-golpe todo lo que viene.
+- **Timeline**: phases with a name, dates, color and status (pending, active,
+  done, blocked). For example, *DFT benchmark → MACE L1 → TS search*.
+- **Feed**: the project diary. Each entry is a note, a milestone or a
+  decision, with a date and an optional phase.
+- **Weekly snapshots**: on Mondays when you open the app and on Fridays when
+  you close the week, the app asks you for each phased project how it stands
+  and what is moving (or what closed and what is left), and saves it as a
+  feed entry. You can skip it.
+- **Export to Markdown**: from the project menu, *Export timeline and log
+  (.md)* generates a file with the phases and the feed, ready to paste into a
+  report or hand to an assistant as context.
 
-![Vista del curso académico exportada como imagen](docs/screenshots/13-overview-export.png)
+#### Project tools
 
-Qué contiene:
+You turn them on from the project's three-dot menu:
 
-- **Proyectos** con fecha de inicio y fin, dibujados como barras. Si un
-  proyecto tiene paper tracker, el porcentaje aparece en su barra.
-- **Deadlines** de todas las tareas, con los de paper en morado y la próxima
-  charla en rojo. Se abren y editan desde la propia vista.
-- **Carriles propios** (investigación, docencia, lo que necesites) con
-  bloques y hitos. Haz clic en un hueco para añadir, arrastra para mover
-  (también a otro carril) y tira de los bordes para cambiar la duración.
-- **No disponible**: vacaciones, festivos, épocas de docencia o exámenes y
-  estancias, pintados como bandas grises de fondo.
-- **Fases** de los proyectos por fases, que se pueden mostrar u ocultar.
-- **Ideas sin fecha**: un panel lateral para apuntar cosas sin colocarlas
-  todavía. Arrástralas a un carril para darles fecha.
-- **Carga por semana**: una franja de color bajo los meses que indica cuántas
-  cosas coinciden cada semana; al pasar el ratón, cuáles son.
-- **Próximos 30 días**: lista con lo más cercano y la semana más cargada.
-  La misma lista aparece en el Cierre del viernes y en el resumen semanal.
+- **Paper tracker**: follow a manuscript section by section, with words
+  written against a target, a conceptual outline with checkboxes, and article
+  templates. On desktop it can read the `.tex` or `.md` file in the linked
+  folder to update the word count. The project header shows the percentage.
+- **Batch tracker**: a long batch of calculations (for example 60
+  singlepoints) is followed as a single task, with a progress bar and
+  `-10 / -1 / +1 / +10` buttons. Never per individual calculation.
 
-Para enseñar el plan, los botones de exportar de la cabecera generan una **imagen PNG** o un
-**PDF** en A4 apaisado, siempre en tema claro. También exporta un `.md`
-pensado como contexto para un asistente de IA.
+You can also create your own list **templates** (trip, meeting, paper
+wrap-up…) with a name, icon, color and checklist, and reuse them when creating
+new projects.
 
-#### Modo Semanas: qué hago esta semana
+### Course overview: long-term planning
 
-El selector **Curso / Semanas** de la cabecera cambia la pizarra por un
-planificador semanal, pensado para cuando todos los proyectos están vivos a
-la vez y necesitas decidir qué toca ahora.
+The **Overview** button in the sidebar opens the **academic year overview**
+(September to August), a lane-based board to see everything that is coming at
+a glance.
 
-- **Seis columnas**, una por semana, con navegación para avanzar y volver a
-  "Esta semana". Cada columna muestra arriba los deadlines, hitos y
-  ausencias de esos días.
-- **Fases por colocar**: panel lateral con las fases pendientes de tus
-  proyectos por fases. Arrástralas a una semana, o pulsa **+** para añadirlas
-  a la actual. Una fase puede repartirse en varias semanas (el panel cuenta
-  cuántas veces la has colocado).
-- **Objetivos libres**: "Añadir objetivo" crea una tarjeta de texto, con
-  proyecto opcional, para lo que no es una fase.
-- **Tarjetas**: se marcan como hechas, se arrastran a otra semana y se
-  quitan con la **×** o arrastrándolas de vuelta al panel. Un aviso indica
-  si la semana queda fuera de las fechas de la fase.
+![Academic year overview exported as an image](docs/screenshots/13-overview-export.png)
 
-El foco de la semana en curso aparece también en la pantalla de **Hoy**,
-bajo la franja de días; pulsarlo abre el planificador. El export `.md` de la
-vista incluye una sección "Weekly focus" con las próximas semanas.
+What it contains:
 
-### Deadlines y radar de urgencia
+- **Projects** with a start and end date, drawn as bars. If a project has a
+  paper tracker, the percentage appears on its bar.
+- **Deadlines** from all tasks, with paper deadlines in purple and the next
+  talk in red. You open and edit them from the view itself.
+- **Your own lanes** (research, teaching, whatever you need) with blocks and
+  milestones. Click an empty spot to add, drag to move (also to another lane)
+  and pull the edges to change the duration.
+- **Not available**: holidays, public holidays, teaching or exam periods and
+  stays, painted as gray bands in the background.
+- **Phases** of phased projects, which you can show or hide.
+- **Ideas without a date**: a side panel to jot things down without placing
+  them yet. Drag them to a lane to give them a date.
+- **Load per week**: a colored strip under the months showing how many things
+  coincide each week; hover to see which ones.
+- **Next 30 days**: a list with what is closest and the busiest week. The same
+  list appears in the Friday wrap-up and in the weekly summary.
 
-Cada tarea puede tener una fecha límite. La lista de **Deadlines**
-agrupa todas las pendientes por urgencia (vencidas, hoy, pronto, más
-tarde) con el proyecto de origen a la vista.
+To show your plan, the export buttons in the header generate a **PNG image**
+or an A4 landscape **PDF**, always in the light theme. It also exports a `.md`
+file meant as context for an AI assistant.
 
-![Deadlines agrupadas por urgencia](docs/screenshots/04-deadlines.png)
+#### Weeks mode: what am I doing this week
 
-Para una vista espacial del mismo material, el **radar de vencimientos**
-coloca cada deadline como un punto en anillos concéntricos: más cerca del
-centro, más urgente. Las fechas de papers se pintan en color distinto;
-si has configurado una charla próxima, se destaca en rojo y la barra
-lateral muestra la cuenta atrás.
+The **Course / Weeks** switch in the header replaces the board with a weekly
+planner, meant for when all your projects are alive at once and you need to
+decide what comes now.
+
+- **Six columns**, one per week, with navigation to move forward and go back
+  to "This week". Each column shows the deadlines, milestones and absences of
+  those days at the top.
+- **Phases to place**: a side panel with the pending phases of your phased
+  projects. Drag them to a week, or press **+** to add them to the current
+  one. A phase can be spread over several weeks (the panel counts how many
+  times you placed it).
+- **Free goals**: "Add goal" creates a text card, with an optional project,
+  for whatever is not a phase.
+- **Cards**: tick them as done, drag them to another week and remove them with
+  the **×** or by dragging them back to the panel. A warning tells you when
+  the week falls outside the dates of the phase.
+
+The focus of the current week also appears on the **Today** screen, below the
+day strip; clicking it opens the planner. The view's `.md` export includes a
+"Weekly focus" section with the coming weeks.
+
+### Deadlines and the urgency radar
+
+Every task can have a due date. The **Deadlines** list groups all pending ones
+by urgency (overdue, today, soon, later) with the source project in view.
+
+![Deadlines grouped by urgency](docs/screenshots/04-deadlines.png)
+
+For a spatial view of the same material, the **deadline radar** places each
+deadline as a dot on concentric rings: the closer to the center, the more
+urgent. Paper dates are painted in a different color; if you have set an
+upcoming talk, it stands out in red and the sidebar shows the countdown.
 
 ### Mission control
 
-Un tablero bento con todo lo que importa a la vez: tareas de hoy,
-próximas fechas límite (7 días), reuniones activas y un mapa de calor de
-tu actividad en las últimas 12 semanas.
+A bento board with everything that matters at once: today's tasks, upcoming
+deadlines (7 days), active meetings and a heat map of your activity over the
+last 12 weeks.
 
-![Mission control con hoy, deadlines, meetings y actividad](docs/screenshots/05-mission-control.png)
+![Mission control with today, deadlines, meetings and activity](docs/screenshots/05-mission-control.png)
 
-### Gente: quién te espera y a quién esperas
+### People: who is waiting on you and whom you wait on
 
-Si escribes `@nombre` dentro de una tarea, esa persona aparece en el
-panel de **Gente**, con tres columnas: a quién le debes algo, quién te
-espera a ti, y qué compartís. Los tags `#waiting` y `#owe` ajustan
-quién va a qué columna. No hay que configurar nada: las menciones se
-leen al momento, y el mismo nombre con o sin acentos y mayúsculas se
-agrupa en una sola persona.
+If you write `@name` inside a task, that person shows up in the **People**
+panel, with three columns: whom you owe something, who is waiting on you, and
+what you share. The `#waiting` and `#owe` tags adjust which column something
+goes to. There is nothing to configure: mentions are read instantly, and the
+same name with or without accents and capitals is grouped into a single
+person.
 
-![Panel Gente con menciones a Mercedes, Rafa y Veronique](docs/screenshots/06-people.png)
+![People panel with mentions of Mercedes, Rafa and Veronique](docs/screenshots/06-people.png)
 
-### Caja rápida: buscar y ejecutar
+### Quick box: search and run
 
-Pulsa **Ctrl+K** (o **/**) desde cualquier parte: te abre una caja que
-busca tareas en todos los proyectos y, con el prefijo `>`, ejecuta
-comandos (ir a Mission control, abrir Deadlines, cambiar tema, cambiar
-vista, abrir el resumen diario o semanal…). Con el prefijo `+` crea una
-tarea al vuelo entendiendo fecha (`tomorrow 10am`), tag (`#dft`),
-prioridad (`!1`, `!2`, `!3`) y proyecto (`/ceo2`).
+Press **Ctrl+K** (or **/**) from anywhere: it opens a box that searches tasks
+across all projects and, with the `>` prefix, runs commands (go to Mission
+control, open Deadlines, change theme, change view, open the daily or weekly
+summary…). With the `+` prefix it creates a task on the fly, understanding the
+date (`tomorrow 10am`), tag (`#dft`), priority (`!1`, `!2`, `!3`) and project
+(`/ceo2`).
 
-![Caja rápida con atajos a cada acción](docs/screenshots/08-search.png)
+![Quick box with shortcuts to every action](docs/screenshots/08-search.png)
 
-### Resúmenes y cierre semanal
+### Summaries and the weekly wrap-up
 
-A partir de las 17:00 la app te ofrece el **resumen del día** (lo que
-has cerrado y lo que toca mañana). Los viernes a partir de las 17:00 se
-abre el **Cierre del viernes**: lo que acabaste, lo que arrastras al
-lunes, los próximos 30 días y tres preguntas cortas para dejar la semana
-ordenada. Se puede exportar a Markdown. En la sidebar se lleva la cuenta
-de la **racha** de días completos al 100%.
+From 17:00 the app offers you the **daily summary** (what you closed and
+what is due tomorrow). On Fridays from 17:00 the **Friday wrap-up** opens:
+what you finished, what you carry over to Monday, the next 30 days and three
+short questions to leave the week in order. It can be exported to Markdown.
+The sidebar keeps the count of your **streak** of days completed at 100%.
 
-El **resumen semanal** agrupa lo completado por proyecto y por día, y
-tiene el mismo bloque de próximas semanas. Desde ahí se exporta el
-**cuaderno de laboratorio**, semanal o mensual, en una vista imprimible
-con espacio para firma (*PDF / Print*); la versión mensual lleva portada.
+The **weekly summary** groups what was completed by project and by day, and
+has the same upcoming-weeks block. From there you export the **lab
+notebook**, weekly or monthly, in a printable view with space for a signature
+(*PDF / Print*); the monthly version has a cover page.
 
-### Identidad científica
+### Scientific identity
 
-Cada día la app elige un motivo del tema activo. La silueta pinta el
-fondo del splash y la carátula de los proyectos. Puedes clicar la
-insignia de la sidebar para abrir la ficha; en el tema de zeolitas indica
-el tamaño del anillo mayor del framework y si fue descubierta en el ITQ.
+Every day the app picks a motif from the active theme. The silhouette paints
+the splash background and the project covers. You can click the badge in the
+sidebar to open its card; in the zeolite theme it shows the size of the
+framework's largest ring and whether it was discovered at ITQ.
 
-![Ficha de zeolita del día: ITH (ITQ-13)](docs/screenshots/07-zeolite-of-day.png)
+![Zeolite of the day card: ITH (ITQ-13)](docs/screenshots/07-zeolite-of-day.png)
 
-Hay cinco temas científicos, cada uno con sus propias siluetas del día:
-**zeolitas**, **química orgánica**, **óxidos metálicos**, **fotoquímica**
-y **proteínas**. Se cambian desde Ajustes → Display, y la app sugiere un
-color de acento para cada uno.
+There are five scientific themes, each with its own silhouettes of the day:
+**zeolites**, **organic chemistry**, **metal oxides**, **photochemistry** and
+**proteins**. You change them from Settings → Display, and the app suggests an
+accent color for each one.
 
-### Personalización
+### Customization
 
-Desde Ajustes puedes cambiar idioma (inglés / castellano / catalán),
-tema claro u oscuro, tema científico, densidad (aireada o densa),
-tipografía, color de acento, zoom, número de columnas, tarjetas de
-proyecto compactas y su ancho, y si la semana empieza en lunes. Hay un
-**modo rendimiento** que desactiva los fondos difuminados si tu equipo rinde
-justo con la GPU integrada.
+From Settings you can change the language (English / Spanish / Catalan), light
+or dark theme, scientific theme, density (airy or dense), typography, accent
+color, zoom, number of columns, compact project cards and their width, and
+whether the week starts on Monday. There is a **performance mode** that turns
+off the blurred backgrounds if your computer struggles with its integrated
+GPU.
 
-![Ajustes con los controles principales](docs/screenshots/10-settings.png)
+![Settings with the main controls](docs/screenshots/10-settings.png)
 
-### Dónde viven tus datos
+### Where your data lives
 
-Todo se guarda localmente, en la base de datos IndexedDB del navegador
-embebido. Nada se envía a ningún servidor.
+Everything is stored locally, in the IndexedDB database of the embedded
+browser. Nothing is sent to any server.
 
-#### Exportar e importar
+#### Export and import
 
-Para pasar tus datos a otro equipo, o para guardarlos a mano:
+To move your data to another computer, or to save it by hand:
 
-1. **Exportar**: Ajustes → Datos → **Exportar datos**. Se descarga el fichero
-   `LatticeTodoBackup.wtdb` con tareas, proyectos, fases, feed, vista global,
-   tareas recurrentes y ajustes.
-2. **Importar**: en el otro equipo, Ajustes → Datos → **Importar datos** y
-   elige el `.wtdb`.
+1. **Export**: Settings → Data → **Export data**. This downloads the
+   `LatticeTodoBackup.wtdb` file with tasks, projects, phases, feed, overview,
+   recurring tasks and settings.
+2. **Import**: on the other computer, Settings → Data → **Import data** and
+   choose the `.wtdb` file.
 
-> Importar **sustituye** todos los datos actuales por los del fichero. Si el
-> fichero no es válido, la app avisa y no toca nada.
+> Importing **replaces** all current data with that of the file. If the file
+> is not valid, the app warns you and changes nothing.
 
-En Ajustes → Datos también está **Borrar datos**, que vacía la app por
-completo y no se puede deshacer.
+Settings → Data also has **Clear data**, which empties the app completely and
+cannot be undone.
 
-#### Copia de seguridad automática
+#### Automatic backup
 
-Con la app de escritorio puedes activar una copia diaria en una carpeta que
-elijas, por ejemplo una sincronizada con OneDrive. Genera ficheros
-`LatticeTodoBackup-AAAA-MM-DD.wtdb`, con el mismo contenido que una
-exportación manual. Hay también un botón para hacer la copia en el momento
-y una opción para **cargar la copia más reciente al abrir la app**, útil si
-trabajas en dos ordenadores con la misma carpeta sincronizada.
+With the desktop app you can turn on a daily copy in a folder of your choice,
+for example one synced with OneDrive. It generates
+`LatticeTodoBackup-YYYY-MM-DD.wtdb` files, with the same content as a manual
+export. There is also a button to make the copy right now and an option to
+**load the most recent copy on startup**, useful if you work on two computers
+with the same synced folder.
 
-#### Exportar para informes
+#### Export for reports
 
-El menú de tres puntos de la barra lateral incluye **Exportar todos los
-proyectos**, un resumen en Markdown de todos tus proyectos. Cada proyecto
-por fases, la vista global y los resúmenes semanales tienen además su propia
-exportación.
+The three-dot menu of the sidebar includes **Export all projects**, a Markdown
+summary of all your projects. Each phased project, the overview and the weekly
+summaries also have their own export.
 
-### Guía dentro de la app
+### In-app guide
 
-Si quieres ver todo lo anterior con ejemplos y pasos concretos, la
-**Guía de funciones** está dentro de la app (sidebar → tres puntos →
-Feature guide). Tiene una pestaña por cada bloque, con ejemplos reales
-de uso.
+If you want to see everything above with examples and concrete steps, the
+**Feature guide** is inside the app (sidebar → three dots → Feature guide). It
+has one tab for each block, with real examples of use.
 
-![Guía de funciones con ejemplos de Gente](docs/screenshots/11-feature-guide.png)
+![Feature guide with People examples](docs/screenshots/11-feature-guide.png)
 
 ---
 
-## Atajos de teclado
+## Keyboard shortcuts
 
-Los esenciales (los puedes ver en cualquier momento pulsando **?**):
+The essentials (you can see them at any time by pressing **?**):
 
-| Tecla | Acción |
+| Key | Action |
 |---|---|
-| `N` | Enfoca el campo de nueva tarea del día centrado |
-| `T` | Vuelve a Hoy |
-| `← / →` | Mueve un día atrás / adelante |
-| `/` | Abre la búsqueda |
-| `Ctrl+K` | Abre la caja rápida de comandos |
-| `D` | Abre deadlines |
-| `?` | Muestra esta ayuda |
-| `Esc` | Cierra el diálogo abierto, o la vista del curso |
-| `Ctrl+Alt+Space` | Captura global de una tarea (app de escritorio) |
+| `N` | Focuses the new-task field of the centered day |
+| `T` | Back to Today |
+| `← / →` | Moves one day back / forward |
+| `/` | Opens search |
+| `Ctrl+K` | Opens the quick command box |
+| `D` | Opens deadlines |
+| `?` | Shows this help |
+| `Esc` | Closes the open dialog, or the overview |
+| `Ctrl+Alt+Space` | Global task capture (desktop app) |
 
-![Modal de atajos de teclado](docs/screenshots/12-shortcuts.png)
+![Keyboard shortcuts modal](docs/screenshots/12-shortcuts.png)
 
 ---
 
-## Problemas y sugerencias
+## Issues and suggestions
 
-Abre un issue en el repositorio o escríbeme directamente.
+Open an issue in the repository or write to me directly.
 
-## Licencia
+## License
 
-GPL-3.0. Basado en [WeekToDo](https://github.com/manuelernestog/weektodo)
-de Manuel Ernesto García, ampliado para flujo diario de investigación.
+GPL-3.0. Based on [WeekToDo](https://github.com/manuelernestog/weektodo) by
+Manuel Ernesto García, extended for a daily research workflow.

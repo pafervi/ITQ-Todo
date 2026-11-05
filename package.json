@@ -1,6 +1,6 @@
 {
   "name": "LatticeTodo",
-  "version": "3.0.4",
+  "version": "3.0.5",
   "private": true,
   "description": "Personal planner and lab notebook for computational catalysis research.",
   "author": "Pau Ferri-Vicedo <pauferrivi@gmail.com>",
